@@ -47,7 +47,7 @@ stages:
             feedsToUse: 'select'
             vstsFeed: 'b8db0229-c220-4583-b1d9-1111e482a1ce'
         # Step 3: Prepare SonarQube analysis
-        - task: SonarQubePrepare@5
+        - task: SonarQubePrepare@7
           displayName: 'Prepare SonarQube Analysis'
           inputs:
             SonarQube: $(SonarQubeServiceConnectionName)
@@ -107,7 +107,7 @@ stages:
                   exit 0      # Passes the job if no critical/high vulnerabilities are found
               fi
 
-# Test Stage: This stage runs unit tests, integration tests and end-to-end (E2E) tests.
+# Test Stage: This stage runs unit tests and integration tests.
 - stage: Test
   displayName: 'Run Unit, Integration and E2E Tests'
   dependsOn: StaticAnalysis
