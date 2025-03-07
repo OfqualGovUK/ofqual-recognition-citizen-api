@@ -51,7 +51,7 @@ stages:
           displayName: 'Prepare SonarQube Analysis'
           inputs:
             SonarQube: $(SonarQubeServiceConnectionName)
-            scannerMode: 'MSBuild'
+            scannerMode: 'dotnet'
             projectKey: $(SonarQubeProjectKey)
         # Step 4: PowerShell script to modify SonarQube parameters
         - task: PowerShell@2
@@ -73,10 +73,10 @@ stages:
             projects: "**/*.csproj"
             arguments: "--no-restore"
         # Step 6: Run SonarQube static code analysis
-        - task: SonarQubeAnalyze@5
+        - task: SonarQubeAnalyze@7
           displayName: 'Run SonarQube Static Code Analysis'
         # Step 7: Publish SonarQube results to the dashboard
-        - task: SonarQubePublish@5
+        - task: SonarQubePublish@7
           displayName: 'Publish SonarQube Analysis Results'
           inputs:
             pollingTimeoutSec: '300'
