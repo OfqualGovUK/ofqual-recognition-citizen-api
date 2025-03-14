@@ -1,20 +1,80 @@
+using System.Data;
+using System.Reflection;
+using CorrelationId;
+using CorrelationId.DependencyInjection;
+using CorrelationId.HttpClient;
+using Microsoft.Data.SqlClient;
+using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.Http;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+#region Services
+
+// Add HttpClient service with Correlation ID forwarding
+builder.Services.AddHttpClient<HttpClient>().AddCorrelationIdForwarding();
+
+// Configure Serilog logging
+builder.Host.UseSerilog((ctx, svc, cfg) => cfg
+    .ReadFrom.Configuration(ctx.Configuration)
+    .ReadFrom.Services(svc)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Environment", ctx.Configuration.GetValue<string>("LogzIo:Environment") ?? "Unknown")
+    .Enrich.WithProperty("Assembly", Assembly.GetEntryAssembly()?.GetName()?.Name ?? "Ofqual.Recognition.Citizen.API")
+    .MinimumLevel.Override("CorrelationId", LogEventLevel.Error)
+    .WriteTo.Console(
+        restrictedToMinimumLevel: ctx.Configuration.GetValue<string>("LogzIo:Environment") == "LOCAL"
+            ? LogEventLevel.Verbose
+            : LogEventLevel.Error)
+    .WriteTo.LogzIoDurableHttp(
+        requestUri: ctx.Configuration.GetValue<string>("LogzIo:Uri"),
+        bufferBaseFileName: "Buffer",
+        bufferRollingInterval: BufferRollingInterval.Hour,
+        bufferFileSizeLimitBytes: 524288000L,
+        retainedBufferFileCountLimit: 12
+    )
+);
+
+// Add Correlation ID service for tracking requests across logs
+builder.Services.AddCorrelationId(opt =>
+    {
+        opt.AddToLoggingScope = true;
+        opt.UpdateTraceIdentifier = true;
+    }
+).WithTraceIdentifierProvider();
+
+// Register database connection
+builder.Services.AddScoped<IDbConnection>(sp =>
+    new SqlConnection(builder.Configuration.GetConnectionString("OfqualODS"))
+);
+
+// Register UnitOfWork for database transactions
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Add controllers
 builder.Services.AddControllers();
 
-// Add Swagger services
+// Enable Swagger for API documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Configure CORS Policy
 builder.Services.AddCors(o => o.AddPolicy("CORS_POLICY", builder =>
 {
     builder.AllowAnyOrigin()
         .AllowAnyMethod()
         .AllowAnyHeader();
 }));
+
+#endregion
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+#region Middleware
+
+// Configure middleware and request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -23,10 +83,23 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ofqual Recognition Citizen API V1");
     });
-}
+};
 
+app.UseCorrelationId();
+app.UseSerilogRequestLogging(opt =>
+{
+    opt.EnrichDiagnosticContext = (dc, hc) =>
+    {
+        dc.Set("RequestHost", hc.Request.Host.Value);
+        dc.Set("RequestScheme", hc.Request.Scheme);
+        dc.Set("UserAgent", hc.Request.Headers["User-Agent"].ToString());
+    };
+});
 app.UseCors("CORS_POLICY");
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+#endregion
+
 app.Run();

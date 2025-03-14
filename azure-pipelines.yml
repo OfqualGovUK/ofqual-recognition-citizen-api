@@ -109,7 +109,7 @@ stages:
 
 # Test Stage: This stage runs unit tests and integration tests.
 - stage: Test
-  displayName: 'Run Unit, Integration and E2E Tests'
+  displayName: 'Run Unit and Integration'
   dependsOn: StaticAnalysis
   condition: succeeded()
   jobs:
