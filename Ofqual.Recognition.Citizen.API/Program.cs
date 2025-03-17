@@ -5,6 +5,7 @@ using CorrelationId.DependencyInjection;
 using CorrelationId.HttpClient;
 using Microsoft.Data.SqlClient;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.Http;
@@ -50,8 +51,9 @@ builder.Services.AddScoped<IDbConnection>(sp =>
     new SqlConnection(builder.Configuration.GetConnectionString("OfqualODS"))
 );
 
-// Register UnitOfWork for database transactions
+// Register application services
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<ITaskService, TaskService>();
 
 // Add controllers
 builder.Services.AddControllers();

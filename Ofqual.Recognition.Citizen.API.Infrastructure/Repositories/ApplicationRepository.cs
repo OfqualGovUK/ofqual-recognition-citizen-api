@@ -15,22 +15,18 @@ public class ApplicationRepository : IApplicationRepository
 
     public async Task<Application> CreateApplication()
     {
-        const string insertQuery = @"
-            INSERT INTO [RecognitionCitizen].[Application]
-            (
-                CreatedByUpn,
+        const string query = @"
+            INSERT INTO [recognitionCitizen].[Application] (
+                CreatedByUpn, 
                 ModifiedByUpn
-            )
-            OUTPUT INSERTED.*
-            VALUES
-            (
+            ) OUTPUT INSERTED.* VALUES (
                 @CreatedByUpn,
                 @ModifiedByUpn
             )";
-        return await _dbTransaction.Connection!.QuerySingleAsync<Application>(insertQuery, new
+        return await _dbTransaction.Connection!.QuerySingleAsync<Application>(query, new
         {
-            CreatedByUpn = "USER",
-            ModifiedByUpn = "USER"
+            CreatedByUpn = "USER", // TODO: replace once auth gets added
+            ModifiedByUpn = "USER" // TODO: replace once auth gets added
         }, _dbTransaction);
     }
 }

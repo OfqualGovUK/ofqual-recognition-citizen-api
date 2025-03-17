@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 using Serilog;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
@@ -14,13 +15,15 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 public class RecognitionCitizenController : ControllerBase
 {
     private readonly IUnitOfWork _context;
+    private readonly ITaskService _taskService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="RecognitionCitizenController"/>.
     /// </summary>
-    public RecognitionCitizenController(IUnitOfWork context)
+    public RecognitionCitizenController(IUnitOfWork context, ITaskService taskService)
     {
         _context = context;
+        _taskService = taskService;
     }
 
     /// <summary>
@@ -34,11 +37,28 @@ public class RecognitionCitizenController : ControllerBase
         {
             var application = await _context.ApplicationRepository.CreateApplication();
 
-            if (application == null) {
+            if (application == null)
+            {
                 return BadRequest("Application could not be created.");
             }
 
+            var tasks = await _context.TaskRepository.GetAllTask();
+
+            if (tasks == null || !tasks.Any())
+            {
+                return BadRequest("No tasks found to create statuses for the application.");
+            }
+
+            // Create Task Statuses for all Tasks
+            bool isTaskStatusesCreated = await _context.TaskRepository.CreateTaskStatuses(application.ApplicationId, tasks);
+
+            if (!isTaskStatusesCreated)
+            {
+                return BadRequest("Failed to create task statuses for the new application.");
+            }
+
             _context.Commit();
+
             return Ok(application);
         }
         catch (Exception ex)
@@ -49,17 +69,18 @@ public class RecognitionCitizenController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves tasks and their statuses for a given application.
+    /// Retrieves sections with tasks and their statuses for a given application.
     /// </summary>
     /// <param name="applicationId">The application ID.</param>
-    /// <returns>List of tasks with statuses.</returns>
+    /// <returns>A list of sections containing tasks with statuses.</returns>
     [HttpGet("application/{applicationId}/tasks")]
-    public async Task<ActionResult<List<TaskStatusDto>>> GetApplicationTasks(Guid applicationId)
+    public async Task<ActionResult<List<TaskSectionDto>>> GetApplicationTasks(Guid applicationId)
     {
         try
         {
-            var taskStatusDto = await _context.TaskRepository.GetTasksByApplicationId(applicationId);
-            return Ok(taskStatusDto);
+            var tasks = await _taskService.GetSectionsWithTasksByApplicationId(applicationId);
+
+            return Ok(tasks);
         }
         catch (Exception ex)
         {
@@ -79,7 +100,7 @@ public class RecognitionCitizenController : ControllerBase
     {
         try
         {
-            var isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, status);
+            bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, status);
 
             if (!isStatusUpdated)
             {
@@ -87,6 +108,7 @@ public class RecognitionCitizenController : ControllerBase
             }
 
             _context.Commit();
+
             return Ok();
         }
         catch (Exception ex)

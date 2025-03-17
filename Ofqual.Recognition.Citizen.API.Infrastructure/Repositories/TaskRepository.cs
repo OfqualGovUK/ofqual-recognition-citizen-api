@@ -14,30 +14,82 @@ public class TaskRepository : ITaskRepository
         _dbTransaction = dbTransaction;
     }
 
-    public async Task<List<TaskStatusDto>> GetTasksByApplicationId(Guid applicationId)
+    public async Task<IEnumerable<TaskItem>> GetAllTask()
+    {
+        const string query = @"
+            SELECT 
+                TaskId,
+                TaskName,
+                SectionId,
+                OrderNumber,
+                CreatedDate,
+                ModifiedDate,
+                CreatedByUpn,
+                ModifiedByUpn
+            FROM [recognitionCitizen].[Task]";
+        
+        return await _dbTransaction.Connection!.QueryAsync<TaskItem>(query, null, _dbTransaction);
+    }
+
+    public async Task<IEnumerable<TaskStatusRawDto>> GetTaskStatusesByApplicationId(Guid applicationId)
     {
         var query = @"
             SELECT
+                S.SectionId,
+                S.SectionName,
+                S.OrderNumber AS SectionOrderNumber,
                 T.TaskId,
                 T.TaskName,
-                T.SectionId,
-                T.OrderNumber,
-                TS.Status,
-                TS.CreatedDate AS TaskStatusCreatedDate,
-                TS.ModifiedDate AS TaskStatusModifiedDate
-            FROM RecognitionCitizen.TaskStatus TS
-            INNER JOIN RecognitionCitizen.Task T ON TS.TaskId = T.TaskId
-            WHERE TS.ApplicationId = @applicationId";
-        return (await _dbTransaction.Connection!.QueryAsync<TaskStatusDto>(query, new
+                T.OrderNumber AS TaskOrderNumber,
+                TS.Status
+            FROM recognitionCitizen.TaskStatus TS
+            INNER JOIN recognitionCitizen.Task T ON TS.TaskId = T.TaskId
+            INNER JOIN recognitionCitizen.Section S ON T.SectionId = S.SectionId
+            WHERE TS.ApplicationId = @applicationId
+            ORDER BY S.OrderNumber, T.OrderNumber";
+
+        return await _dbTransaction.Connection!.QueryAsync<TaskStatusRawDto>(query, new
         {
             applicationId
-        }, _dbTransaction)).ToList();
+        }, _dbTransaction);
+    }
+
+    public async Task<bool> CreateTaskStatuses(Guid applicationId, IEnumerable<TaskItem> tasks)
+    {        
+        const string query = @"
+            INSERT INTO [recognitionCitizen].[TaskStatus] (
+                ApplicationId, 
+                TaskId, 
+                Status, 
+                CreatedByUpn, 
+                ModifiedByUpn
+            ) VALUES (
+                @ApplicationId, 
+                @TaskId, 
+                @Status, 
+                @CreatedByUpn, 
+                @ModifiedByUpn
+            )";
+        
+        var taskStatusEntries = tasks.Select(task => new
+        {
+            ApplicationId = applicationId,
+            task.TaskId,
+            Status = TaskStatusEnum.NotStarted,
+            CreatedByUpn = "USER", // TODO: replace once auth gets added
+            ModifiedByUpn = "USER" // TODO: replace once auth gets added
+        }).ToList();
+
+        int rowsAffected = await _dbTransaction.Connection!.ExecuteAsync(query, taskStatusEntries, _dbTransaction);
+
+        // Check if the number of inserted rows matches the number of tasks
+        return rowsAffected == taskStatusEntries.Count;
     }
 
     public async Task<bool> UpdateTaskStatus(Guid applicationId, Guid taskId, TaskStatusEnum status)
     {
         var query = @"
-            UPDATE RecognitionCitizen.TaskStatus
+            UPDATE recognitionCitizen.TaskStatus
             SET Status = @status,
                 ModifiedDate = GETDATE(),
                 ModifiedByUpn = @modifiedByUpn
@@ -48,7 +100,7 @@ public class TaskRepository : ITaskRepository
         {
             applicationId,
             taskId,
-            modifiedByUpn = "USER",
+            modifiedByUpn = "USER", // TODO: replace once auth gets added
             status = (int)status
         }, _dbTransaction);
         
