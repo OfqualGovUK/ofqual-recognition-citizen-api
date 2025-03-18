@@ -3,7 +3,7 @@ using Ofqual.Recognition.Citizen.API.Core.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
 
-public class TaskItemTaskStatusSection : ITaskItemStatus, ISection
+public class TaskItemStatusSection : ITaskItemStatus, ISection
 {
     // From Section Table
     public Guid SectionId { get; set; }

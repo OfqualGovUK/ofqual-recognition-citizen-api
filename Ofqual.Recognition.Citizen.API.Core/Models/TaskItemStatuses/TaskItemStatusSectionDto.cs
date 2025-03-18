@@ -2,7 +2,7 @@ using Ofqual.Recognition.Citizen.API.Core.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
 
-public class TaskItemTaskStatusSectionDto : ISection
+public class TaskItemStatusSectionDto : ISection
 {
     public Guid SectionId { get; set; }
     public string SectionName { get; set; }

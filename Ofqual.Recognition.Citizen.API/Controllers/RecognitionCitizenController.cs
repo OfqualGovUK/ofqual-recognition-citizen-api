@@ -75,7 +75,7 @@ public class RecognitionCitizenController : ControllerBase
     /// <param name="applicationId">The application ID.</param>
     /// <returns>A list of sections containing tasks with statuses.</returns>
     [HttpGet("application/{applicationId}/tasks")]
-    public async Task<ActionResult<List<TaskItemTaskStatusSectionDto>>> GetApplicationTasks(Guid applicationId)
+    public async Task<ActionResult<List<TaskItemStatusSectionDto>>> GetApplicationTasks(Guid applicationId)
     {
         try
         {

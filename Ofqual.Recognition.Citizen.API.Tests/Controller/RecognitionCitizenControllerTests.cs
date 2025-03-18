@@ -110,9 +110,9 @@ public class RecognitionCitizenControllerTests
         var applicationId = Guid.NewGuid();
         var sectionId1 = Guid.NewGuid();
         var sectionId2 = Guid.NewGuid();
-        var mockSections = new List<TaskItemTaskStatusSectionDto>
+        var mockSections = new List<TaskItemStatusSectionDto>
         {
-            new TaskItemTaskStatusSectionDto
+            new TaskItemStatusSectionDto
             {
                 SectionId = sectionId1,
                 SectionName = "Section A",
@@ -123,7 +123,7 @@ public class RecognitionCitizenControllerTests
                     new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 2", OrderNumber = 2, Status = TaskStatusEnum.InProgress }
                 }
             },
-            new TaskItemTaskStatusSectionDto
+            new TaskItemStatusSectionDto
             {
                 SectionId = sectionId2,
                 SectionName = "Section B",
@@ -143,7 +143,7 @@ public class RecognitionCitizenControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnedSections = Assert.IsType<List<TaskItemTaskStatusSectionDto>>(okResult.Value);
+        var returnedSections = Assert.IsType<List<TaskItemStatusSectionDto>>(okResult.Value);
 
         // Validate the count of sections and tasks
         Assert.Equal(mockSections.Count, returnedSections.Count);

@@ -4,5 +4,5 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
 public interface ITaskService
 {
-    Task<List<TaskItemTaskStatusSectionDto>> GetSectionsWithTasksByApplicationId(Guid applicationId);
+    Task<List<TaskItemStatusSectionDto>> GetSectionsWithTasksByApplicationId(Guid applicationId);
 }

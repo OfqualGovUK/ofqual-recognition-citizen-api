@@ -12,11 +12,11 @@ public class TaskService : ITaskService
         _context = context;
     }
 
-    public async Task<List<TaskItemTaskStatusSectionDto>> GetSectionsWithTasksByApplicationId(Guid applicationId)
+    public async Task<List<TaskItemStatusSectionDto>> GetSectionsWithTasksByApplicationId(Guid applicationId)
     {
-        IEnumerable<TaskItemTaskStatusSection> taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
+        IEnumerable<TaskItemStatusSection> taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
 
-        List<TaskItemTaskStatusSectionDto> sections = taskStatuses
+        List<TaskItemStatusSectionDto> sections = taskStatuses
             .GroupBy(ts => new
             {
                 ts.SectionId,
@@ -24,7 +24,7 @@ public class TaskService : ITaskService
                 ts.SectionOrderNumber
             })
             .OrderBy(g => g.Key.SectionOrderNumber)
-            .Select(g => new TaskItemTaskStatusSectionDto
+            .Select(g => new TaskItemStatusSectionDto
             {
                 SectionId = g.Key.SectionId,
                 SectionName = g.Key.SectionName,
