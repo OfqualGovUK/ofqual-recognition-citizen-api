@@ -1,6 +1,6 @@
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
-public class TaskSectionDto
+public class TaskSectionDto : ITaskSection
 {
     public Guid SectionId { get; set; }
     public string SectionName { get; set; }

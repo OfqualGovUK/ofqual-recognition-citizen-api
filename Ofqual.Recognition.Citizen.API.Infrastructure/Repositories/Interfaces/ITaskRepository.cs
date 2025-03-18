@@ -7,7 +7,7 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 public interface ITaskRepository
 {
     Task<IEnumerable<TaskItem>> GetAllTask();
-    Task<IEnumerable<TaskStatusRawDto>> GetTaskStatusesByApplicationId(Guid applicationId);
+    Task<IEnumerable<TaskWithSectionStatus>> GetTaskStatusesByApplicationId(Guid applicationId);
     Task<bool> CreateTaskStatuses(Guid applicationId, IEnumerable<TaskItem> tasks);
     Task<bool> UpdateTaskStatus(Guid applicationId, Guid taskId, TaskStatusEnum status);
 }

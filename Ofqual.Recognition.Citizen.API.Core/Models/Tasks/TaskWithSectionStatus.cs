@@ -2,7 +2,7 @@ using Ofqual.Recognition.Citizen.API.Core.Enums;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
-public class TaskStatusRawDto
+public class TaskWithSectionStatus
 {
     public Guid SectionId { get; set; }
     public string SectionName { get; set; }
