@@ -25,6 +25,7 @@ public static class TaskMapper
                         TaskId = section.TaskId,
                         TaskName = section.TaskName,
                         TaskOrderNumber = section.TaskOrderNumber,
+                        TaskStatusId = section.TaskStatusId,
                         Status = section.Status
                     }
                 }
@@ -52,6 +53,7 @@ public static class TaskMapper
                         TaskId = ts.TaskId,
                         TaskName = ts.TaskName,
                         TaskOrderNumber = ts.TaskOrderNumber,
+                        TaskStatusId = ts.TaskStatusId,
                         Status = ts.Status
                     })
                     .ToList()
