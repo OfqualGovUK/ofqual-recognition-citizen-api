@@ -147,8 +147,8 @@ public class RecognitionCitizenControllerTests
 
         // Validate the count of sections and tasks
         Assert.Equal(mockSections.Count, returnedSections.Count);
-        //Assert.Equal(mockSections[0].Tasks.Count, returnedSections[0].Tasks.Count);
-        //Assert.Equal(mockSections[1].Tasks.Count, returnedSections[1].Tasks.Count);
+        Assert.Equal(mockSections[0].Tasks.Count(), returnedSections[0].Tasks.Count());
+        Assert.Equal(mockSections[1].Tasks.Count(), returnedSections[1].Tasks.Count());
     }
 
     [Theory]
