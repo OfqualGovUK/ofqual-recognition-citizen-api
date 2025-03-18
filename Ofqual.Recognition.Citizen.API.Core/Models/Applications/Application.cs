@@ -1,3 +1,5 @@
+using Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
+
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 public class Application

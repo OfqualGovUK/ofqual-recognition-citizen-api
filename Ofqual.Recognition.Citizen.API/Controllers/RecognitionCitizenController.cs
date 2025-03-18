@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 using Serilog;
@@ -74,7 +75,7 @@ public class RecognitionCitizenController : ControllerBase
     /// <param name="applicationId">The application ID.</param>
     /// <returns>A list of sections containing tasks with statuses.</returns>
     [HttpGet("application/{applicationId}/tasks")]
-    public async Task<ActionResult<List<TaskSectionDto>>> GetApplicationTasks(Guid applicationId)
+    public async Task<ActionResult<List<TaskItemTaskStatusSectionDto>>> GetApplicationTasks(Guid applicationId)
     {
         try
         {

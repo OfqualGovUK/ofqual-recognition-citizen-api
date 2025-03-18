@@ -1,9 +1,8 @@
-
-using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
 public interface ITaskService
 {
-    Task<List<TaskSectionDto>> GetSectionsWithTasksByApplicationId(Guid applicationId);
+    Task<List<TaskItemTaskStatusSectionDto>> GetSectionsWithTasksByApplicationId(Guid applicationId);
 }

@@ -1,7 +1,9 @@
 using System.Data;
 using Dapper;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Ofqual.Recognition.Citizen.API.Core.Interfaces;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
 using Serilog;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
@@ -15,7 +17,7 @@ public class TaskRepository : ITaskRepository
         _dbTransaction = dbTransaction;
     }
 
-    public async Task<IEnumerable<TaskItem>> GetAllTask()
+    public async Task<IEnumerable<ITaskItem>> GetAllTask()
     {
         try
         {
@@ -39,7 +41,7 @@ public class TaskRepository : ITaskRepository
         }
     }
 
-    public async Task<IEnumerable<TaskWithSectionStatus>> GetTaskStatusesByApplicationId(Guid applicationId)
+    public async Task<IEnumerable<TaskItemTaskStatusSection>> GetTaskStatusesByApplicationId(Guid applicationId)
     {
         try
         {
@@ -58,7 +60,7 @@ public class TaskRepository : ITaskRepository
                 WHERE TS.ApplicationId = @applicationId
                 ORDER BY S.OrderNumber, T.OrderNumber";
 
-            return await _dbTransaction.Connection!.QueryAsync<TaskWithSectionStatus>(query, new
+            return await _dbTransaction.Connection!.QueryAsync<TaskItemTaskStatusSection>(query, new
             {
                 applicationId
             }, _dbTransaction);
@@ -66,11 +68,11 @@ public class TaskRepository : ITaskRepository
         catch (Exception ex)
         {
             Log.Error(ex, "Error retrieving task statuses for ApplicationId: {ApplicationId}", applicationId);
-            return Enumerable.Empty<TaskWithSectionStatus>();
+            return Enumerable.Empty<TaskItemTaskStatusSection>();
         }
     }
 
-    public async Task<bool> CreateTaskStatuses(Guid applicationId, IEnumerable<TaskItem> tasks)
+    public async Task<bool> CreateTaskStatuses(Guid applicationId, IEnumerable<ITaskItem> tasks)
     {
         try
         {

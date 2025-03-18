@@ -1,5 +1,4 @@
-
-using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -13,11 +12,11 @@ public class TaskService : ITaskService
         _context = context;
     }
 
-    public async Task<List<TaskSectionDto>> GetSectionsWithTasksByApplicationId(Guid applicationId)
+    public async Task<List<TaskItemTaskStatusSectionDto>> GetSectionsWithTasksByApplicationId(Guid applicationId)
     {
-        var taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
-        
-        var sections = taskStatuses
+        IEnumerable<TaskItemTaskStatusSection> taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
+
+        List<TaskItemTaskStatusSectionDto> sections = taskStatuses
             .GroupBy(ts => new
             {
                 ts.SectionId,
@@ -25,22 +24,23 @@ public class TaskService : ITaskService
                 ts.SectionOrderNumber
             })
             .OrderBy(g => g.Key.SectionOrderNumber)
-            .Select(g => new TaskSectionDto
+            .Select(g => new TaskItemTaskStatusSectionDto
             {
                 SectionId = g.Key.SectionId,
                 SectionName = g.Key.SectionName,
-                OrderNumber = g.Key.SectionOrderNumber,
+                SectionOrderNumber = g.Key.SectionOrderNumber,
                 Tasks = g
                     .OrderBy(ts => ts.TaskOrderNumber)
-                    .Select(ts => new TaskStatusDto
+                    .Select(ts => new TaskItemStatusDto
                     {
                         TaskId = ts.TaskId,
                         TaskName = ts.TaskName,
-                        OrderNumber = ts.TaskOrderNumber,
+                        TaskOrderNumber = ts.TaskOrderNumber,
                         Status = ts.Status
                     })
                     .ToList()
             }).ToList();
+
         return sections;
     }
 }

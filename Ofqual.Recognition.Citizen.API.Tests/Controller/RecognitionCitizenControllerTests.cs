@@ -8,6 +8,7 @@ using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Microsoft.AspNetCore.Http;
 using Moq;
+using Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
 
 namespace Ofqual.Recognition.Citizen.Tests.Controllers;
 
@@ -109,27 +110,27 @@ public class RecognitionCitizenControllerTests
         var applicationId = Guid.NewGuid();
         var sectionId1 = Guid.NewGuid();
         var sectionId2 = Guid.NewGuid();
-        var mockSections = new List<TaskSectionDto>
+        var mockSections = new List<TaskItemTaskStatusSectionDto>
         {
-            new TaskSectionDto
+            new TaskItemTaskStatusSectionDto
             {
                 SectionId = sectionId1,
                 SectionName = "Section A",
                 OrderNumber = 1,
-                Tasks = new List<TaskStatusDto>
+                Tasks = new List<TaskItemStatusDto>
                 {
-                    new TaskStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 1", OrderNumber = 1, Status = TaskStatusEnum.Completed },
-                    new TaskStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 2", OrderNumber = 2, Status = TaskStatusEnum.InProgress }
+                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 1", OrderNumber = 1, Status = TaskStatusEnum.Completed },
+                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 2", OrderNumber = 2, Status = TaskStatusEnum.InProgress }
                 }
             },
-            new TaskSectionDto
+            new TaskItemTaskStatusSectionDto
             {
                 SectionId = sectionId2,
                 SectionName = "Section B",
                 OrderNumber = 2,
-                Tasks = new List<TaskStatusDto>
+                Tasks = new List<TaskItemStatusDto>
                 {
-                    new TaskStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 3", OrderNumber = 1, Status = TaskStatusEnum.NotStarted }
+                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 3", OrderNumber = 1, Status = TaskStatusEnum.NotStarted }
                 }
             }
         };
@@ -142,7 +143,7 @@ public class RecognitionCitizenControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnedSections = Assert.IsType<List<TaskSectionDto>>(okResult.Value);
+        var returnedSections = Assert.IsType<List<TaskItemTaskStatusSectionDto>>(okResult.Value);
 
         // Validate the count of sections and tasks
         Assert.Equal(mockSections.Count, returnedSections.Count);
