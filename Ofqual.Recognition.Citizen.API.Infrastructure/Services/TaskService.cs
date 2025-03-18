@@ -12,6 +12,15 @@ public class TaskService : ITaskService
         _context = context;
     }
 
+    /// <summary>
+    /// Retrieves sections for a given application, grouping tasks within their respective sections.
+    /// </summary>
+    /// <param name="applicationId">The unique identifier of the application.</param>
+    /// <returns>A list of sections, each containing its ordered tasks and statuses.</returns>
+    /// <remarks>
+    /// Tasks are grouped by section, ensuring a structured hierarchy where
+    /// sections are ordered first, followed by tasks in their respective order.
+    /// </remarks>
     public async Task<List<TaskItemStatusSectionDto>> GetSectionsWithTasksByApplicationId(Guid applicationId)
     {
         IEnumerable<TaskItemStatusSection> taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);

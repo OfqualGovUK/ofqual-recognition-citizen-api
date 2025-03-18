@@ -53,6 +53,7 @@ public class TaskRepository : ITaskRepository
                     T.TaskId,
                     T.TaskName,
                     T.OrderNumber AS TaskOrderNumber,
+                    TS.TaskStatusId,
                     TS.Status
                 FROM recognitionCitizen.TaskStatus TS
                 INNER JOIN recognitionCitizen.Task T ON TS.TaskId = T.TaskId
@@ -117,12 +118,12 @@ public class TaskRepository : ITaskRepository
         try
         {
             var query = @"
-            UPDATE recognitionCitizen.TaskStatus
-            SET Status = @status,
-                ModifiedDate = GETDATE(),
-                ModifiedByUpn = @modifiedByUpn
-            WHERE ApplicationId = @applicationId
-            AND TaskId = @taskId";
+                UPDATE recognitionCitizen.TaskStatus
+                SET Status = @status,
+                    ModifiedDate = GETDATE(),
+                    ModifiedByUpn = @modifiedByUpn
+                WHERE ApplicationId = @applicationId
+                AND TaskId = @taskId";
 
             var rowsAffected = await _dbTransaction.Connection!.ExecuteAsync(query, new
             {
