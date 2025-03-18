@@ -9,5 +9,6 @@ public class TaskSection : ITaskSection
     public DateTime ModifiedDate { get; set; }
     public string CreatedByUpn { get; set; }
     public string? ModifiedByUpn { get; set; }
+    
     public readonly ICollection<TaskItem> TaskItems = new List<TaskItem>();
 }

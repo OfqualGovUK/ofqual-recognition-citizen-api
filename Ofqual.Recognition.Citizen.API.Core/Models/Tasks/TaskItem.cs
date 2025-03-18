@@ -1,6 +1,6 @@
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
-public class TaskItem
+public class TaskItem : ITaskItem
 {
     public Guid TaskId { get; set; }
     public string TaskName { get; set; }

@@ -2,7 +2,7 @@ using Ofqual.Recognition.Citizen.API.Core.Enums;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
-public class TaskStatusDto : ITaskItemStatus
+public class TaskStatusDto : ITaskItemStatus, ITaskItem
 {
     public Guid TaskId { get; set; }
     public string TaskName { get; set; }
