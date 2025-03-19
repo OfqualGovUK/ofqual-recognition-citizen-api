@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Ofqual.Recognition.Citizen.API\Ofqual.Recognition.Citizen.API.csproj" />
+    <ProjectReference Include="..\Ofqual.Recognition.Citizen.API.Core\Ofqual.Recognition.Citizen.API.Core.csproj" />
   </ItemGroup>
 
 </Project>
