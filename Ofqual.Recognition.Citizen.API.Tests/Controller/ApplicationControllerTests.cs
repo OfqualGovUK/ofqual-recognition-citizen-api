@@ -97,7 +97,7 @@ public class ApplicationControllerTests
         else
         {
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var application = Assert.IsType<Application>(okResult.Value);
+            var application = Assert.IsType<ApplicationDto>(okResult.Value);
             Assert.NotNull(application);
         }
     }
