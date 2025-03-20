@@ -1,27 +1,27 @@
 using Microsoft.AspNetCore.Mvc;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
-using Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Serilog;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
 /// <summary>
-/// Controller for recognition citizen
+/// Controller for recognition citizen application
 /// </summary>
 [ApiController]
-[Route("recognition/citizen")]
-public class RecognitionCitizenController : ControllerBase
+[Route("applications")]
+public class ApplicationController : ControllerBase
 {
     private readonly IUnitOfWork _context;
     private readonly ITaskService _taskService;
 
     /// <summary>
-    /// Initialises a new instance of <see cref="RecognitionCitizenController"/>.
+    /// Initialises a new instance of <see cref="ApplicationController"/>.
     /// </summary>
-    public RecognitionCitizenController(IUnitOfWork context, ITaskService taskService)
+    public ApplicationController(IUnitOfWork context, ITaskService taskService)
     {
         _context = context;
         _taskService = taskService;
@@ -31,8 +31,8 @@ public class RecognitionCitizenController : ControllerBase
     /// Creates a new application with initial task statuses.
     /// </summary>
     /// <returns>The created application.</returns>
-    [HttpPost("application")]
-    public async Task<ActionResult<Application>> CreateApplication()
+    [HttpPost]
+    public async Task<ActionResult<ApplicationDto>> CreateApplication()
     {
         try
         {
@@ -58,9 +58,11 @@ public class RecognitionCitizenController : ControllerBase
                 return BadRequest("Failed to create task statuses for the new application.");
             }
 
+            var applicationDto = ApplicationMapper.MapToApplicationDto(application); 
+
             _context.Commit();
 
-            return Ok(application);
+            return Ok(applicationDto);
         }
         catch (Exception ex)
         {
@@ -74,7 +76,7 @@ public class RecognitionCitizenController : ControllerBase
     /// </summary>
     /// <param name="applicationId">The application ID.</param>
     /// <returns>A list of sections containing tasks with statuses.</returns>
-    [HttpGet("application/{applicationId}/tasks")]
+    [HttpGet("{applicationId}/tasks")]
     public async Task<ActionResult<List<TaskItemStatusSectionDto>>> GetApplicationTasks(Guid applicationId)
     {
         try
@@ -95,9 +97,8 @@ public class RecognitionCitizenController : ControllerBase
     /// </summary>
     /// <param name="applicationId">The application ID.</param>
     /// <param name="taskId">The task ID.</param>
-    /// <param name="status">The new status.</param>
-    [HttpPost("application/{applicationId}/tasks/{taskId}/status/{status}")]
-    public async Task<IActionResult> UpdateTaskStatus(Guid applicationId, Guid taskId, TaskStatusEnum status)
+    [HttpPost("{applicationId}/tasks/{taskId}")]
+    public async Task<IActionResult> UpdateTaskStatus(Guid applicationId, Guid taskId, [FromBody] TaskStatusEnum status)
     {
         try
         {

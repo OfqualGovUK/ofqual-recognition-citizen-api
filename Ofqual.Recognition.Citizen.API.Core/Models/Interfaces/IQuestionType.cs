@@ -1,4 +1,4 @@
-﻿namespace Ofqual.Recognition.Citizen.API.Core.Interfaces;
+﻿namespace Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
 public interface IQuestionType
 {

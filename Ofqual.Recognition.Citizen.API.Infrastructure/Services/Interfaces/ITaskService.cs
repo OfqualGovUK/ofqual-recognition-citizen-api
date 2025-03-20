@@ -1,6 +1,6 @@
-using Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
+using Ofqual.Recognition.Citizen.API.Core.Models;
 
-namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
+namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
 public interface ITaskService
 {
