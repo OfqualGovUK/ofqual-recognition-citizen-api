@@ -1,6 +1,6 @@
-using Ofqual.Recognition.Citizen.API.Core.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
-namespace Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
+namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 /// <summary>
 /// Represents a section containing a list of tasks with their statuses.
@@ -9,7 +9,6 @@ public class TaskItemStatusSectionDto : ISection
 {
     public Guid SectionId { get; set; }
     public required string SectionName { get; set; }
-    public int SectionOrderNumber { get; set; }
 
     public IEnumerable<ITaskItemStatus> Tasks { get; set; } = new List<ITaskItemStatus>();
 }

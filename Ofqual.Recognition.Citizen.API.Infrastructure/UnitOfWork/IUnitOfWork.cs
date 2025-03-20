@@ -1,4 +1,4 @@
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure;
 

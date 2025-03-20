@@ -1,9 +1,9 @@
 
 using Ofqual.Recognition.Citizen.API.Core.Enums;
-using Ofqual.Recognition.Citizen.API.Core.Interfaces;
-using Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
-namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
+namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 
 public interface ITaskRepository
 {

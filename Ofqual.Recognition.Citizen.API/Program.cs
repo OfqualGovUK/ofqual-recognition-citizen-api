@@ -6,6 +6,7 @@ using CorrelationId.HttpClient;
 using Microsoft.Data.SqlClient;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.Http;

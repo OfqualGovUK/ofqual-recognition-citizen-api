@@ -1,7 +1,7 @@
 using Ofqual.Recognition.Citizen.API.Core.Enums;
-using Ofqual.Recognition.Citizen.API.Core.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
-namespace Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
+namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 /// <summary>
 /// Represents a domain-level model of the <c>recognitionCitizen.TaskStatus</c> database table,

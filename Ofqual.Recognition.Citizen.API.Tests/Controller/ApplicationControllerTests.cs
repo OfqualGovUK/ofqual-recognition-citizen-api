@@ -3,24 +3,23 @@ using Microsoft.AspNetCore.Mvc;
 using Ofqual.Recognition.Citizen.API.Controllers;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Microsoft.AspNetCore.Http;
 using Moq;
-using Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.Tests.Controllers;
 
-public class RecognitionCitizenControllerTests
+public class ApplicationControllerTests
 {
-    private readonly RecognitionCitizenController _controller;
+    private readonly ApplicationController _controller;
     private readonly Mock<ITaskRepository> _mockTaskRepository;
     private readonly Mock<IApplicationRepository> _mockApplicationRepository;
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<ITaskService> _mockTaskService;
 
-    public RecognitionCitizenControllerTests()
+    public ApplicationControllerTests()
     {
         _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockTaskService = new Mock<ITaskService>();
@@ -31,7 +30,7 @@ public class RecognitionCitizenControllerTests
         _mockApplicationRepository = new Mock<IApplicationRepository>();
         _mockUnitOfWork.Setup(u => u.ApplicationRepository).Returns(_mockApplicationRepository.Object);
 
-        _controller = new RecognitionCitizenController(_mockUnitOfWork.Object, _mockTaskService.Object);
+        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockTaskService.Object);
 
         _controller.ControllerContext = new ControllerContext();
         _controller.ControllerContext.HttpContext = new DefaultHttpContext();
@@ -98,7 +97,7 @@ public class RecognitionCitizenControllerTests
         else
         {
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var application = Assert.IsType<Application>(okResult.Value);
+            var application = Assert.IsType<ApplicationDto>(okResult.Value);
             Assert.NotNull(application);
         }
     }
@@ -116,21 +115,19 @@ public class RecognitionCitizenControllerTests
             {
                 SectionId = sectionId1,
                 SectionName = "Section A",
-                SectionOrderNumber = 1,
                 Tasks = new List<TaskItemStatusDto>
                 {
-                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 1", TaskOrderNumber = 1, Status = TaskStatusEnum.Completed },
-                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 2", TaskOrderNumber = 2, Status = TaskStatusEnum.InProgress }
+                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 1", Status = TaskStatusEnum.Completed },
+                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 2", Status = TaskStatusEnum.InProgress }
                 }
             },
             new TaskItemStatusSectionDto
             {
                 SectionId = sectionId2,
                 SectionName = "Section B",
-                SectionOrderNumber = 2,
                 Tasks = new List<TaskItemStatusDto>
                 {
-                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 3", TaskOrderNumber = 1, Status = TaskStatusEnum.NotStarted }
+                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 3", Status = TaskStatusEnum.NotStarted }
                 }
             }
         };

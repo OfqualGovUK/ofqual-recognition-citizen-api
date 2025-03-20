@@ -1,5 +1,6 @@
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
-using Ofqual.Recognition.Citizen.API.Core.Models.TaskStatuses;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
