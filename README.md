@@ -10,7 +10,7 @@ The Ofqual Register of Recognised Qualifications Citizen API is used by the Regi
 [The Office of Qualifications and Examinations Regulation](https://www.gov.uk/government/organisations/ofqual)
 
 ## About this project
-This project is a ASP.NET Core 8 web api utilizing Docker for deployment. 
+This project is a ASP.NET Core 8 web api utilising Docker for deployment. 
 
 The web api runs on an App service for Container apps on Azure.
 

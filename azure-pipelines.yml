@@ -80,6 +80,7 @@ stages:
           displayName: 'Publish SonarQube Analysis Results'
           inputs:
             pollingTimeoutSec: '300'
+    
     # Audit job: This job audits dependencies for vulnerabilities.
     - job: Audit
       displayName: 'Audit Dependencies for Security Vulnerabilities'
@@ -147,6 +148,7 @@ stages:
             projects: '**/*Tests.csproj'
             arguments: '--no-build --no-restore --filter Category=Unit'
             testRunTitle: 'Recognition-Citizen-Api-Unit-$(Build.BuildId)'
+    
     # Integration Test Job: Runs integration tests to validate system interactions.
     - job: Integration
       displayName: 'Run Integration Tests'
@@ -204,6 +206,7 @@ stages:
         tags: |
           latest
           $(tag)
+  
   # Build and push to Production ACR
   - job: BuildProd
     displayName: Build and Push for Production

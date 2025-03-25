@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
@@ -98,11 +97,11 @@ public class ApplicationController : ControllerBase
     /// <param name="applicationId">The application ID.</param>
     /// <param name="taskId">The task ID.</param>
     [HttpPost("{applicationId}/tasks/{taskId}")]
-    public async Task<IActionResult> UpdateTaskStatus(Guid applicationId, Guid taskId, [FromBody] TaskStatusEnum status)
+    public async Task<IActionResult> UpdateTaskStatus(Guid applicationId, Guid taskId, [FromBody] UpdateTaskStatusDto request)
     {
         try
         {
-            bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, status);
+            bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, request.Status);
 
             if (!isStatusUpdated)
             {

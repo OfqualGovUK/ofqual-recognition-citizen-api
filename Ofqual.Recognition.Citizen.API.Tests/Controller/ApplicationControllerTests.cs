@@ -37,6 +37,7 @@ public class ApplicationControllerTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData(true, true, true)]  // Application and task statuses created successfully
     [InlineData(true, true, false)] // Task statuses failed
     [InlineData(true, false, false)] // No tasks found
@@ -103,6 +104,7 @@ public class ApplicationControllerTests
     }
 
     [Fact]
+    [Trait("Category", "Unit")]
     public async Task GetApplicationTasks_ShouldReturnSectionsWithTasks()
     {
         // Arrange
@@ -149,6 +151,7 @@ public class ApplicationControllerTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData(true)]
     [InlineData(false)]
     public async Task UpdateTaskStatus_ShouldReturnExpectedResult(bool isSuccess)
@@ -156,13 +159,17 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
-        var status = TaskStatusEnum.Completed;
+        
+        var request = new UpdateTaskStatusDto
+        {
+            Status = TaskStatusEnum.Completed
+        };
 
-        _mockTaskRepository.Setup(repo => repo.UpdateTaskStatus(applicationId, taskId, status))
+        _mockTaskRepository.Setup(repo => repo.UpdateTaskStatus(applicationId, taskId, request.Status))
             .ReturnsAsync(isSuccess);
 
         // Act
-        var result = await _controller.UpdateTaskStatus(applicationId, taskId, status);
+        var result = await _controller.UpdateTaskStatus(applicationId, taskId, request);
 
         // Assert
         if (isSuccess)
