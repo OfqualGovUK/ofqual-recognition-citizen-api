@@ -31,7 +31,7 @@ builder.Host.UseSerilog((ctx, svc, cfg) => cfg
             ? LogEventLevel.Verbose
             : LogEventLevel.Error)
     .WriteTo.LogzIoDurableHttp(
-        requestUri: ctx.Configuration.GetValue<string>("LogzIo:Uri"),
+        requestUri: ctx.Configuration.GetValue<string>("LogzIo:Uri") ?? string.Empty,
         bufferBaseFileName: "Buffer",
         bufferRollingInterval: BufferRollingInterval.Hour,
         bufferFileSizeLimitBytes: 524288000L,
