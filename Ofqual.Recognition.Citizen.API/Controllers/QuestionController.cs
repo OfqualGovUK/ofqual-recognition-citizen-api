@@ -23,11 +23,11 @@ public class QuestionController : ControllerBase
     }
 
     /// <summary>
-    /// Returns question content, type and task name based on URL.
+    /// Returns question content and type based on URL.
     /// </summary>
     /// <param name="taskName">URL-formatted task name.</param>
     /// <param name="questionName">Question name from the URL.</param>
-    /// <returns>The question with its content, type and task name.</returns>
+    /// <returns>The question with its content and type.</returns>
     [HttpGet("{taskName}/{questionName}")]
     public async Task<ActionResult<QuestionDto?>> GetQuestions(string taskName, string questionName)
     {
