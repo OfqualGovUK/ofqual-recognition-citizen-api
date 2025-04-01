@@ -21,12 +21,10 @@ public class QuestionRepository : IQuestionRepository
         {
             var query = @"
                 SELECT
-                    T.TaskName,
                     QT.QuestionTypeName,
                     Q.QuestionContent
                 FROM recognitionCitizen.Question Q
                 INNER JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
-                INNER JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
                 WHERE Q.QuestionURL = @questionURL";
                 
             var result = await _dbTransaction.Connection!
