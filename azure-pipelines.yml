@@ -2,8 +2,8 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
 trigger:
-  - main
-  - releases/*
+- main
+- releases/*
 
 resources:
 - repo: self
