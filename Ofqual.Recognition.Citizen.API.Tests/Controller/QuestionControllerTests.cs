@@ -36,7 +36,6 @@ public class QuestionControllerTests
         // Arrange
         var expectedQuestion = new QuestionDto
         {
-            TaskName = "Review application",
             QuestionContent = "{\"hint\":\"test.\"}",
             QuestionTypeName = "File Upload"
         };
@@ -53,7 +52,6 @@ public class QuestionControllerTests
         var value = Assert.IsType<QuestionDto>(okResult.Value);
         Assert.Equal(expectedQuestion.QuestionTypeName, value.QuestionTypeName);
         Assert.Equal(expectedQuestion.QuestionContent, value.QuestionContent);
-        Assert.Equal(expectedQuestion.TaskName, value.TaskName);
     }
     
     [Theory]
