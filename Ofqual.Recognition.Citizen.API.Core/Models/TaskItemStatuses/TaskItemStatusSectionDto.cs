@@ -7,8 +7,7 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// </summary>
 public class TaskItemStatusSectionDto : ISection
 {
-    public Guid SectionId { get; set; }
     public required string SectionName { get; set; }
 
-    public IEnumerable<ITaskItemStatus> Tasks { get; set; } = new List<ITaskItemStatus>();
+    public IEnumerable<TaskItemStatusDto> Tasks { get; set; } = new List<TaskItemStatusDto>();
 }
