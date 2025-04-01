@@ -66,10 +66,10 @@ public class ApplicationControllerTests
             new TaskItem { TaskId = Guid.NewGuid(), TaskName = "Task 2", SectionId = Guid.NewGuid(), TaskOrderNumber = 2, CreatedDate = DateTime.UtcNow, ModifiedDate = DateTime.UtcNow, CreatedByUpn = createdByUpn, ModifiedByUpn = modifiedByUpn }
             }
             : new List<TaskItem>();
-        
+
         _mockApplicationRepository.Setup(repo => repo.CreateApplication())
             .ReturnsAsync(mockApplication);
-        
+
         _mockTaskRepository.Setup(repo => repo.GetAllTask())
             .ReturnsAsync(mockTasks);
 
@@ -109,27 +109,23 @@ public class ApplicationControllerTests
     {
         // Arrange
         var applicationId = Guid.NewGuid();
-        var sectionId1 = Guid.NewGuid();
-        var sectionId2 = Guid.NewGuid();
         var mockSections = new List<TaskItemStatusSectionDto>
         {
             new TaskItemStatusSectionDto
             {
-                SectionId = sectionId1,
                 SectionName = "Section A",
                 Tasks = new List<TaskItemStatusDto>
                 {
-                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 1", Status = TaskStatusEnum.Completed },
-                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 2", Status = TaskStatusEnum.InProgress }
+                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 1", Status = TaskStatusEnum.Completed, FirstQuestionUrl = "testurl/path" },
+                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 2", Status = TaskStatusEnum.InProgress, FirstQuestionUrl = "testurl/path" }
                 }
             },
             new TaskItemStatusSectionDto
             {
-                SectionId = sectionId2,
                 SectionName = "Section B",
                 Tasks = new List<TaskItemStatusDto>
                 {
-                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 3", Status = TaskStatusEnum.NotStarted }
+                    new TaskItemStatusDto { TaskId = Guid.NewGuid(), TaskName = "Task 3", Status = TaskStatusEnum.NotStarted, FirstQuestionUrl = "testurl/path" }
                 }
             }
         };
@@ -159,7 +155,7 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
-        
+
         var request = new UpdateTaskStatusDto
         {
             Status = TaskStatusEnum.Completed

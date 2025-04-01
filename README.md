@@ -1,5 +1,7 @@
 # Ofqual Register of Recognised Qualifications Citizen API
 
+[![Build Status](https://ofqual.visualstudio.com/Ofqual%20IM/_apis/build/status%2Fofqual-recognition-citizen-api?branchName=main)](https://ofqual.visualstudio.com/Ofqual%20IM/_build/latest?definitionId=395&branchName=main)
+
 The Ofqual Register of Recognised Qualifications Citizen API is used by the Register of Recognised Qualifications web application to allow the following:
 
 - Submission of applications to be recognised 

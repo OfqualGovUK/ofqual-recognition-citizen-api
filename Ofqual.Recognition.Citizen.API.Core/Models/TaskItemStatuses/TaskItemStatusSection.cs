@@ -4,7 +4,7 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 /// <summary>
-/// Represents a task's status within a section, combining section, task and status details.
+/// Represents a task's status within a section, combining section, task, status and question details.
 /// This model makes it easier to track task progress without needing multiple database queries.
 /// </summary>
 public class TaskItemStatusSection : ITaskItemStatus, ISection
@@ -22,4 +22,7 @@ public class TaskItemStatusSection : ITaskItemStatus, ISection
     // From Task Status Table
     public Guid TaskStatusId { get; set; }
     public TaskStatusEnum Status { get; set; }
+
+    // From Question Table
+    public required string QuestionURL { get; set; }
 }

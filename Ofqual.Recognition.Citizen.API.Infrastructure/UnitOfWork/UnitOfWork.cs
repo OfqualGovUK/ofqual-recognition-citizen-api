@@ -10,6 +10,7 @@ public class UnitOfWork : IUnitOfWork
     private IDbTransaction _transaction;
     public ITaskRepository TaskRepository { get; }
     public IApplicationRepository ApplicationRepository { get; }
+    public IQuestionRepository QuestionRepository { get; }
 
     public UnitOfWork(IDbConnection connection)
     {
@@ -20,6 +21,7 @@ public class UnitOfWork : IUnitOfWork
         // Initialise repositories
         TaskRepository = new TaskRepository(_transaction);
         ApplicationRepository = new ApplicationRepository(_transaction);
+        QuestionRepository = new QuestionRepository(_transaction);
     }
 
     public void Commit()

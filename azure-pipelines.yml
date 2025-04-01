@@ -3,9 +3,9 @@
 
 trigger:
   branches:
-   include:
-     - main
-     - releases/*
+    include:
+      - main
+      - releases/*
 
 resources:
 - repo: self

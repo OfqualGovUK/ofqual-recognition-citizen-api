@@ -54,10 +54,12 @@ public class TaskRepository : ITaskRepository
                     T.TaskName,
                     T.OrderNumber AS TaskOrderNumber,
                     TS.TaskStatusId,
-                    TS.Status
+                    TS.Status,
+                    Q.QuestionURL
                 FROM recognitionCitizen.TaskStatus TS
                 INNER JOIN recognitionCitizen.Task T ON TS.TaskId = T.TaskId
                 INNER JOIN recognitionCitizen.Section S ON T.SectionId = S.SectionId
+                INNER JOIN recognitionCitizen.Question Q on T.TaskId = Q.TaskId AND Q.OrderNumber = 1
                 WHERE TS.ApplicationId = @applicationId
                 ORDER BY S.OrderNumber, T.OrderNumber";
 

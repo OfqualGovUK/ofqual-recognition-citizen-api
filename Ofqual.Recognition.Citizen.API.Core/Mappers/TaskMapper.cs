@@ -16,7 +16,6 @@ public static class TaskMapper
     {
         return new TaskItemStatusSectionDto
         {
-            SectionId = section.SectionId,
             SectionName = section.SectionName,
             Tasks = new List<TaskItemStatusDto>
                 {
@@ -24,7 +23,8 @@ public static class TaskMapper
                     {
                         TaskId = section.TaskId,
                         TaskName = section.TaskName,
-                        Status = section.Status
+                        Status = section.Status,
+                        FirstQuestionUrl = section.QuestionURL
                     }
                 }
         };
@@ -43,7 +43,6 @@ public static class TaskMapper
             .OrderBy(g => g.Key.SectionOrderNumber)
             .Select(g => new TaskItemStatusSectionDto
             {
-                SectionId = g.Key.SectionId,
                 SectionName = g.Key.SectionName,
                 Tasks = g
                     .OrderBy(ts => ts.TaskOrderNumber)
@@ -51,7 +50,8 @@ public static class TaskMapper
                     {
                         TaskId = ts.TaskId,
                         TaskName = ts.TaskName,
-                        Status = ts.Status
+                        Status = ts.Status,
+                        FirstQuestionUrl = ts.QuestionURL
                     })
                     .ToList()
             })
