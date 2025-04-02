@@ -29,6 +29,7 @@ public class QuestionControllerTests
     }
 
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("review-submit", "review-your-application")]
     [InlineData("declaration-and-submit", "submit")]
     public async Task GetQuestions_ReturnsQuestion_WhenQuestionExists(string taskName, string questionName)
@@ -37,7 +38,8 @@ public class QuestionControllerTests
         var expectedQuestion = new QuestionDto
         {
             QuestionContent = "{\"hint\":\"test.\"}",
-            QuestionTypeName = "File Upload"
+            QuestionTypeName = "File Upload",
+            QuestionId = Guid.NewGuid()
         };
 
         _mockQuestionRepository
@@ -52,9 +54,11 @@ public class QuestionControllerTests
         var value = Assert.IsType<QuestionDto>(okResult.Value);
         Assert.Equal(expectedQuestion.QuestionTypeName, value.QuestionTypeName);
         Assert.Equal(expectedQuestion.QuestionContent, value.QuestionContent);
+        Assert.Equal(expectedQuestion.QuestionId, value.QuestionId);
     }
     
     [Theory]
+    [Trait("Category", "Unit")]
     [InlineData("nonexistent", "missingquestion")]
     public async Task GetQuestions_ReturnsBadRequest_WhenQuestionIsNull(string taskName, string questionName)
     {
