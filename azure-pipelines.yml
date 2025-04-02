@@ -108,7 +108,7 @@ stages:
                   exit 0      # Passes the job if no critical/high vulnerabilities are found
               fi
 
-# Test Stage: This stage runs unit tests, integration tests and end-to-end (E2E) tests.
+# Test Stage: This stage runs unit tests and integration tests.
 - stage: Test
   displayName: 'Run Unit, Integration and E2E Tests'
   dependsOn: StaticAnalysis
@@ -147,7 +147,7 @@ stages:
             command: 'test'
             projects: '**/*Tests.csproj'
             arguments: '--no-build --no-restore --filter Category=Unit'
-            testRunTitle: 'Recognition-Frontend-Unit-$(Build.BuildId)'
+            testRunTitle: 'Recognition-Citizen-Api-Unit-$(Build.BuildId)'
             
     # Integration Test Job: Runs integration tests to validate system interactions.
     - job: Integration
@@ -182,7 +182,7 @@ stages:
             command: 'test'
             projects: '**/*Tests.csproj'
             arguments: '--no-build --no-restore --filter Category=Integration'
-            testRunTitle: 'Recognition-Frontend-Integration-$(Build.BuildId)'
+            testRunTitle: 'Recognition-Citizen-Api-Integration-$(Build.BuildId)'
 
 # Build and Push Stage: This stage builds and pushes Docker images for Development/Preproduction and Production environments.
 - stage: Build
