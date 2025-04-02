@@ -2,8 +2,10 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
 trigger:
-- main
-- releases/*
+  branches:
+   include:
+     - main
+     - releases/*
 
 resources:
 - repo: self
@@ -78,7 +80,7 @@ stages:
           displayName: 'Publish SonarQube Analysis Results'
           inputs:
             pollingTimeoutSec: '300'
-    
+
     # Audit job: This job audits dependencies for vulnerabilities.
     - job: Audit
       displayName: 'Audit Dependencies for Security Vulnerabilities'
@@ -106,9 +108,9 @@ stages:
                   exit 0      # Passes the job if no critical/high vulnerabilities are found
               fi
 
-# Test Stage: This stage runs unit tests and integration tests.
+# Test Stage: This stage runs unit tests, integration tests and end-to-end (E2E) tests.
 - stage: Test
-  displayName: 'Run Unit and Integration'
+  displayName: 'Run Unit, Integration and E2E Tests'
   dependsOn: StaticAnalysis
   condition: succeeded()
   jobs:
@@ -145,8 +147,8 @@ stages:
             command: 'test'
             projects: '**/*Tests.csproj'
             arguments: '--no-build --no-restore --filter Category=Unit'
-            testRunTitle: 'Recognition-Citizen-Api-Unit-$(Build.BuildId)'
-    
+            testRunTitle: 'Recognition-Frontend-Unit-$(Build.BuildId)'
+            
     # Integration Test Job: Runs integration tests to validate system interactions.
     - job: Integration
       displayName: 'Run Integration Tests'
@@ -180,7 +182,7 @@ stages:
             command: 'test'
             projects: '**/*Tests.csproj'
             arguments: '--no-build --no-restore --filter Category=Integration'
-            testRunTitle: 'Recognition-Citizen-Api-Integration-$(Build.BuildId)'
+            testRunTitle: 'Recognition-Frontend-Integration-$(Build.BuildId)'
 
 # Build and Push Stage: This stage builds and pushes Docker images for Development/Preproduction and Production environments.
 - stage: Build
@@ -204,7 +206,6 @@ stages:
         tags: |
           latest
           $(tag)
-  
   # Build and push to Production ACR
   - job: BuildProd
     displayName: Build and Push for Production
