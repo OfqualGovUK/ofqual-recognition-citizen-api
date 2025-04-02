@@ -21,8 +21,9 @@ public class QuestionRepository : IQuestionRepository
         {
             var query = @"
                 SELECT
-                    QT.QuestionTypeName,
-                    Q.QuestionContent
+                    Q.QuestionId,
+                    Q.QuestionContent,
+                    QT.QuestionTypeName
                 FROM recognitionCitizen.Question Q
                 INNER JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
                 WHERE Q.QuestionURL = @questionURL";
