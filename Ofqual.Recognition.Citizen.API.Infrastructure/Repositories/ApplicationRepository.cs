@@ -39,4 +39,35 @@ public class ApplicationRepository : IApplicationRepository
             return null!;
         }
     }
+
+    public async Task<bool> InsertApplicationAnswer(Guid applicationId, Guid questionId, string answer)
+    {
+        try
+        {
+            const string query = @"
+                INSERT INTO [recognitionCitizen].[ApplicationAnswers ] (
+                    ApplicationId,
+                    QuestionId,
+                    Answer
+                ) OUTPUT INSERTED.* VALUES (
+                    @ApplicationId,
+                    @QuestionId,
+                    @Answer
+                )";
+
+            var rowsAffected = await _dbTransaction.Connection!.ExecuteAsync(query, new
+            {
+                applicationId,
+                questionId,
+                answer,
+            }, _dbTransaction);
+            
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error inserting application answer. ApplicationId: {ApplicationId}, QuestionId: {QuestionId}, Answer: {Answer}", applicationId, questionId, answer);
+            return false;
+        }
+    }
 }

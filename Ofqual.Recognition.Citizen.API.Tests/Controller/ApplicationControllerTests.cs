@@ -16,6 +16,7 @@ public class ApplicationControllerTests
     private readonly ApplicationController _controller;
     private readonly Mock<ITaskRepository> _mockTaskRepository;
     private readonly Mock<IApplicationRepository> _mockApplicationRepository;
+    private readonly Mock<IQuestionRepository> _mockQuestionRepository;
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<ITaskService> _mockTaskService;
 
@@ -23,6 +24,9 @@ public class ApplicationControllerTests
     {
         _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockTaskService = new Mock<ITaskService>();
+
+        _mockQuestionRepository = new Mock<IQuestionRepository>();
+        _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
 
         _mockTaskRepository = new Mock<ITaskRepository>();
         _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
@@ -98,7 +102,7 @@ public class ApplicationControllerTests
         else
         {
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var application = Assert.IsType<ApplicationDto>(okResult.Value);
+            var application = Assert.IsType<ApplicationDetailsDto>(okResult.Value);
             Assert.NotNull(application);
         }
     }
@@ -176,6 +180,43 @@ public class ApplicationControllerTests
         {
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Failed to update task status. Either the task does not exist or belongs to a different application.", badRequestResult.Value);
+        }
+    }
+
+    [Theory]
+    [InlineData("Answer 1", true, "criteria-a/next-question")]
+    [InlineData("Answer 2", false, null)]
+    public async Task PostApplicationQuestion_ReturnsExpectedResult_BasedOnInsertStatus(string answer, bool insertSuccess, string? expectedUrl)
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var dto = new ApplicationAnswerDto { Answer = answer };
+
+        _mockApplicationRepository
+            .Setup(r => r.InsertApplicationAnswer(applicationId, questionId, answer))
+            .ReturnsAsync(insertSuccess);
+
+        if (insertSuccess)
+        {
+            _mockQuestionRepository
+                .Setup(r => r.GetNextQuestionUrl(questionId))
+                .ReturnsAsync(expectedUrl);
+        }
+
+        // Act
+        var result = await _controller.PostApplicationQuestion(applicationId, questionId, dto);
+
+        // Assert
+        if (insertSuccess)
+        {
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            Assert.Equal(expectedUrl, okResult.Value);
+        }
+        else
+        {
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal("Failed to save the application answer. Please check your input and try again.", badRequest.Value);
         }
     }
 }

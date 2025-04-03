@@ -27,15 +27,43 @@ public class QuestionRepository : IQuestionRepository
                 FROM recognitionCitizen.Question Q
                 INNER JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
                 WHERE Q.QuestionURL = @questionURL";
-                
+
             var result = await _dbTransaction.Connection!
                 .QueryFirstOrDefaultAsync<QuestionDto>(query, new { questionURL }, _dbTransaction);
-            
+
             return result;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error retrieving question for QuestionURL: {questionURL}", questionURL);
+            return null;
+        }
+    }
+
+    public async Task<string?> GetNextQuestionUrl(Guid currentQuestionId)
+    {
+        try
+        {
+            const string query = @"
+                SELECT TOP 1 [next].QuestionURL
+                FROM [recognitionCitizen].[Question] AS [current]
+                JOIN [recognitionCitizen].[Question] AS [next]
+                    ON [current].TaskId = [next].TaskId
+                WHERE [current].QuestionId = @QuestionId
+                AND [next].OrderNumber > [current].OrderNumber
+                ORDER BY [next].OrderNumber ASC";
+
+            var result = await _dbTransaction.Connection!.QueryFirstOrDefaultAsync<string>(
+                query,
+                new { QuestionId = currentQuestionId },
+                _dbTransaction
+            );
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error retrieving next question URL for QuestionId: {QuestionId}", currentQuestionId);
             return null;
         }
     }

@@ -5,7 +5,7 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// <summary>
 /// Represents the users application details.
 /// </summary>
-public class ApplicationDto : IApplication
+public class ApplicationDetailsDto : IApplication
 {
     public Guid ApplicationId { get; set; }
 }
