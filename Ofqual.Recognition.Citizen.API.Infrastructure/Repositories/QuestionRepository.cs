@@ -40,20 +40,21 @@ public class QuestionRepository : IQuestionRepository
         }
     }
 
-    public async Task<string?> GetNextQuestionUrl(Guid currentQuestionId)
+    public async Task<ApplicationAnswerResultDto?> GetNextQuestionUrl(Guid currentQuestionId)
     {
         try
         {
             const string query = @"
-                SELECT TOP 1 [next].QuestionURL
+                SELECT TOP 1
+                    [next].QuestionURL AS NextQuestionUrl
                 FROM [recognitionCitizen].[Question] AS [current]
                 JOIN [recognitionCitizen].[Question] AS [next]
                     ON [current].TaskId = [next].TaskId
                 WHERE [current].QuestionId = @QuestionId
                 AND [next].OrderNumber > [current].OrderNumber
                 ORDER BY [next].OrderNumber ASC";
-
-            var result = await _dbTransaction.Connection!.QueryFirstOrDefaultAsync<string>(
+            
+            var result = await _dbTransaction.Connection!.QueryFirstOrDefaultAsync<ApplicationAnswerResultDto>(
                 query,
                 new { QuestionId = currentQuestionId },
                 _dbTransaction

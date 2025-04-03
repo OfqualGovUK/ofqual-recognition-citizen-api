@@ -131,13 +131,13 @@ public class ApplicationController : ControllerBase
         try
         {
             var isAnswerInserted = await _context.ApplicationRepository.InsertApplicationAnswer(applicationId, questionId, request.Answer);
-            
+
             if (!isAnswerInserted)
             {
                 return BadRequest("Failed to save the application answer. Please check your input and try again.");
             }
 
-            var redirectUrl = await _context.QuestionRepository.GetNextQuestionUrl(questionId);
+            ApplicationAnswerResultDto? redirectUrl = await _context.QuestionRepository.GetNextQuestionUrl(questionId);
 
             _context.Commit();
             return Ok(redirectUrl);

@@ -48,11 +48,15 @@ public class ApplicationRepository : IApplicationRepository
                 INSERT INTO [recognitionCitizen].[ApplicationAnswers ] (
                     ApplicationId,
                     QuestionId,
-                    Answer
+                    Answer,
+                    CreatedByUpn,
+                    ModifiedByUpn
                 ) OUTPUT INSERTED.* VALUES (
                     @ApplicationId,
                     @QuestionId,
-                    @Answer
+                    @Answer,
+                    @CreatedByUpn,
+                    @ModifiedByUpn
                 )";
 
             var rowsAffected = await _dbTransaction.Connection!.ExecuteAsync(query, new
@@ -60,6 +64,8 @@ public class ApplicationRepository : IApplicationRepository
                 applicationId,
                 questionId,
                 answer,
+                CreatedByUpn = "USER", // TODO: replace once auth gets added
+                ModifiedByUpn = "USER" // TODO: replace once auth gets added
             }, _dbTransaction);
             
             return rowsAffected > 0;
