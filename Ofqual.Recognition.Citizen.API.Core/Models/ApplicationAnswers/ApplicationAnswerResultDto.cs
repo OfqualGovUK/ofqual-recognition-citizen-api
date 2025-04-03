@@ -1,10 +1,10 @@
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
+/// <summary>
+/// Represents the result of submitting an application answer, including the next question URL if available.
+/// </summary>
 public class ApplicationAnswerResultDto
 {
-    /// <summary>
-    /// The URL of the next question, or null if there are no more questions in the sequence.
-    /// </summary>
     public string? NextQuestionUrl { get; set; }
 }
