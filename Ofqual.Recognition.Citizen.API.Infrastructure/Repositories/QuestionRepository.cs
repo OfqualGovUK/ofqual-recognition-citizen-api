@@ -8,12 +8,15 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
 public class QuestionRepository : IQuestionRepository
 {
-    private readonly IDbTransaction _dbTransaction;
+    private readonly IDbConnection _connection;
+    private readonly IDbTransaction _transaction;
 
-    public QuestionRepository(IDbTransaction dbTransaction)
+    public QuestionRepository(IDbConnection connection, IDbTransaction transaction)
     {
-        _dbTransaction = dbTransaction;
+        _connection = connection;
+        _transaction = transaction;
     }
+
 
     public async Task<QuestionDto?> GetQuestion(string questionURL)
     {
@@ -28,8 +31,7 @@ public class QuestionRepository : IQuestionRepository
                 INNER JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
                 WHERE Q.QuestionURL = @questionURL";
 
-            var result = await _dbTransaction.Connection!
-                .QueryFirstOrDefaultAsync<QuestionDto>(query, new { questionURL }, _dbTransaction);
+            var result = await _connection.QueryFirstOrDefaultAsync<QuestionDto>(query, new { questionURL }, _transaction);
 
             return result;
         }
@@ -54,10 +56,10 @@ public class QuestionRepository : IQuestionRepository
                 AND [next].OrderNumber > [current].OrderNumber
                 ORDER BY [next].OrderNumber ASC";
             
-            var result = await _dbTransaction.Connection!.QueryFirstOrDefaultAsync<ApplicationAnswerResultDto>(
+            var result = await _connection.QueryFirstOrDefaultAsync<ApplicationAnswerResultDto>(
                 query,
                 new { QuestionId = currentQuestionId },
-                _dbTransaction
+                _transaction
             );
             
             return result;

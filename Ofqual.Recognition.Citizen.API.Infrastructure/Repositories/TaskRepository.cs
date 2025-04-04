@@ -10,11 +10,13 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
 public class TaskRepository : ITaskRepository
 {
-    private readonly IDbTransaction _dbTransaction;
+    private readonly IDbConnection _connection;
+    private readonly IDbTransaction _transaction;
 
-    public TaskRepository(IDbTransaction dbTransaction)
+    public TaskRepository(IDbConnection connection, IDbTransaction transaction)
     {
-        _dbTransaction = dbTransaction;
+        _connection = connection;
+        _transaction = transaction;
     }
 
     public async Task<IEnumerable<ITaskItem>> GetAllTask()
@@ -32,7 +34,7 @@ public class TaskRepository : ITaskRepository
                     CreatedByUpn,
                     ModifiedByUpn
                 FROM [recognitionCitizen].[Task]";
-            return await _dbTransaction.Connection!.QueryAsync<TaskItem>(query, null, _dbTransaction);
+            return await _connection.QueryAsync<TaskItem>(query, null, _transaction);
         }
         catch (Exception ex)
         {
@@ -63,10 +65,10 @@ public class TaskRepository : ITaskRepository
                 WHERE TS.ApplicationId = @applicationId
                 ORDER BY S.OrderNumber, T.OrderNumber";
 
-            return await _dbTransaction.Connection!.QueryAsync<TaskItemStatusSection>(query, new
+            return await _connection.QueryAsync<TaskItemStatusSection>(query, new
             {
                 applicationId
-            }, _dbTransaction);
+            }, _transaction);
         }
         catch (Exception ex)
         {
@@ -103,7 +105,7 @@ public class TaskRepository : ITaskRepository
                 ModifiedByUpn = "USER" // TODO: replace once auth gets added
             }).ToList();
 
-            int rowsAffected = await _dbTransaction.Connection!.ExecuteAsync(query, taskStatusEntries, _dbTransaction);
+            int rowsAffected = await _connection.ExecuteAsync(query, taskStatusEntries, _transaction);
 
             // Check if the number of inserted rows matches the number of tasks
             return rowsAffected == taskStatusEntries.Count;
@@ -127,13 +129,13 @@ public class TaskRepository : ITaskRepository
                 WHERE ApplicationId = @applicationId
                 AND TaskId = @taskId";
 
-            var rowsAffected = await _dbTransaction.Connection!.ExecuteAsync(query, new
+            var rowsAffected = await _connection.ExecuteAsync(query, new
             {
                 applicationId,
                 taskId,
                 modifiedByUpn = "USER", // TODO: replace once auth gets added
                 status = (int)status
-            }, _dbTransaction);
+            }, _transaction);
             return rowsAffected > 0;
         }
         catch (Exception ex)

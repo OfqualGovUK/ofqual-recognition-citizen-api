@@ -9,7 +9,7 @@ using Moq;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
-namespace Ofqual.Recognition.Citizen.Tests.Controllers;
+namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 
 public class ApplicationControllerTests
 {

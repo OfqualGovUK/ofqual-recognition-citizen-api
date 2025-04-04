@@ -183,6 +183,14 @@ stages:
             projects: '**/*Tests.csproj'
             arguments: '--no-build --no-restore --filter Category=Integration'
             testRunTitle: 'Recognition-Citizen-Api-Integration-$(Build.BuildId)'
+          env:
+            TestSettings__RegistryEndpoint: $(TestSettings__RegistryEndpoint)
+            TestSettings__ImagePath: $(TestSettings__ImagePath)
+            TestSettings__RegistryUsername: $(TestSettings__RegistryUsername)
+            TestSettings__RegistryPassword: $(TestSettings__RegistryPassword)
+            TestSettings__SqlUsername: $(TestSettings__SqlUsername)
+            TestSettings__SqlPassword: $(TestSettings__SqlPassword)
+            TestSettings__DatabaseName: $(TestSettings__DatabaseName)
 
 # Build and Push Stage: This stage builds and pushes Docker images for Development/Preproduction and Production environments.
 - stage: Build
