@@ -15,8 +15,8 @@ public class SqlTestFixture : IAsyncLifetime
     {
         _config = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.Development.json")
-            .AddJsonFile("appsettings.Test.Development.json", optional: true, reloadOnChange: true)
+            .AddJsonFile("appsettings.Test.Development.json", optional: true)
+            .AddJsonFile("appsettings.Test.json", optional: true)
             .AddEnvironmentVariables()
             .Build();
 
