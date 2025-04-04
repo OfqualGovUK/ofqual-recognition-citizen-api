@@ -74,6 +74,6 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public void Dispose()
     {
         _transaction?.Dispose();
-        // _connection?.Dispose();
+        _connection?.Dispose();
     }
 }
