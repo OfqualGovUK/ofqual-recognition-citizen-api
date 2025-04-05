@@ -7,7 +7,7 @@ using Moq;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 using Xunit;
 
-namespace Ofqual.Recognition.Citizen.Tests.Controllers;
+namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 
 public class QuestionControllerTests
 {

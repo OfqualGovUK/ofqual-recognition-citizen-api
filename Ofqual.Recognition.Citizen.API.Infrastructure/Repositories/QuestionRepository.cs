@@ -8,11 +8,13 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
 public class QuestionRepository : IQuestionRepository
 {
-    private readonly IDbTransaction _dbTransaction;
+    private readonly IDbConnection _connection;
+    private readonly IDbTransaction _transaction;
 
-    public QuestionRepository(IDbTransaction dbTransaction)
+    public QuestionRepository(IDbConnection connection, IDbTransaction transaction)
     {
-        _dbTransaction = dbTransaction;
+        _connection = connection;
+        _transaction = transaction;
     }
 
     public async Task<QuestionDto?> GetQuestion(string questionURL)
@@ -27,15 +29,43 @@ public class QuestionRepository : IQuestionRepository
                 FROM recognitionCitizen.Question Q
                 INNER JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
                 WHERE Q.QuestionURL = @questionURL";
-                
-            var result = await _dbTransaction.Connection!
-                .QueryFirstOrDefaultAsync<QuestionDto>(query, new { questionURL }, _dbTransaction);
-            
+
+            var result = await _connection.QueryFirstOrDefaultAsync<QuestionDto>(query, new { questionURL }, _transaction);
+
             return result;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error retrieving question for QuestionURL: {questionURL}", questionURL);
+            return null;
+        }
+    }
+
+    public async Task<ApplicationAnswerResultDto?> GetNextQuestionUrl(Guid currentQuestionId)
+    {
+        try
+        {
+            const string query = @"
+                SELECT TOP 1
+                    [next].QuestionURL AS NextQuestionUrl
+                FROM [recognitionCitizen].[Question] AS [current]
+                JOIN [recognitionCitizen].[Question] AS [next]
+                    ON [current].TaskId = [next].TaskId
+                WHERE [current].QuestionId = @QuestionId
+                AND [next].OrderNumber > [current].OrderNumber
+                ORDER BY [next].OrderNumber ASC";
+
+            var result = await _connection.QueryFirstOrDefaultAsync<ApplicationAnswerResultDto>(
+                query,
+                new { QuestionId = currentQuestionId },
+                _transaction
+            );
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error retrieving next question URL for QuestionId: {QuestionId}", currentQuestionId);
             return null;
         }
     }
