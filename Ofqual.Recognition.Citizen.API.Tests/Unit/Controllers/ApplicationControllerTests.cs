@@ -193,16 +193,17 @@ public class ApplicationControllerTests
         var applicationId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
         var dto = new ApplicationAnswerDto { Answer = answer };
+        var resultDto = nextQuestionUrl != null
+            ? new ApplicationAnswerResultDto { NextQuestionUrl = nextQuestionUrl }
+            : null;
 
         _mockApplicationRepository
             .Setup(r => r.InsertApplicationAnswer(applicationId, questionId, answer))
             .ReturnsAsync(true);
-        
+
         _mockQuestionRepository
             .Setup(r => r.GetNextQuestionUrl(questionId))
-            .ReturnsAsync(nextQuestionUrl is not null
-                ? new ApplicationAnswerResultDto { NextQuestionUrl = nextQuestionUrl }
-                : null);
+            .ReturnsAsync(resultDto);
         
         // Act
         var result = await _controller.PostApplicationQuestion(applicationId, questionId, dto);

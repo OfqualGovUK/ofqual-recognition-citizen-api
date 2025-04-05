@@ -91,7 +91,6 @@ public class ContainerBootstrapper : IAsyncDisposable
             await _containerStdout.DisposeAsync();
         }
 
-
         if (DbContainer is not null)
         {
             await DbContainer.StopAsync();

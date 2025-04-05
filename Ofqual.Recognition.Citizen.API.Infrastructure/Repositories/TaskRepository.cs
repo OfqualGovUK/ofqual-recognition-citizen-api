@@ -19,7 +19,7 @@ public class TaskRepository : ITaskRepository
         _transaction = transaction;
     }
 
-    public async Task<IEnumerable<TaskItem>> GetAllTask()
+    public async Task<IEnumerable<ITaskItem>> GetAllTask()
     {
         try
         {

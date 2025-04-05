@@ -33,10 +33,10 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         // Act
         var result = await unitOfWork.TaskRepository.GetAllTask();
 
-        // Assert
-        Assert.NotNull(result);
+        var taskList = result.Cast<TaskItem>().ToList();
 
-        var taskList = result.ToList();
+        // Assert
+        Assert.NotNull(taskList);
         Assert.True(taskList.Any());
 
         var fetchedTask = taskList.FirstOrDefault(t => t.TaskId == task.TaskId);
