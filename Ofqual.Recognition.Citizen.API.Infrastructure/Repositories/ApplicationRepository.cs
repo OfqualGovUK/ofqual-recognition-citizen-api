@@ -29,7 +29,7 @@ public class ApplicationRepository : IApplicationRepository
                     @CreatedByUpn,
                     @ModifiedByUpn
                 )";
-            
+
             return await _connection.QuerySingleAsync<Application>(query, new
             {
                 CreatedByUpn = "USER", // TODO: replace once auth gets added
@@ -70,7 +70,7 @@ public class ApplicationRepository : IApplicationRepository
                 CreatedByUpn = "USER", // TODO: replace once auth gets added
                 ModifiedByUpn = "USER" // TODO: replace once auth gets added
             }, _transaction);
-            
+
             return rowsAffected > 0;
         }
         catch (Exception ex)

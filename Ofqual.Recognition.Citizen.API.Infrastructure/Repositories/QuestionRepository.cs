@@ -17,7 +17,6 @@ public class QuestionRepository : IQuestionRepository
         _transaction = transaction;
     }
 
-
     public async Task<QuestionDto?> GetQuestion(string questionURL)
     {
         try
@@ -55,13 +54,13 @@ public class QuestionRepository : IQuestionRepository
                 WHERE [current].QuestionId = @QuestionId
                 AND [next].OrderNumber > [current].OrderNumber
                 ORDER BY [next].OrderNumber ASC";
-            
+
             var result = await _connection.QueryFirstOrDefaultAsync<ApplicationAnswerResultDto>(
                 query,
                 new { QuestionId = currentQuestionId },
                 _transaction
             );
-            
+
             return result;
         }
         catch (Exception ex)

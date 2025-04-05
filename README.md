@@ -18,9 +18,13 @@ This project is a ASP.NET Core 8 web api utilising Docker for deployment.
 
 The web api runs on an App service for Container apps on Azure.
 
-### App Settings Definition
+# Application Configuration Guide
 
-The following configuration structure is used in `appsettings.json`. Each section defines settings that control application behaviour across different environments.
+This document outlines how the application is configured using `appsettings.json` files. These settings help manage behaviour across different environments and scenarios, including development, production and automated testing.
+
+## Application Settings (`appsettings.json`)
+
+The main application settings are defined in `appsettings.json` and can be tailored per environment using files like `appsettings.Development.json` or `appsettings.Production.json`.
 
 ```json
 {
@@ -34,22 +38,22 @@ The following configuration structure is used in `appsettings.json`. Each sectio
 }
 ```
 
-#### Setting Descriptions
+### Setting Details
 
-- `LogzIo:Environment`  
-  A label for identifying the current environment (e.g., DEV, PREPROD, PROD) in logs.
+- **`LogzIo:Environment`**  
+  Identifies the current environment in the logs (e.g., `DEV`, `PREPROD`, `PROD`). This helps differentiate log entries across deployments.
 
-- `LogzIo:Uri`  
-  The endpoint URI for sending logs to Logz.io or another external logging service.
+- **`LogzIo:Uri`**  
+  The endpoint for sending log data to an external logging service such as Logz.io.
 
-- `ConnectionStrings:OfqualODS`  
-   The connection string used to connect to the Ofqual ODS database.
+- **`ConnectionStrings:OfqualODS`**  
+   Connection string for accessing the Ofqual ODS (Organisational Data Service) database.
 
-> These settings should be environment-specific and managed through `appsettings.{Environment}.json` or overridden using environment variables in production scenarios.
+> It’s recommended to manage environment-specific values in `appsettings.{Environment}.json` or override them via environment variables, especially in production.
 
-### Test Settings Definition
+## Test Settings (`appsettings.Test.json`)
 
-The following configuration structure is used in `appsettings.Test.json`. These settings are specifically for **integration testing** scenarios and help define the runtime context for test containers, database setup and connection handling.
+Used only for **automated integration tests**, these settings configure test containers and database access. They are **not** meant for production environments.
 
 ```json
 {
@@ -65,27 +69,27 @@ The following configuration structure is used in `appsettings.Test.json`. These 
 }
 ```
 
-#### Setting Descriptions
+### Setting Details
 
-- `TestSettings:RegistryEndpoint`  
-  The container registry URL where the database image is hosted (e.g., Docker Hub, AWS ECR, Azure Container Registry).
+- **`TestSettings:RegistryEndpoint`**  
+  The container registry URL where the database image is stored (e.g., Docker Hub, AWS ECR).
 
-- `TestSettings:ImagePath`  
-  The image path (repository name) for the test database container. It will be combined with the registry to pull the full image.
+- **`TestSettings:ImagePath`**  
+  The repository path for the test database image. Combined with the registry URL to pull the image.
 
-- `TestSettings:RegistryUsername`  
-  Username for authenticating with the container registry.
+- **`TestSettings:RegistryUsername`**  
+  Username for accessing the container registry.
 
-- `TestSettings:RegistryPassword`  
-  Password or token used for authenticating with the container registry.
+- **`TestSettings:RegistryPassword`**  
+  Password or token for authenticating with the container registry.
 
-- `TestSettings:SqlUsername`  
-  The username used to connect to the SQL Server running in the test container.
+- **`TestSettings:SqlUsername`**  
+  SQL Server username for connecting to the test database container.
 
-- `TestSettings:SqlPassword`  
-  The password associated with the SQL user.
+- **`TestSettings:SqlPassword`**  
+  Corresponding password for the SQL user.
 
-- `TestSettings:DatabaseName`  
-   The name of the database to be created or used in the test container.
+- **`TestSettings:DatabaseName`**  
+   The name of the test database to be created or accessed during integration tests.
 
-> These settings are used only for **automated integration tests** and should not be applied to production configurations. They can be overridden via environment variables in CI/CD pipelines using the format: `TestSettings__YourCustomVariable`.
+> These settings support the test environment and can be overridden in CI/CD using environment variables (e.g., `TestSettings__DatabaseName`).

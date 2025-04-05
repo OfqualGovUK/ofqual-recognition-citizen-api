@@ -25,7 +25,7 @@ public class SqlTestFixture : IAsyncLifetime
 
     public Task<SqlConnection> InitNewTestDatabaseContainer()
     {
-        return  _containerBootstrapper.InitDbContainer();
+        return _containerBootstrapper.InitDbContainer();
     }
 
     public async Task DisposeAsync()
