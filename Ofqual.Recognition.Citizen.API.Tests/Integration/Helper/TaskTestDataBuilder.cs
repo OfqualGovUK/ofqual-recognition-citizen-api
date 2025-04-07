@@ -1,4 +1,3 @@
-
 using Dapper;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models;

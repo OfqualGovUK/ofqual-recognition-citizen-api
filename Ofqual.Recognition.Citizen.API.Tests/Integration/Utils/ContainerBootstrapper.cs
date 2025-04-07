@@ -26,13 +26,13 @@ public class ContainerBootstrapper : IAsyncDisposable
     public async Task<SqlConnection> InitDbContainer()
     {
         await PullContainer();
-        
+
         _containerStdin = new MemoryStream();
         _containerStdout = new MemoryStream();
         _containerOutputConsumer = Consume.RedirectStdoutAndStderrToStream(_containerStdin, _containerStdout);
-        
+
         var imageName = $"{Get("RegistryEndpoint")}/{Get("ImagePath")}:latest";
-        
+
         DbContainer = new ContainerBuilder()
             .WithImage(imageName)
             .WithPortBinding(1433, true)
@@ -41,19 +41,45 @@ public class ContainerBootstrapper : IAsyncDisposable
                 .UntilPortIsAvailable(1433))
             .WithCleanUp(true)
             .Build();
-        
+
         await DbContainer.StartAsync();
 
         var mappedPort = DbContainer.GetMappedPublicPort(1433);
-        return CreateSqlConnection(mappedPort);
+        var sqlConnectionStr = CreateSqlConnectionStr(mappedPort);
+
+        await WaitForSqlServerReady(sqlConnectionStr);
+
+        return new SqlConnection(sqlConnectionStr);
     }
 
-    private SqlConnection CreateSqlConnection(int port)
+    private string CreateSqlConnectionStr(int port)
     {
         var connStr = $"Server=localhost,{port};Initial Catalog={Get("DatabaseName")};" +
                       $"User ID={Get("SqlUsername")};Password={Get("SqlPassword")};TrustServerCertificate=True;";
-        
-        return new SqlConnection(connStr);
+
+        return connStr;
+    }
+
+    private async Task WaitForSqlServerReady(string connectionString, int maxRetries = 10, int initialDelayMs = 500)
+    {
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                await connection.OpenAsync();
+                return;
+            }
+            catch (SqlException)
+            {
+                if (attempt == maxRetries)
+                {
+                    throw;
+                }
+
+                await Task.Delay(initialDelayMs * attempt);
+            }
+        }
     }
 
     private async Task PullContainer()
@@ -61,12 +87,16 @@ public class ContainerBootstrapper : IAsyncDisposable
         var dockerClient = new DockerClientConfiguration(
             credentials: new BasicAuthCredentials(Get("RegistryUsername"), Get("RegistryPassword")))
             .CreateClient();
-        
+
         var fullImage = $"{Get("RegistryEndpoint")}/{Get("ImagePath")}";
         var tag = "latest";
 
         await dockerClient.Images.CreateImageAsync(
-            new ImagesCreateParameters { FromImage = fullImage, Tag = tag },
+            new ImagesCreateParameters
+            {
+                FromImage = fullImage,
+                Tag = tag
+            },
             new AuthConfig
             {
                 Username = Get("RegistryUsername"),

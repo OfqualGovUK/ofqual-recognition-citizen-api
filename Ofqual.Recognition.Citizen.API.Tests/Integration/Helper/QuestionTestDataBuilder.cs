@@ -1,4 +1,3 @@
-
 using Dapper;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
