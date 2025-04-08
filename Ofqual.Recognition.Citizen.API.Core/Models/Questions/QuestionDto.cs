@@ -9,6 +9,7 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 public class QuestionDto : IQuestion, IQuestionType
 {
     public required Guid QuestionId { get; set; }
+    public required Guid TaskId { get; set; }
     public required string QuestionTypeName { get; set; }
     public required string QuestionContent { get; set; }
 }

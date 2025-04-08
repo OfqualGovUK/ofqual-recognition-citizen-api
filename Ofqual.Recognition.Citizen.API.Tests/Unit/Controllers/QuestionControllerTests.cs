@@ -39,7 +39,8 @@ public class QuestionControllerTests
         {
             QuestionContent = "{\"hint\":\"test.\"}",
             QuestionTypeName = "File Upload",
-            QuestionId = Guid.NewGuid()
+            QuestionId = Guid.NewGuid(),
+            TaskId = Guid.NewGuid()
         };
 
         _mockQuestionRepository
@@ -55,6 +56,7 @@ public class QuestionControllerTests
         Assert.Equal(expectedQuestion.QuestionTypeName, value.QuestionTypeName);
         Assert.Equal(expectedQuestion.QuestionContent, value.QuestionContent);
         Assert.Equal(expectedQuestion.QuestionId, value.QuestionId);
+        Assert.Equal(expectedQuestion.TaskId, value.TaskId);
     }
     
     [Theory]
