@@ -46,6 +46,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.NotNull(result);
         Assert.Equal(expectedQuestion.QuestionId, result!.QuestionId);
         Assert.Equal(expectedQuestion.QuestionContent, result.QuestionContent);
+        Assert.Equal(expectedQuestion.TaskId, result.TaskId);
         Assert.Equal(questionType.QuestionTypeName, result.QuestionTypeName);
 
         // Clean up test container

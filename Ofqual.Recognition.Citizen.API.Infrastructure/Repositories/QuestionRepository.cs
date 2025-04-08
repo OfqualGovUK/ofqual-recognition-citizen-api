@@ -25,6 +25,7 @@ public class QuestionRepository : IQuestionRepository
                 SELECT
                     Q.QuestionId,
                     Q.QuestionContent,
+                    Q.TaskId,
                     QT.QuestionTypeName
                 FROM recognitionCitizen.Question Q
                 INNER JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
