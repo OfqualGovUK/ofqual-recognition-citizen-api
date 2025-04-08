@@ -9,13 +9,14 @@ using Moq;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
-namespace Ofqual.Recognition.Citizen.Tests.Controllers;
+namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 
 public class ApplicationControllerTests
 {
     private readonly ApplicationController _controller;
     private readonly Mock<ITaskRepository> _mockTaskRepository;
     private readonly Mock<IApplicationRepository> _mockApplicationRepository;
+    private readonly Mock<IQuestionRepository> _mockQuestionRepository;
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<ITaskService> _mockTaskService;
 
@@ -23,6 +24,9 @@ public class ApplicationControllerTests
     {
         _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockTaskService = new Mock<ITaskService>();
+
+        _mockQuestionRepository = new Mock<IQuestionRepository>();
+        _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
 
         _mockTaskRepository = new Mock<ITaskRepository>();
         _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
@@ -98,7 +102,7 @@ public class ApplicationControllerTests
         else
         {
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var application = Assert.IsType<ApplicationDto>(okResult.Value);
+            var application = Assert.IsType<ApplicationDetailsDto>(okResult.Value);
             Assert.NotNull(application);
         }
     }
@@ -177,5 +181,64 @@ public class ApplicationControllerTests
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Failed to update task status. Either the task does not exist or belongs to a different application.", badRequestResult.Value);
         }
+    }
+    
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData("Answer 1", "criteria-a/next-question")]
+    [InlineData("Answer 2", null)]
+    public async Task PostQuestionAnswer_ReturnsOk_ForSuccessfulInsert(string answer, string? nextQuestionUrl)
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var dto = new QuestionAnswerDto { Answer = answer };
+        var resultDto = nextQuestionUrl != null
+            ? new QuestionAnswerResultDto { NextQuestionUrl = nextQuestionUrl }
+            : null;
+
+        _mockQuestionRepository
+            .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, answer))
+            .ReturnsAsync(true);
+
+        _mockQuestionRepository
+            .Setup(r => r.GetNextQuestionUrl(questionId))
+            .ReturnsAsync(resultDto);
+        
+        // Act
+        var result = await _controller.SubmitQuestionAnswer(applicationId, questionId, dto);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        if (nextQuestionUrl == null)
+        {
+            Assert.Null(okResult.Value);
+        }
+        else
+        {
+            var dtoResult = Assert.IsType<QuestionAnswerResultDto>(okResult.Value);
+            Assert.Equal(nextQuestionUrl, dtoResult.NextQuestionUrl);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task PostQuestionAnswer_ReturnsBadRequest_WhenInsertFails()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var dto = new QuestionAnswerDto { Answer = "Invalid Answer" };
+
+        _mockQuestionRepository
+            .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, dto.Answer))
+            .ReturnsAsync(false);
+        
+        // Act
+        var result = await _controller.SubmitQuestionAnswer(applicationId, questionId, dto);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Failed to save the question answer. Please check your input and try again.", badRequest.Value);
     }
 }

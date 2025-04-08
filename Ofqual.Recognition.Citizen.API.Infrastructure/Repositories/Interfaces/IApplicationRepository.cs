@@ -4,5 +4,5 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 
 public interface IApplicationRepository
 {
-    Task<Application> CreateApplication();
+    public Task<Application> CreateApplication();
 }

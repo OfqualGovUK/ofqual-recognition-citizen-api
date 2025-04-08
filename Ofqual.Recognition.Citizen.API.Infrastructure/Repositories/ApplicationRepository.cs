@@ -8,11 +8,13 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
 public class ApplicationRepository : IApplicationRepository
 {
-    private readonly IDbTransaction _dbTransaction;
+    private readonly IDbConnection _connection;
+    private readonly IDbTransaction _transaction;
 
-    public ApplicationRepository(IDbTransaction dbTransaction)
+    public ApplicationRepository(IDbConnection connection, IDbTransaction transaction)
     {
-        _dbTransaction = dbTransaction;
+        _connection = connection;
+        _transaction = transaction;
     }
 
     public async Task<Application> CreateApplication()
@@ -27,11 +29,12 @@ public class ApplicationRepository : IApplicationRepository
                     @CreatedByUpn,
                     @ModifiedByUpn
                 )";
-            return await _dbTransaction.Connection!.QuerySingleAsync<Application>(query, new
+
+            return await _connection.QuerySingleAsync<Application>(query, new
             {
                 CreatedByUpn = "USER", // TODO: replace once auth gets added
                 ModifiedByUpn = "USER" // TODO: replace once auth gets added
-            }, _dbTransaction);
+            }, _transaction);
         }
         catch (Exception ex)
         {

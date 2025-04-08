@@ -8,13 +8,13 @@ namespace Ofqual.Recognition.Citizen.API.Core.Mappers;
 public static class ApplicationMapper
 {
     /// <summary>
-    /// Maps an <see cref="Application"/> model to an <see cref="ApplicationDto"/>.
+    /// Maps an <see cref="Application"/> model to an <see cref="ApplicationDetailsDto"/>.
     /// </summary>
     /// <param name="application">The application domain model to map.</param>
-    /// <returns>The mapped <see cref="ApplicationDto"/>.</returns>
-    public static ApplicationDto MapToApplicationDto(Application application)
+    /// <returns>The mapped <see cref="ApplicationDetailsDto"/>.</returns>
+    public static ApplicationDetailsDto MapToApplicationDetailsDto(Application application)
     {
-        return new ApplicationDto
+        return new ApplicationDetailsDto
         {
             ApplicationId = application.ApplicationId
         };

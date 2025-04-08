@@ -3,9 +3,9 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 /// <summary>
-/// Represents the users application details.
+/// Represents an answer submitted for a task question.
 /// </summary>
-public class ApplicationDto : IApplication
+public class QuestionAnswerDto : IQuestionAnswer
 {
-    public Guid ApplicationId { get; set; }
+    public string Answer { get; set; }
 }

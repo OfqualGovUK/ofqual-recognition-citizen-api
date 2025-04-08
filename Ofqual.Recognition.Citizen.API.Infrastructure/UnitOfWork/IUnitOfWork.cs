@@ -1,13 +1,16 @@
+using System.Data;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure;
 
 public interface IUnitOfWork : IDisposable
 {
-    ITaskRepository TaskRepository { get; }
-    IApplicationRepository ApplicationRepository { get; }
-    IQuestionRepository QuestionRepository { get; }
-    
-    void Commit();
-    void Rollback();
+    public ITaskRepository TaskRepository { get; }
+    public IApplicationRepository ApplicationRepository { get; }
+    public IQuestionRepository QuestionRepository { get; }
+    public IDbConnection Connection { get; }
+    public IDbTransaction Transaction { get; }
+
+    public void Commit();
+    public void Rollback();
 }

@@ -31,11 +31,11 @@ public class ApplicationController : ControllerBase
     /// </summary>
     /// <returns>The created application.</returns>
     [HttpPost]
-    public async Task<ActionResult<ApplicationDto>> CreateApplication()
+    public async Task<ActionResult<ApplicationDetailsDto>> CreateApplication()
     {
         try
         {
-            var application = await _context.ApplicationRepository.CreateApplication();
+            Application? application = await _context.ApplicationRepository.CreateApplication();
 
             if (application == null)
             {
@@ -57,11 +57,11 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Failed to create task statuses for the new application.");
             }
 
-            var applicationDto = ApplicationMapper.MapToApplicationDto(application); 
+            ApplicationDetailsDto ApplicationDetailsDto = ApplicationMapper.MapToApplicationDetailsDto(application);
 
             _context.Commit();
 
-            return Ok(applicationDto);
+            return Ok(ApplicationDetailsDto);
         }
         catch (Exception ex)
         {
@@ -116,6 +116,36 @@ public class ApplicationController : ControllerBase
         {
             Log.Error(ex, "An error occurred while updating the status of task {TaskId} for application {ApplicationId}.", taskId, applicationId);
             throw new Exception("An error occurred while updating the task status. Please try again later.");
+        }
+    }
+
+    /// <summary>
+    /// Submits an answer to a specific task question.
+    /// </summary>
+    /// <param name="applicationId">The ID of the application.</param>
+    /// <param name="questionId">The ID of the question being answered.</param>
+    /// <param name="request">The answer payload.</param>
+    [HttpPost("{applicationId}/questions/{questionId}")]
+    public async Task<ActionResult<string?>> SubmitQuestionAnswer(Guid applicationId, Guid questionId, [FromBody] QuestionAnswerDto request)
+    {
+        try
+        {
+            var isAnswerInserted = await _context.QuestionRepository.InsertQuestionAnswer(applicationId, questionId, request.Answer);
+
+            if (!isAnswerInserted)
+            {
+                return BadRequest("Failed to save the question answer. Please check your input and try again.");
+            }
+
+            QuestionAnswerResultDto? redirectUrl = await _context.QuestionRepository.GetNextQuestionUrl(questionId);
+
+            _context.Commit();
+            return Ok(redirectUrl);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while inserting an answer for QuestionId: {QuestionId} in ApplicationId: {ApplicationId}.", questionId, applicationId);
+            throw new Exception("An error occurred while saving the answer. Please try again later.");
         }
     }
 }
