@@ -5,12 +5,12 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure;
 
 public interface IUnitOfWork : IDisposable
 {
-    ITaskRepository TaskRepository { get; }
-    IApplicationRepository ApplicationRepository { get; }
-    IQuestionRepository QuestionRepository { get; }
-    IDbConnection Connection { get; }
-    IDbTransaction Transaction { get; }
+    public ITaskRepository TaskRepository { get; }
+    public IApplicationRepository ApplicationRepository { get; }
+    public IQuestionRepository QuestionRepository { get; }
+    public IDbConnection Connection { get; }
+    public IDbTransaction Transaction { get; }
 
-    void Commit();
-    void Rollback();
+    public void Commit();
+    public void Rollback();
 }
