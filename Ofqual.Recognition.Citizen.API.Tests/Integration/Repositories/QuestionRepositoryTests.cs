@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
 using Ofqual.Recognition.Citizen.Tests.Integration.Helper;
@@ -142,6 +143,66 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Assert
         Assert.Null(result);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Should_Insert_Question_Answer_With_Json_Successfully()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId);
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
+
+        var question = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task.TaskId,
+            questionType.QuestionTypeId,
+            1,
+            "integration-test/question",
+            "{\"title\":\"Insert test\"}"
+        );
+
+        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
+
+        unitOfWork.Commit();
+
+        var answerJson = JsonSerializer.Serialize(new { value = "This is a test answer." });
+
+        // Act
+        var success = await unitOfWork.QuestionRepository.InsertQuestionAnswer(
+            application.ApplicationId,
+            question.QuestionId,
+            answerJson
+        );
+
+        unitOfWork.Commit();
+
+        // Assert
+        Assert.True(success);
+
+        var insertedAnswer = await QuestionTestDataBuilder.GetInsertedQuestionAnswer(
+            unitOfWork,
+            application.ApplicationId,
+            question.QuestionId
+        );
+
+        Assert.NotNull(insertedAnswer);
+        Assert.Equal(application.ApplicationId, insertedAnswer!.ApplicationId);
+        Assert.Equal(question.QuestionId, insertedAnswer.QuestionId);
+        Assert.Equal(answerJson, insertedAnswer.Answer);
+
+        using var expectedDoc = JsonDocument.Parse(answerJson);
+        using var actualDoc = JsonDocument.Parse(insertedAnswer.Answer);
+
+        Assert.Equal(expectedDoc.RootElement.ToString(), actualDoc.RootElement.ToString());
 
         // Clean up test container
         await _fixture.DisposeAsync();

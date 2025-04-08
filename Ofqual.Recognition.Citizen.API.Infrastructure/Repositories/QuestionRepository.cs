@@ -69,4 +69,41 @@ public class QuestionRepository : IQuestionRepository
             return null;
         }
     }
+
+    public async Task<bool> InsertQuestionAnswer(Guid applicationId, Guid questionId, string answer)
+    {
+        try
+        {
+            const string query = @"
+                INSERT INTO [recognitionCitizen].[ApplicationAnswers ] (
+                    ApplicationId,
+                    QuestionId,
+                    Answer,
+                    CreatedByUpn,
+                    ModifiedByUpn
+                ) OUTPUT INSERTED.* VALUES (
+                    @ApplicationId,
+                    @QuestionId,
+                    @Answer,
+                    @CreatedByUpn,
+                    @ModifiedByUpn
+                )";
+
+            var rowsAffected = await _connection.ExecuteAsync(query, new
+            {
+                applicationId,
+                questionId,
+                answer,
+                CreatedByUpn = "USER", // TODO: replace once auth gets added
+                ModifiedByUpn = "USER" // TODO: replace once auth gets added
+            }, _transaction);
+
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error inserting application answer. ApplicationId: {ApplicationId}, QuestionId: {QuestionId}, Answer: {Answer}", applicationId, questionId, answer);
+            return false;
+        }
+    }
 }

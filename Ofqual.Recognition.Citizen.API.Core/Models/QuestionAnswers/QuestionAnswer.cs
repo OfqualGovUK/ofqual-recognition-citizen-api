@@ -8,7 +8,7 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// </summary>
 public class QuestionAnswer : IQuestionAnswer
 {
-    public Guid ApplicationAnswerId  { get; set; }
+    public Guid ApplicationAnswersId  { get; set; }
     public Guid ApplicationId { get; set; }
     public Guid QuestionId { get; set; }
     public string Answer  { get; set; }

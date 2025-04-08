@@ -130,7 +130,7 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            var isAnswerInserted = await _context.ApplicationRepository.InsertQuestionAnswer(applicationId, questionId, request.Answer);
+            var isAnswerInserted = await _context.QuestionRepository.InsertQuestionAnswer(applicationId, questionId, request.Answer);
 
             if (!isAnswerInserted)
             {

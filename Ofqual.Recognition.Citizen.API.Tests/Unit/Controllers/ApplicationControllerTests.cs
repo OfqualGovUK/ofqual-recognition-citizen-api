@@ -187,7 +187,7 @@ public class ApplicationControllerTests
     [Trait("Category", "Unit")]
     [InlineData("Answer 1", "criteria-a/next-question")]
     [InlineData("Answer 2", null)]
-    public async Task PostApplicationQuestion_ReturnsOk_ForSuccessfulInsert(string answer, string? nextQuestionUrl)
+    public async Task PostQuestionAnswer_ReturnsOk_ForSuccessfulInsert(string answer, string? nextQuestionUrl)
     {
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -197,7 +197,7 @@ public class ApplicationControllerTests
             ? new QuestionAnswerResultDto { NextQuestionUrl = nextQuestionUrl }
             : null;
 
-        _mockApplicationRepository
+        _mockQuestionRepository
             .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, answer))
             .ReturnsAsync(true);
 
@@ -223,14 +223,14 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task PostApplicationQuestion_ReturnsBadRequest_WhenInsertFails()
+    public async Task PostQuestionAnswer_ReturnsBadRequest_WhenInsertFails()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerDto { Answer = "Invalid Answer" };
 
-        _mockApplicationRepository
+        _mockQuestionRepository
             .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(false);
         
@@ -239,6 +239,6 @@ public class ApplicationControllerTests
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Failed to save the application answer. Please check your input and try again.", badRequest.Value);
+        Assert.Equal("Failed to save the question answer. Please check your input and try again.", badRequest.Value);
     }
 }

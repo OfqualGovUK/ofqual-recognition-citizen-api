@@ -51,4 +51,23 @@ public static class QuestionTestDataBuilder
 
         return question;
     }
+
+    public static async Task<QuestionAnswer?> GetInsertedQuestionAnswer(UnitOfWork unitOfWork, Guid applicationId, Guid questionId)
+    {
+        const string sql = @"
+            SELECT
+                ApplicationAnswersId,
+                ApplicationId,
+                QuestionId,
+                Answer
+            FROM [recognitionCitizen].[ApplicationAnswers]
+            WHERE ApplicationId = @applicationId AND QuestionId = @questionId;";
+        
+        var answer = await unitOfWork.Connection.QuerySingleOrDefaultAsync<QuestionAnswer>(
+            sql,
+            new { applicationId, questionId },
+            unitOfWork.Transaction);
+
+        return answer;
+    }
 }
