@@ -5,5 +5,5 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 public interface IApplicationRepository
 {
     public Task<Application> CreateApplication();
-    public Task<bool> InsertApplicationAnswer(Guid applicationId, Guid questionId, string answer);
+    public Task<bool> InsertQuestionAnswer(Guid applicationId, Guid questionId, string answer);
 }

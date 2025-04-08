@@ -6,7 +6,7 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// Represents a domain-level model of the <c>recognitionCitizen.ApplicationAnswers</c> database table,
 /// containing answers submitted for application questions.
 /// </summary>
-public class ApplicationAnswer : IApplicationAnswer
+public class QuestionAnswer : IQuestionAnswer
 {
     public Guid ApplicationAnswerId  { get; set; }
     public Guid ApplicationId { get; set; }

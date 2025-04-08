@@ -41,7 +41,7 @@ public class QuestionRepository : IQuestionRepository
         }
     }
 
-    public async Task<ApplicationAnswerResultDto?> GetNextQuestionUrl(Guid currentQuestionId)
+    public async Task<QuestionAnswerResultDto?> GetNextQuestionUrl(Guid currentQuestionId)
     {
         try
         {
@@ -55,7 +55,7 @@ public class QuestionRepository : IQuestionRepository
                 AND [next].OrderNumber > [current].OrderNumber
                 ORDER BY [next].OrderNumber ASC";
 
-            var result = await _connection.QueryFirstOrDefaultAsync<ApplicationAnswerResultDto>(
+            var result = await _connection.QueryFirstOrDefaultAsync<QuestionAnswerResultDto>(
                 query,
                 new { QuestionId = currentQuestionId },
                 _transaction

@@ -192,13 +192,13 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
-        var dto = new ApplicationAnswerDto { Answer = answer };
+        var dto = new QuestionAnswerDto { Answer = answer };
         var resultDto = nextQuestionUrl != null
-            ? new ApplicationAnswerResultDto { NextQuestionUrl = nextQuestionUrl }
+            ? new QuestionAnswerResultDto { NextQuestionUrl = nextQuestionUrl }
             : null;
 
         _mockApplicationRepository
-            .Setup(r => r.InsertApplicationAnswer(applicationId, questionId, answer))
+            .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, answer))
             .ReturnsAsync(true);
 
         _mockQuestionRepository
@@ -206,7 +206,7 @@ public class ApplicationControllerTests
             .ReturnsAsync(resultDto);
         
         // Act
-        var result = await _controller.PostApplicationQuestion(applicationId, questionId, dto);
+        var result = await _controller.SubmitQuestionAnswer(applicationId, questionId, dto);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -216,7 +216,7 @@ public class ApplicationControllerTests
         }
         else
         {
-            var dtoResult = Assert.IsType<ApplicationAnswerResultDto>(okResult.Value);
+            var dtoResult = Assert.IsType<QuestionAnswerResultDto>(okResult.Value);
             Assert.Equal(nextQuestionUrl, dtoResult.NextQuestionUrl);
         }
     }
@@ -228,14 +228,14 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
-        var dto = new ApplicationAnswerDto { Answer = "Invalid Answer" };
+        var dto = new QuestionAnswerDto { Answer = "Invalid Answer" };
 
         _mockApplicationRepository
-            .Setup(r => r.InsertApplicationAnswer(applicationId, questionId, dto.Answer))
+            .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(false);
         
         // Act
-        var result = await _controller.PostApplicationQuestion(applicationId, questionId, dto);
+        var result = await _controller.SubmitQuestionAnswer(applicationId, questionId, dto);
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);

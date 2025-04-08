@@ -120,24 +120,24 @@ public class ApplicationController : ControllerBase
     }
 
     /// <summary>
-    /// Submits an answer to a specific application question.
+    /// Submits an answer to a specific task question.
     /// </summary>
     /// <param name="applicationId">The ID of the application.</param>
     /// <param name="questionId">The ID of the question being answered.</param>
     /// <param name="request">The answer payload.</param>
     [HttpPost("{applicationId}/questions/{questionId}")]
-    public async Task<ActionResult<string?>> PostApplicationQuestion(Guid applicationId, Guid questionId, [FromBody] ApplicationAnswerDto request)
+    public async Task<ActionResult<string?>> SubmitQuestionAnswer(Guid applicationId, Guid questionId, [FromBody] QuestionAnswerDto request)
     {
         try
         {
-            var isAnswerInserted = await _context.ApplicationRepository.InsertApplicationAnswer(applicationId, questionId, request.Answer);
+            var isAnswerInserted = await _context.ApplicationRepository.InsertQuestionAnswer(applicationId, questionId, request.Answer);
 
             if (!isAnswerInserted)
             {
-                return BadRequest("Failed to save the application answer. Please check your input and try again.");
+                return BadRequest("Failed to save the question answer. Please check your input and try again.");
             }
 
-            ApplicationAnswerResultDto? redirectUrl = await _context.QuestionRepository.GetNextQuestionUrl(questionId);
+            QuestionAnswerResultDto? redirectUrl = await _context.QuestionRepository.GetNextQuestionUrl(questionId);
 
             _context.Commit();
             return Ok(redirectUrl);

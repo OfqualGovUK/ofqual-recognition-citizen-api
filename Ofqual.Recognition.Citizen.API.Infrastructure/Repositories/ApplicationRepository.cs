@@ -43,7 +43,7 @@ public class ApplicationRepository : IApplicationRepository
         }
     }
 
-    public async Task<bool> InsertApplicationAnswer(Guid applicationId, Guid questionId, string answer)
+    public async Task<bool> InsertQuestionAnswer(Guid applicationId, Guid questionId, string answer)
     {
         try
         {
