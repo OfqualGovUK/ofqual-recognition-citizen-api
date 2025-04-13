@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
-using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
@@ -40,7 +40,7 @@ public class QuestionController : ControllerBase
                 return BadRequest($"No question found with URL: {taskName}/{questionName}");
             }
 
-            return question;
+            return Ok(question);
         }
         catch (Exception ex)
         {

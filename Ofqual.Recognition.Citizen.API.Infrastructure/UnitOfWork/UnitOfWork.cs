@@ -1,6 +1,6 @@
-using System.Data;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
+using System.Data;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure;
 

@@ -1,6 +1,6 @@
-using Dapper;
-using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Dapper;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Helper;
 
@@ -52,7 +52,7 @@ public static class QuestionTestDataBuilder
         return question;
     }
 
-    public static async Task<QuestionAnswer?> GetInsertedQuestionAnswer(UnitOfWork unitOfWork, Guid applicationId, Guid questionId)
+    public static async Task<ApplicationAnswer?> GetInsertedApplicationAnswer(UnitOfWork unitOfWork, Guid applicationId, Guid questionId)
     {
         const string sql = @"
             SELECT
@@ -63,7 +63,7 @@ public static class QuestionTestDataBuilder
             FROM [recognitionCitizen].[ApplicationAnswers]
             WHERE ApplicationId = @applicationId AND QuestionId = @questionId;";
         
-        var answer = await unitOfWork.Connection.QuerySingleOrDefaultAsync<QuestionAnswer>(
+        var answer = await unitOfWork.Connection.QuerySingleOrDefaultAsync<ApplicationAnswer>(
             sql,
             new { applicationId, questionId },
             unitOfWork.Transaction);

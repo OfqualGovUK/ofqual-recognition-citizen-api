@@ -5,7 +5,7 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// <summary>
 /// Represents an answer submitted for a task question.
 /// </summary>
-public class QuestionAnswerDto : IQuestionAnswer
+public class QuestionAnswerSubmissionDto : IApplicationAnswer
 {
     public string Answer { get; set; }
 }

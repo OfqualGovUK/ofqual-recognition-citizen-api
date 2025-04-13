@@ -1,6 +1,6 @@
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using Ofqual.Recognition.Citizen.Tests.Integration.Utils;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Data.SqlClient;
 using Xunit;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;

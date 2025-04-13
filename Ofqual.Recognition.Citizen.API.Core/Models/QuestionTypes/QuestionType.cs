@@ -4,8 +4,7 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 /// <summary>
-/// Represents a domain-level model of the <c>recognitionCitizen.QuestionType</c> database table,
-/// defining question types and their audit tracking information.
+/// Represents a domain-level model of the <c>recognitionCitizen.QuestionType</c> database table
 /// </summary>
 public class QuestionType : IQuestionType, IDataMetadata
 {

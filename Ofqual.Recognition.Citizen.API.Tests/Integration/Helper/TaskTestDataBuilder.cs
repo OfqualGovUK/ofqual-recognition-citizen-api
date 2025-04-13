@@ -1,7 +1,7 @@
-using Dapper;
-using Ofqual.Recognition.Citizen.API.Core.Enums;
-using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Dapper;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Helper;
 

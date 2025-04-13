@@ -1,8 +1,8 @@
-using System.Data;
-using Dapper;
-using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using System.Data;
 using Serilog;
+using Dapper;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 

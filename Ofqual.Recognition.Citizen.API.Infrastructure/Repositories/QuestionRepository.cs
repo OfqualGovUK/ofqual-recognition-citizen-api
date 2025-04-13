@@ -1,8 +1,8 @@
-using System.Data;
-using Dapper;
-using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using System.Data;
 using Serilog;
+using Dapper;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
@@ -42,7 +42,7 @@ public class QuestionRepository : IQuestionRepository
         }
     }
 
-    public async Task<QuestionAnswerResultDto?> GetNextQuestionUrl(Guid currentQuestionId)
+    public async Task<QuestionAnswerSubmissionResponseDto?> GetNextQuestionUrl(Guid currentQuestionId)
     {
         try
         {
@@ -56,7 +56,7 @@ public class QuestionRepository : IQuestionRepository
                 AND [next].OrderNumber > [current].OrderNumber
                 ORDER BY [next].OrderNumber ASC";
 
-            var result = await _connection.QueryFirstOrDefaultAsync<QuestionAnswerResultDto>(
+            var result = await _connection.QueryFirstOrDefaultAsync<QuestionAnswerSubmissionResponseDto>(
                 query,
                 new { QuestionId = currentQuestionId },
                 _transaction
@@ -76,35 +76,81 @@ public class QuestionRepository : IQuestionRepository
         try
         {
             const string query = @"
-                INSERT INTO [recognitionCitizen].[ApplicationAnswers ] (
-                    ApplicationId,
-                    QuestionId,
-                    Answer,
-                    CreatedByUpn,
-                    ModifiedByUpn
-                ) OUTPUT INSERTED.* VALUES (
-                    @ApplicationId,
-                    @QuestionId,
-                    @Answer,
-                    @CreatedByUpn,
-                    @ModifiedByUpn
-                )";
+                IF NOT EXISTS (
+                    SELECT 1 FROM [recognitionCitizen].[ApplicationAnswers]
+                    WHERE ApplicationId = @ApplicationId AND QuestionId = @QuestionId
+                )
+                BEGIN
+                    INSERT INTO [recognitionCitizen].[ApplicationAnswers] (
+                        ApplicationId,
+                        QuestionId,
+                        Answer,
+                        CreatedByUpn,
+                        ModifiedByUpn
+                    )
+                    VALUES (
+                        @ApplicationId,
+                        @QuestionId,
+                        @Answer,
+                        @CreatedByUpn,
+                        @ModifiedByUpn
+                    )
+                END
+            ";
 
             var rowsAffected = await _connection.ExecuteAsync(query, new
             {
                 applicationId,
                 questionId,
                 answer,
-                CreatedByUpn = "USER", // TODO: replace once auth gets added
-                ModifiedByUpn = "USER" // TODO: replace once auth gets added
+                CreatedByUpn = "USER",
+                ModifiedByUpn = "USER"
             }, _transaction);
-
+            
             return rowsAffected > 0;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error inserting application answer. ApplicationId: {ApplicationId}, QuestionId: {QuestionId}, Answer: {Answer}", applicationId, questionId, answer);
             return false;
+        }
+    }
+
+    public async Task<IEnumerable<TaskQuestionAnswerDto>> GetTaskQuestionAnswers(Guid applicationId, Guid taskId)
+    {
+        try
+        {
+            const string query = @"
+                SELECT
+                    t.TaskId,
+                    t.TaskName,
+                    t.OrderNumber AS TaskOrder,
+                    q.QuestionId,
+                    q.QuestionContent,
+                    q.QuestionURL,
+                    a.Answer
+                FROM [recognitionCitizen].[Task] t
+                INNER JOIN [recognitionCitizen].[Question] q ON q.TaskId = t.TaskId
+                LEFT JOIN [recognitionCitizen].[ApplicationAnswers] a
+                    ON a.QuestionId = q.QuestionId AND a.ApplicationId = @ApplicationId
+                WHERE t.TaskId = @TaskId
+                ORDER BY t.OrderNumber, q.OrderNumber";
+
+            var results = await _connection.QueryAsync<TaskQuestionAnswerDto>(
+                query,
+                new
+                {
+                    ApplicationId = applicationId,
+                    TaskId = taskId
+                },
+                _transaction);
+
+            return results;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to fetch question answers for TaskId: {TaskId}, ApplicationId: {ApplicationId}", taskId, applicationId);
+            return Enumerable.Empty<TaskQuestionAnswerDto>();
         }
     }
 }
