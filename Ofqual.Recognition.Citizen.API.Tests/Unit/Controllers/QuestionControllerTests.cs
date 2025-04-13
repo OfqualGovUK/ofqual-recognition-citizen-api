@@ -38,6 +38,7 @@ public class QuestionControllerTests
         // Arrange
         var expectedQuestion = new QuestionDto
         {
+            CurrentQuestionUrl = "current/url",
             QuestionContent = "{\"hint\":\"test.\"}",
             QuestionTypeName = "File Upload",
             QuestionId = Guid.NewGuid(),
@@ -55,6 +56,7 @@ public class QuestionControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedQuestion = Assert.IsType<QuestionDto>(okResult.Value);
 
+        Assert.Equal(expectedQuestion.CurrentQuestionUrl, returnedQuestion.CurrentQuestionUrl);
         Assert.Equal(expectedQuestion.QuestionTypeName, returnedQuestion.QuestionTypeName);
         Assert.Equal(expectedQuestion.QuestionContent, returnedQuestion.QuestionContent);
         Assert.Equal(expectedQuestion.QuestionId, returnedQuestion.QuestionId);

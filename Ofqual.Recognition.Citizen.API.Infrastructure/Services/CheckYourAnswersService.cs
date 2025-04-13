@@ -101,7 +101,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                     var checkboxHeading = groupValue["heading"]?.Value<string>("text");
                     AddQuestionField(fields, checkboxName, checkboxHeading);
 
-                    var selectedCheckboxes = answerData?[checkboxName]?.Values<string>().ToHashSet() ?? new HashSet<string>();
+                    var selectedCheckboxes = GetCheckboxValues(answerData?[checkboxName]);
                     foreach (var checkboxOption in groupValue["checkBoxes"])
                     {
                         var checkboxValue = checkboxOption.Value<string>("value");
@@ -121,6 +121,16 @@ public class CheckYourAnswersService : ICheckYourAnswersService
             }
         }
         return fields;
+    }
+
+    private static HashSet<string> GetCheckboxValues(JToken? token)
+    {
+        return token switch
+        {
+            JArray array => array.Values<string>().ToHashSet(),
+            JValue value when !string.IsNullOrWhiteSpace(value.ToString()) => new HashSet<string> { value.ToString()! },
+            _ => new HashSet<string>()
+        };
     }
 
     private static JToken? FindNestedAnswer(JToken? token, string fieldName)

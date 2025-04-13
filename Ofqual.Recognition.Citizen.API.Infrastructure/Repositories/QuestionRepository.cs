@@ -26,12 +26,23 @@ public class QuestionRepository : IQuestionRepository
                     Q.QuestionId,
                     Q.QuestionContent,
                     Q.TaskId,
-                    QT.QuestionTypeName
+                    Q.QuestionURL AS CurrentQuestionUrl,
+                    QT.QuestionTypeName,
+                    (
+                        SELECT TOP 1 prev.QuestionURL
+                        FROM recognitionCitizen.Question prev
+                        WHERE prev.TaskId = Q.TaskId
+                        AND prev.OrderNumber < Q.OrderNumber
+                        ORDER BY prev.OrderNumber DESC
+                    ) AS PreviousQuestionUrl
                 FROM recognitionCitizen.Question Q
                 INNER JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
                 WHERE Q.QuestionURL = @questionURL";
 
-            var result = await _connection.QueryFirstOrDefaultAsync<QuestionDto>(query, new { questionURL }, _transaction);
+            var result = await _connection.QueryFirstOrDefaultAsync<QuestionDto>(query, new
+            {
+                questionURL
+            }, _transaction);
 
             return result;
         }
@@ -56,11 +67,10 @@ public class QuestionRepository : IQuestionRepository
                 AND [next].OrderNumber > [current].OrderNumber
                 ORDER BY [next].OrderNumber ASC";
 
-            var result = await _connection.QueryFirstOrDefaultAsync<QuestionAnswerSubmissionResponseDto>(
-                query,
-                new { QuestionId = currentQuestionId },
-                _transaction
-            );
+            var result = await _connection.QueryFirstOrDefaultAsync<QuestionAnswerSubmissionResponseDto>(query, new
+            {
+                QuestionId = currentQuestionId
+            }, _transaction);
 
             return result;
         }
@@ -103,10 +113,10 @@ public class QuestionRepository : IQuestionRepository
                 applicationId,
                 questionId,
                 answer,
-                CreatedByUpn = "USER",
-                ModifiedByUpn = "USER"
+                CreatedByUpn = "USER", // TODO: replace once auth gets added
+                ModifiedByUpn = "USER" // TODO: replace once auth gets added
             }, _transaction);
-            
+
             return rowsAffected > 0;
         }
         catch (Exception ex)
@@ -136,14 +146,11 @@ public class QuestionRepository : IQuestionRepository
                 WHERE t.TaskId = @TaskId
                 ORDER BY t.OrderNumber, q.OrderNumber";
 
-            var results = await _connection.QueryAsync<TaskQuestionAnswerDto>(
-                query,
-                new
-                {
-                    ApplicationId = applicationId,
-                    TaskId = taskId
-                },
-                _transaction);
+            var results = await _connection.QueryAsync<TaskQuestionAnswerDto>(query, new
+            {
+                ApplicationId = applicationId,
+                TaskId = taskId
+            }, _transaction);
 
             return results;
         }

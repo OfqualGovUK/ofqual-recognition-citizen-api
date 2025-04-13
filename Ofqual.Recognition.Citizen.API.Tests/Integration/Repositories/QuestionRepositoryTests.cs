@@ -55,6 +55,51 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Should_Return_Previous_Question_Url()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId);
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
+
+        var firstQuestion = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task.TaskId,
+            questionType.QuestionTypeId,
+            1,
+            "test/first-question",
+            "{\"title\":\"first question\"}"
+        );
+
+        var secondQuestion = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task.TaskId,
+            questionType.QuestionTypeId,
+            2,
+            "test/second-question",
+            "{\"title\":\"second question\"}"
+        );
+        
+        unitOfWork.Commit();
+
+        // Act
+        var result = await unitOfWork.QuestionRepository.GetQuestion("test/second-question");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(secondQuestion.QuestionId, result!.QuestionId);
+        Assert.Equal("test/first-question", result.PreviousQuestionUrl);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Should_Return_Null_If_QuestionURL_Not_Found()
     {
         // Initialise test container and connection
