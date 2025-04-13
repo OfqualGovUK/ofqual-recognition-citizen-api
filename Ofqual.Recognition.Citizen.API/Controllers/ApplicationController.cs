@@ -158,7 +158,7 @@ public class ApplicationController : ControllerBase
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "An error occurred while inserting an answer for QuestionId: {QuestionId} in ApplicationId: {ApplicationId}.", questionId, applicationId);
+            Log.Error(ex, "An error occurred while inserting an answer for QuestionId: {QuestionId} in TaskId: {TaskId} of ApplicationId: {ApplicationId}.", questionId, taskId, applicationId);
             throw new Exception("An error occurred while saving the answer. Please try again later.");
         }
     }
