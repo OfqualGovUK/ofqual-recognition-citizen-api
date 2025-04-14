@@ -342,7 +342,7 @@ public class ApplicationControllerTests
             new QuestionAnswerReviewDto
             {
                 QuestionText = "Sample Question",
-                AnswerValue = "Sample Answer",
+                AnswerValue = ["Sample Answer"],
                 QuestionUrl = "task/question/url"
             }
         };

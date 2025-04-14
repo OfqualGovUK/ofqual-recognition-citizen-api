@@ -169,7 +169,7 @@ public class ApplicationController : ControllerBase
     /// <param name="applicationId">The ID of the application.</param>
     /// <param name="taskId">The ID of the task.</param>
     [HttpGet("{applicationId}/tasks/{taskId}/questions/answers")]
-    public async Task<ActionResult<List<QuestionAnswerReviewDto>>> GetTaskQuestionAnswers(Guid applicationId, Guid taskId)
+    public async Task<ActionResult<List<QuestionAnswerSectionDto>>> GetTaskQuestionAnswers(Guid applicationId, Guid taskId)
     {
         try
         {

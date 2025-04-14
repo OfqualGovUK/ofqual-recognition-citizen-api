@@ -4,5 +4,5 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
 public interface ICheckYourAnswersService
 {
-   public List<QuestionAnswerReviewDto> GetQuestionAnswers(IEnumerable<TaskQuestionAnswerDto> questions);
+   public List<QuestionAnswerSectionDto> GetQuestionAnswers(IEnumerable<TaskQuestionAnswerDto> questions);
 }

@@ -6,7 +6,7 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
 public class CheckYourAnswersService : ICheckYourAnswersService
 {
-    public List<QuestionAnswerReviewDto> GetQuestionAnswers(IEnumerable<TaskQuestionAnswerDto> questions)
+    public List<QuestionAnswerSectionDto> GetQuestionAnswers(IEnumerable<TaskQuestionAnswerDto> questions)
     {
         var answerLookup = questions
             .Where(q => !string.IsNullOrWhiteSpace(q.Answer))
@@ -18,27 +18,147 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                     QuestionUrl = q.QuestionUrl
                 });
 
-        var questionAnswers = new List<QuestionAnswerReviewDto>();
+        var sections = new List<QuestionAnswerSectionDto>();
 
         foreach (var question in questions)
         {
             answerLookup.TryGetValue(question.QuestionId, out var parsedAnswer);
-            var questionFields = ExtractQuestionFields(question, parsedAnswer?.AnswerData);
 
-            foreach (var field in questionFields)
+            if (string.IsNullOrWhiteSpace(question.QuestionContent))
             {
-                var answerValue = GetFieldAnswerValue(field.Name, parsedAnswer?.AnswerData);
+                continue;
+            }
 
-                questionAnswers.Add(new QuestionAnswerReviewDto
+            var questionJson = JObject.Parse(question.QuestionContent);
+            var formGroup = questionJson["formGroup"] as JObject;
+
+            if (formGroup == null)
+            {
+                continue;
+            }
+
+            foreach (var groupProperty in formGroup.Properties())
+            {
+                var groupValue = groupProperty.Value;
+                var sectionHeading = groupValue.Value<string>("SectionName");
+
+                var section = new QuestionAnswerSectionDto
                 {
-                    QuestionText = field.QuestionText,
-                    AnswerValue = answerValue,
-                    QuestionUrl = parsedAnswer?.QuestionUrl ?? question.QuestionUrl
-                });
+                    SectionHeading = sectionHeading
+                };
+
+                var textInputs = groupValue["TextInputs"] as JArray;
+                if (textInputs != null)
+                {
+                    foreach (var input in textInputs)
+                    {
+                        var fieldName = input.Value<string>("name");
+                        var label = input.Value<string>("label");
+
+                        if (string.IsNullOrWhiteSpace(fieldName) || string.IsNullOrWhiteSpace(label))
+                        {
+                            continue;
+                        }
+
+                        var answerValue = GetFieldAnswerValue(fieldName, parsedAnswer?.AnswerData);
+
+                        section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                        {
+                            QuestionText = label,
+                            AnswerValue = answerValue,
+                            QuestionUrl = parsedAnswer?.QuestionUrl ?? question.QuestionUrl
+                        });
+                    }
+                }
+                if (groupProperty.Name == "Textarea")
+                {
+                    var fieldName = groupValue.Value<string>("name");
+                    var label = groupValue["label"]?.Value<string>("text");
+
+                    if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
+                    {
+                        var answerValue = GetFieldAnswerValue(fieldName, parsedAnswer?.AnswerData);
+
+                        section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                        {
+                            QuestionText = label,
+                            AnswerValue = answerValue,
+                            QuestionUrl = parsedAnswer?.QuestionUrl ?? question.QuestionUrl
+                        });
+                    }
+                }
+                if (groupProperty.Name == "radioButton")
+                {
+                    var fieldName = groupValue.Value<string>("name");
+                    var label = groupValue["heading"]?.Value<string>("text");
+
+                    if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
+                    {
+                        var answerValue = GetFieldAnswerValue(fieldName, parsedAnswer?.AnswerData);
+
+                        section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                        {
+                            QuestionText = label,
+                            AnswerValue = answerValue,
+                            QuestionUrl = parsedAnswer?.QuestionUrl ?? question.QuestionUrl
+                        });
+                    }
+                }
+                if (groupProperty.Name == "checkbox")
+                {
+                    var checkboxName = groupValue.Value<string>("name");
+                    var checkboxHeading = groupValue["heading"]?.Value<string>("text");
+
+                    if (!string.IsNullOrWhiteSpace(checkboxName) && !string.IsNullOrWhiteSpace(checkboxHeading))
+                    {
+                        var answerValue = GetFieldAnswerValue(checkboxName, parsedAnswer?.AnswerData);
+
+                        section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                        {
+                            QuestionText = checkboxHeading,
+                            AnswerValue = answerValue,
+                            QuestionUrl = parsedAnswer?.QuestionUrl ?? question.QuestionUrl
+                        });
+                    }
+
+                    var selectedCheckboxes = GetCheckboxValues(parsedAnswer?.AnswerData?[checkboxName]);
+                    foreach (var checkboxOption in groupValue["checkBoxes"] ?? Enumerable.Empty<JToken>())
+                    {
+                        var checkboxValue = checkboxOption.Value<string>("value");
+                        if (selectedCheckboxes.Contains(checkboxValue))
+                        {
+                            var conditionalFields = checkboxOption["conditionalInputs"] ?? checkboxOption["conditionalSelects"];
+                            if (conditionalFields != null)
+                            {
+                                foreach (var conditionalField in conditionalFields)
+                                {
+                                    var fieldName = conditionalField.Value<string>("name");
+                                    var label = conditionalField.Value<string>("label");
+
+                                    if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
+                                    {
+                                        var conditionalAnswerValue = GetFieldAnswerValue(fieldName, parsedAnswer?.AnswerData);
+
+                                        section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                                        {
+                                            QuestionText = label,
+                                            AnswerValue = conditionalAnswerValue,
+                                            QuestionUrl = parsedAnswer?.QuestionUrl ?? question.QuestionUrl
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (section.QuestionAnswers.Any())
+                {
+                    sections.Add(section);
+                }
             }
         }
-
-        return questionAnswers;
+        return sections;
     }
 
     private static List<string> GetFieldAnswerValue(string fieldName, JObject? answerData)
@@ -60,80 +180,6 @@ public class CheckYourAnswersService : ICheckYourAnswersService
             : new List<string> { token.ToString() };
     }
 
-    public static List<QuestionFieldDto> ExtractQuestionFields(TaskQuestionAnswerDto question, JObject? answerData = null)
-    {
-        var fields = new List<QuestionFieldDto>();
-
-        if (string.IsNullOrWhiteSpace(question.QuestionContent))
-        {
-            return fields;
-        }
-
-        var questionJson = JObject.Parse(question.QuestionContent);
-        var formGroup = questionJson["formGroup"] as JObject;
-
-        if (formGroup == null)
-        {
-            return fields;
-        }
-
-        foreach (var formFieldGroup in formGroup.Properties())
-        {
-            var groupValue = formFieldGroup.Value;
-            switch (formFieldGroup.Name)
-            {
-                case "TextInputs":
-                    foreach (var input in groupValue)
-                    {
-                        AddQuestionField(fields, input.Value<string>("name"), input.Value<string>("label"));
-                    }
-                    break;
-
-                case "Textarea":
-                    AddQuestionField(fields, groupValue.Value<string>("name"), groupValue["label"]?.Value<string>("text"));
-                    break;
-
-                case "radioButton":
-                    AddQuestionField(fields, groupValue.Value<string>("name"), groupValue["heading"]?.Value<string>("text"));
-                    break;
-
-                case "checkbox":
-                    var checkboxName = groupValue.Value<string>("name");
-                    var checkboxHeading = groupValue["heading"]?.Value<string>("text");
-                    AddQuestionField(fields, checkboxName, checkboxHeading);
-
-                    var selectedCheckboxes = GetCheckboxValues(answerData?[checkboxName]);
-                    foreach (var checkboxOption in groupValue["checkBoxes"])
-                    {
-                        var checkboxValue = checkboxOption.Value<string>("value");
-                        if (selectedCheckboxes.Contains(checkboxValue))
-                        {
-                            var conditionalFields = checkboxOption["conditionalInputs"] ?? checkboxOption["conditionalSelects"];
-                            if (conditionalFields != null)
-                            {
-                                foreach (var conditionalField in conditionalFields)
-                                {
-                                    AddQuestionField(fields, conditionalField.Value<string>("name"), conditionalField.Value<string>("label"));
-                                }
-                            }
-                        }
-                    }
-                    break;
-            }
-        }
-        return fields;
-    }
-
-    private static HashSet<string> GetCheckboxValues(JToken? token)
-    {
-        return token switch
-        {
-            JArray array => array.Values<string>().ToHashSet(),
-            JValue value when !string.IsNullOrWhiteSpace(value.ToString()) => new HashSet<string> { value.ToString()! },
-            _ => new HashSet<string>()
-        };
-    }
-
     private static JToken? FindNestedAnswer(JToken? token, string fieldName)
     {
         if (token == null)
@@ -149,7 +195,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                 {
                     return property.Value;
                 }
-
+                
                 var nestedResult = FindNestedAnswer(property.Value, fieldName);
                 if (nestedResult != null)
                 {
@@ -162,7 +208,6 @@ public class CheckYourAnswersService : ICheckYourAnswersService
             foreach (var item in token)
             {
                 var nestedResult = FindNestedAnswer(item, fieldName);
-
                 if (nestedResult != null)
                 {
                     return nestedResult;
@@ -172,15 +217,13 @@ public class CheckYourAnswersService : ICheckYourAnswersService
         return null;
     }
 
-    private static void AddQuestionField(List<QuestionFieldDto> fields, string? fieldName, string? questionText)
+    private static HashSet<string> GetCheckboxValues(JToken? token)
     {
-        if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(questionText))
+        return token switch
         {
-            fields.Add(new QuestionFieldDto
-            {
-                Name = fieldName,
-                QuestionText = questionText
-            });
-        }
+            JArray array => array.Values<string>().ToHashSet(),
+            JValue value when !string.IsNullOrWhiteSpace(value.ToString()) => new HashSet<string> { value.ToString()! },
+            _ => new HashSet<string>()
+        };
     }
 }
