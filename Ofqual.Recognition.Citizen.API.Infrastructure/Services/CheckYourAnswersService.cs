@@ -41,22 +41,23 @@ public class CheckYourAnswersService : ICheckYourAnswersService
         return questionAnswers;
     }
 
-    private static string GetFieldAnswerValue(string fieldName, JObject? answerData)
+    private static List<string> GetFieldAnswerValue(string fieldName, JObject? answerData)
     {
         if (answerData == null)
         {
-            return "Not provided";
+            return new List<string> { "Not provided" };
         }
 
         var token = answerData[fieldName] ?? FindNestedAnswer(answerData, fieldName);
-        return token != null ? FormatAnswerValue(token) : "Not provided";
-    }
 
-    private static string FormatAnswerValue(JToken answer)
-    {
-        return answer.Type == JTokenType.Array
-            ? string.Join(", ", answer.Values<string>())
-            : answer.ToString();
+        if (token == null)
+        {
+            return new List<string> { "Not provided" };
+        }
+
+        return token.Type == JTokenType.Array
+            ? token.Values<string>().ToList()
+            : new List<string> { token.ToString() };
     }
 
     public static List<QuestionFieldDto> ExtractQuestionFields(TaskQuestionAnswerDto question, JObject? answerData = null)

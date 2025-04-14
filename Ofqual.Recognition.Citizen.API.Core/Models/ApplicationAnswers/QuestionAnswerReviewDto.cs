@@ -6,6 +6,6 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 public class QuestionAnswerReviewDto
 {
     public string QuestionText { get; set; }
-    public string AnswerValue { get; set; }
+    public List<string> AnswerValue { get; set; }
     public string QuestionUrl { get; set; }
 }
