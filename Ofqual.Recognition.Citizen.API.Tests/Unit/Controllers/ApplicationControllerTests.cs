@@ -238,19 +238,19 @@ public class ApplicationControllerTests
         var nextUrlDto = nextQuestionUrl != null
             ? new QuestionAnswerSubmissionResponseDto { NextQuestionUrl = nextQuestionUrl }
             : null;
-        
+
         _mockQuestionRepository
             .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, answer))
             .ReturnsAsync(true);
-        
+
         _mockTaskRepository
             .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress))
             .ReturnsAsync(true);
-        
+
         _mockQuestionRepository
             .Setup(r => r.GetNextQuestionUrl(questionId))
             .ReturnsAsync(nextUrlDto);
-        
+
         // Act
         var result = await _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto);
 
@@ -266,7 +266,7 @@ public class ApplicationControllerTests
             Assert.Equal(nextQuestionUrl, dtoResult.NextQuestionUrl);
         }
     }
-    
+
     [Fact]
     [Trait("Category", "Unit")]
     public async Task SubmitQuestionAnswer_ReturnsBadRequest_WhenInsertFails()
@@ -280,7 +280,7 @@ public class ApplicationControllerTests
         _mockQuestionRepository
             .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(false);
-        
+
         // Act
         var result = await _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto);
 
@@ -302,11 +302,11 @@ public class ApplicationControllerTests
         _mockQuestionRepository
             .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(true);
-        
+
         _mockTaskRepository
             .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress))
             .ReturnsAsync(false);
-        
+
         // Act
         var result = await _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto);
 
@@ -317,12 +317,12 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetTaskQuestionAnswers_ShouldReturnReviewAnswers_WhenDataExists()
+    public async Task GetTaskQuestionAnswers_ShouldReturnSectionedReviewAnswers_WhenDataExists()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
-
+        
         var mockAnswers = new List<TaskQuestionAnswerDto>
         {
             new TaskQuestionAnswerDto
@@ -331,19 +331,26 @@ public class ApplicationControllerTests
                 TaskName = "Task 1",
                 TaskOrder = 1,
                 QuestionId = Guid.NewGuid(),
-                QuestionContent = "{}",
+                QuestionContent = "{\"formGroup\": { \"TextInput\": { \"SectionName\": \"Test Section\", \"TextInputs\": [ { \"name\": \"field\", \"label\": \"Sample Question\" } ] } } }",
                 QuestionUrl = "task/question/url",
-                Answer = "{\"field\":\"value\"}"
+                Answer = "{\"field\":\"Sample Answer\"}"
             }
         };
 
-        var expectedReviewAnswers = new List<QuestionAnswerReviewDto>
+        var expectedReviewAnswers = new List<QuestionAnswerSectionDto>
         {
-            new QuestionAnswerReviewDto
+            new QuestionAnswerSectionDto
             {
-                QuestionText = "Sample Question",
-                AnswerValue = ["Sample Answer"],
-                QuestionUrl = "task/question/url"
+                SectionHeading = "Test Section",
+                QuestionAnswers = new List<QuestionAnswerReviewDto>
+                {
+                    new QuestionAnswerReviewDto
+                    {
+                        QuestionText = "Sample Question",
+                        AnswerValue = new List<string> { "Sample Answer" },
+                        QuestionUrl = "task/question/url"
+                    }
+                }
             }
         };
 
@@ -357,13 +364,18 @@ public class ApplicationControllerTests
 
         // Act
         var result = await _controller.GetTaskQuestionAnswers(applicationId, taskId);
-
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnedAnswers = Assert.IsType<List<QuestionAnswerReviewDto>>(okResult.Value);
+        var returnedSections = Assert.IsType<List<QuestionAnswerSectionDto>>(okResult.Value);
 
-        Assert.Equal(expectedReviewAnswers.Count, returnedAnswers.Count);
-        Assert.Equal(expectedReviewAnswers[0].AnswerValue, returnedAnswers[0].AnswerValue);
+        Assert.Single(returnedSections);
+        var returnedSection = returnedSections[0];
+
+        Assert.Equal("Test Section", returnedSection.SectionHeading);
+        Assert.Single(returnedSection.QuestionAnswers);
+        Assert.Equal("Sample Question", returnedSection.QuestionAnswers[0].QuestionText);
+        Assert.Equal("Sample Answer", returnedSection.QuestionAnswers[0].AnswerValue[0]);
+        Assert.Equal("task/question/url", returnedSection.QuestionAnswers[0].QuestionUrl);
     }
 
     [Fact]
@@ -380,7 +392,7 @@ public class ApplicationControllerTests
 
         // Act
         var result = await _controller.GetTaskQuestionAnswers(applicationId, taskId);
-        
+
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
         Assert.Equal("No question answers found for the specified task and application.", notFoundResult.Value);

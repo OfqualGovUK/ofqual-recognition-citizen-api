@@ -1,4 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Helpers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Newtonsoft.Json.Linq;
 
@@ -30,7 +31,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
             }
 
             var questionJson = JObject.Parse(question.QuestionContent);
-            var formGroup = questionJson["formGroup"] as JObject;
+            var formGroup = JsonHelper.GetObject(questionJson, "formGroup");
 
             if (formGroup == null)
             {
@@ -40,23 +41,22 @@ public class CheckYourAnswersService : ICheckYourAnswersService
             foreach (var groupProperty in formGroup.Properties())
             {
                 var groupValue = groupProperty.Value;
-                var sectionHeading = groupValue.Value<string>("SectionName");
+                var sectionHeading = JsonHelper.GetString(groupValue, "sectionName");
 
                 var section = new QuestionAnswerSectionDto
                 {
                     SectionHeading = sectionHeading
                 };
 
-                var textInputs = groupValue["TextInputs"] as JArray;
+                var textInputs = JsonHelper.GetArray(groupValue, "textInputs");
                 if (textInputs != null)
                 {
                     foreach (var input in textInputs)
                     {
-                        var fieldName = input.Value<string>("name");
-                        var label = input.Value<string>("label");
+                        var fieldName = JsonHelper.GetString(input, "name");
+                        var label = JsonHelper.GetString(input, "label");
 
-                        if (string.IsNullOrWhiteSpace(fieldName) || string.IsNullOrWhiteSpace(label))
-                        {
+                        if (string.IsNullOrWhiteSpace(fieldName) || string.IsNullOrWhiteSpace(label)) {
                             continue;
                         }
 
@@ -70,10 +70,11 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                         });
                     }
                 }
-                if (groupProperty.Name == "Textarea")
+
+                if (groupProperty.Name.Equals("textarea", StringComparison.OrdinalIgnoreCase))
                 {
-                    var fieldName = groupValue.Value<string>("name");
-                    var label = groupValue["label"]?.Value<string>("text");
+                    var fieldName = JsonHelper.GetString(groupValue, "name");
+                    var label = JsonHelper.GetNestedString(groupValue, "label", "text");
 
                     if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
                     {
@@ -87,10 +88,11 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                         });
                     }
                 }
-                if (groupProperty.Name == "radioButton")
+
+                if (groupProperty.Name.Equals("radioButton", StringComparison.OrdinalIgnoreCase))
                 {
-                    var fieldName = groupValue.Value<string>("name");
-                    var label = groupValue["heading"]?.Value<string>("text");
+                    var fieldName = JsonHelper.GetString(groupValue, "name");
+                    var label = JsonHelper.GetNestedString(groupValue, "heading", "text");
 
                     if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
                     {
@@ -104,10 +106,11 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                         });
                     }
                 }
-                if (groupProperty.Name == "checkbox")
+
+                if (groupProperty.Name.Equals("checkbox", StringComparison.OrdinalIgnoreCase))
                 {
-                    var checkboxName = groupValue.Value<string>("name");
-                    var checkboxHeading = groupValue["heading"]?.Value<string>("text");
+                    var checkboxName = JsonHelper.GetString(groupValue, "name");
+                    var checkboxHeading = JsonHelper.GetNestedString(groupValue, "heading", "text");
 
                     if (!string.IsNullOrWhiteSpace(checkboxName) && !string.IsNullOrWhiteSpace(checkboxHeading))
                     {
@@ -122,23 +125,22 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                     }
 
                     var selectedCheckboxes = GetCheckboxValues(parsedAnswer?.AnswerData?[checkboxName]);
-                    foreach (var checkboxOption in groupValue["checkBoxes"] ?? Enumerable.Empty<JToken>())
+                    foreach (var checkboxOption in JsonHelper.GetArray(groupValue, "checkBoxes") ?? Enumerable.Empty<JToken>())
                     {
-                        var checkboxValue = checkboxOption.Value<string>("value");
+                        var checkboxValue = JsonHelper.GetString(checkboxOption, "value");
                         if (selectedCheckboxes.Contains(checkboxValue))
                         {
-                            var conditionalFields = checkboxOption["conditionalInputs"] ?? checkboxOption["conditionalSelects"];
+                            var conditionalFields = JsonHelper.GetArray(checkboxOption, "conditionalInputs") ?? JsonHelper.GetArray(checkboxOption, "conditionalSelects");
                             if (conditionalFields != null)
                             {
                                 foreach (var conditionalField in conditionalFields)
                                 {
-                                    var fieldName = conditionalField.Value<string>("name");
-                                    var label = conditionalField.Value<string>("label");
+                                    var fieldName = JsonHelper.GetString(conditionalField, "name");
+                                    var label = JsonHelper.GetString(conditionalField, "label");
 
                                     if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
                                     {
                                         var conditionalAnswerValue = GetFieldAnswerValue(fieldName, parsedAnswer?.AnswerData);
-
                                         section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                                         {
                                             QuestionText = label,
@@ -195,7 +197,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                 {
                     return property.Value;
                 }
-                
+
                 var nestedResult = FindNestedAnswer(property.Value, fieldName);
                 if (nestedResult != null)
                 {
