@@ -9,20 +9,20 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// </summary>
 public class TaskItemStatusSection : ITaskItemStatus, ISection
 {
-    // From Section Table
+    // Section Table
     public Guid SectionId { get; set; }
     public required string SectionName { get; set; }
     public int SectionOrderNumber { get; set; }
 
-    // From Task Table
+    // Task Table
     public Guid TaskId { get; set; }
     public required string TaskName { get; set; }
     public int TaskOrderNumber { get; set; }
 
-    // From Task Status Table
+    // Task Status Table
     public Guid TaskStatusId { get; set; }
     public TaskStatusEnum Status { get; set; }
 
-    // From Question Table
+    // Question Table
     public required string QuestionURL { get; set; }
 }

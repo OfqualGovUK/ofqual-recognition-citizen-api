@@ -1,11 +1,11 @@
-using Microsoft.AspNetCore.Mvc;
-using Ofqual.Recognition.Citizen.API.Controllers;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Controllers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Microsoft.AspNetCore.Http;
-using Moq;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 using Xunit;
+using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 
@@ -23,9 +23,10 @@ public class QuestionControllerTests
         _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
 
         _controller = new QuestionController(_mockUnitOfWork.Object);
-
-        _controller.ControllerContext = new ControllerContext();
-        _controller.ControllerContext.HttpContext = new DefaultHttpContext();
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
     }
 
     [Theory]
@@ -37,6 +38,7 @@ public class QuestionControllerTests
         // Arrange
         var expectedQuestion = new QuestionDto
         {
+            CurrentQuestionUrl = "current/url",
             QuestionContent = "{\"hint\":\"test.\"}",
             QuestionTypeName = "File Upload",
             QuestionId = Guid.NewGuid(),
@@ -51,12 +53,14 @@ public class QuestionControllerTests
         var result = await _controller.GetQuestions(taskName, questionName);
 
         // Assert
-        var okResult = Assert.IsType<ActionResult<QuestionDto?>>(result);
-        var value = Assert.IsType<QuestionDto>(okResult.Value);
-        Assert.Equal(expectedQuestion.QuestionTypeName, value.QuestionTypeName);
-        Assert.Equal(expectedQuestion.QuestionContent, value.QuestionContent);
-        Assert.Equal(expectedQuestion.QuestionId, value.QuestionId);
-        Assert.Equal(expectedQuestion.TaskId, value.TaskId);
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedQuestion = Assert.IsType<QuestionDto>(okResult.Value);
+
+        Assert.Equal(expectedQuestion.CurrentQuestionUrl, returnedQuestion.CurrentQuestionUrl);
+        Assert.Equal(expectedQuestion.QuestionTypeName, returnedQuestion.QuestionTypeName);
+        Assert.Equal(expectedQuestion.QuestionContent, returnedQuestion.QuestionContent);
+        Assert.Equal(expectedQuestion.QuestionId, returnedQuestion.QuestionId);
+        Assert.Equal(expectedQuestion.TaskId, returnedQuestion.TaskId);
     }
     
     [Theory]
@@ -68,7 +72,7 @@ public class QuestionControllerTests
         _mockQuestionRepository
             .Setup(repo => repo.GetQuestion($"{taskName}/{questionName}"))
             .ReturnsAsync((QuestionDto?)null);
-        
+
         // Act
         var result = await _controller.GetQuestions(taskName, questionName);
 

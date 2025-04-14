@@ -1,7 +1,6 @@
-
-using Ofqual.Recognition.Citizen.API.Core.Enums;
-using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 

@@ -1,10 +1,10 @@
-using System.Data;
-using Dapper;
-using Ofqual.Recognition.Citizen.API.Core.Enums;
-using Ofqual.Recognition.Citizen.API.Core.Models;
-using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
+using System.Data;
 using Serilog;
+using Dapper;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
@@ -34,6 +34,7 @@ public class TaskRepository : ITaskRepository
                     CreatedByUpn,
                     ModifiedByUpn
                 FROM [recognitionCitizen].[Task]";
+            
             return await _connection.QueryAsync<TaskItem>(query, null, _transaction);
         }
         catch (Exception ex)
@@ -136,6 +137,7 @@ public class TaskRepository : ITaskRepository
                 modifiedByUpn = "USER", // TODO: replace once auth gets added
                 status = (int)status
             }, _transaction);
+
             return rowsAffected > 0;
         }
         catch (Exception ex)

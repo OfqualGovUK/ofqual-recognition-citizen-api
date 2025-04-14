@@ -1,5 +1,5 @@
-using System.Data;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using System.Data;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure;
 

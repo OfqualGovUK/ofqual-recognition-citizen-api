@@ -3,8 +3,7 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 /// <summary>
-/// Represents a domain-level model of the <c>recognitionCitizen.Question</c> database table,
-/// defining questions, their type, associated task and audit tracking information.
+/// Represents a domain-level model of the <c>recognitionCitizen.Question</c> database table
 /// </summary>
 public class Question : IQuestion, IDataMetadata
 {

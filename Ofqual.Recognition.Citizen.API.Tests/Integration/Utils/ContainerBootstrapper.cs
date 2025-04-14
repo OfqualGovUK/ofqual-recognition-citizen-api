@@ -1,11 +1,11 @@
-using Docker.DotNet;
+using DotNet.Testcontainers.Configurations;
+using Microsoft.Extensions.Configuration;
+using DotNet.Testcontainers.Containers;
+using DotNet.Testcontainers.Builders;
+using Microsoft.Data.SqlClient;
 using Docker.DotNet.BasicAuth;
 using Docker.DotNet.Models;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Configurations;
-using DotNet.Testcontainers.Containers;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+using Docker.DotNet;
 using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Utils;

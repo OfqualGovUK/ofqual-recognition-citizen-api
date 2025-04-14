@@ -3,8 +3,7 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 /// <summary>
-/// Represents a domain-level model of the <c>recognitionCitizen.Section</c> database table,
-/// defining sections, their order and audit tracking information.
+/// Represents a domain-level model of the <c>recognitionCitizen.Section</c> database table
 /// </summary>
 public class Section : ISection, IDataMetadata
 {
@@ -15,6 +14,4 @@ public class Section : ISection, IDataMetadata
     public DateTime ModifiedDate { get; set; }
     public required string CreatedByUpn { get; set; }
     public string? ModifiedByUpn { get; set; }
-    
-    public readonly ICollection<ITaskItem> TaskItems = new List<ITaskItem>();
 }

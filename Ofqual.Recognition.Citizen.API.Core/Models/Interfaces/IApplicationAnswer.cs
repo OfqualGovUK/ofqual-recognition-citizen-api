@@ -1,7 +1,7 @@
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
-public interface IQuestionAnswer
+public interface IApplicationAnswer
 {
     public string Answer { get; set; }
 }
