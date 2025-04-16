@@ -55,7 +55,7 @@ public class TaskRepository : ITaskRepository
                     TaskName,
                     TaskNameUrl,
                     SectionId,
-                    OrderNumber,
+                    OrderNumber AS TaskOrderNumber,
                     CreatedDate,
                     ModifiedDate,
                     CreatedByUpn,
