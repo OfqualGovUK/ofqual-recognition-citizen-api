@@ -34,4 +34,21 @@ public static class TaskMapper
             })
             .ToList();
     }
+
+    /// <summary>
+    /// Maps a <see cref="TaskItem"/> to a <see cref="TaskItemDto"/>.
+    /// </summary>
+    /// <param name="taskItem">The source task entity to map.</param>
+    /// <returns>A mapped <see cref="TaskItemDto"/> instance.</returns>
+    public static TaskItemDto ToDto(TaskItem taskItem)
+    {
+        return new TaskItemDto
+        {
+            TaskId = taskItem.TaskId,
+            TaskName = taskItem.TaskName,
+            TaskNameUrl = taskItem.TaskNameUrl,
+            TaskOrderNumber = taskItem.TaskOrderNumber,
+            SectionId = taskItem.SectionId
+        };
+    }
 }

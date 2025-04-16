@@ -26,19 +26,19 @@ public class QuestionController : ControllerBase
     /// <summary>
     /// Returns question content and type based on URL.
     /// </summary>
-    /// <param name="TaskNameUrl">URL-formatted task name.</param>
+    /// <param name="taskNameUrl">URL-formatted task name.</param>
     /// <param name="questionNameUrl">Question name from the URL.</param>
     /// <returns>The question with its content and type.</returns>
-    [HttpGet("{TaskNameUrl}/{questionNameUrl}")]
-    public async Task<ActionResult<QuestionDto?>> GetQuestions(string TaskNameUrl, string questionNameUrl)
+    [HttpGet("{taskNameUrl}/{questionNameUrl}")]
+    public async Task<ActionResult<QuestionDto?>> GetQuestions(string taskNameUrl, string questionNameUrl)
     {
         try
         {
-            TaskQuestion? question = await _context.QuestionRepository.GetQuestion(TaskNameUrl, questionNameUrl);
+            TaskQuestion? question = await _context.QuestionRepository.GetQuestion(taskNameUrl, questionNameUrl);
 
             if (question == null)
             {
-                return BadRequest($"No question found with URL: {TaskNameUrl}/{questionNameUrl}");
+                return BadRequest($"No question found with URL: {taskNameUrl}/{questionNameUrl}");
             }
 
             QuestionDto questionDto = QuestionMapper.ToDto(question);
@@ -47,7 +47,7 @@ public class QuestionController : ControllerBase
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "An error occurred while retrieving question for URL: {TaskNameUrl}/{questionNameUrl}", TaskNameUrl, questionNameUrl);
+            Log.Error(ex, "An error occurred while retrieving question for URL: {taskNameUrl}/{questionNameUrl}", taskNameUrl, questionNameUrl);
             throw new Exception("An error occurred while fetching the question. Please try again later.");
         }
     }
