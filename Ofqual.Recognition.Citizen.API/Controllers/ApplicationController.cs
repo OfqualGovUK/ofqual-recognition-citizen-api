@@ -58,7 +58,7 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Failed to create task statuses for the new application.");
             }
 
-            ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.MapToApplicationDetailsDto(application);
+            ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
 
             _context.Commit();
             return Ok(applicationDetailsDto);
@@ -87,7 +87,7 @@ public class ApplicationController : ControllerBase
                 return BadRequest("No tasks found for the specified application.");
             }
 
-            var taskItemStatusSectionList = TaskMapper.MapToSectionsWithTasks(taskStatuses);
+            var taskItemStatusSectionList = TaskMapper.ToDto(taskStatuses);
 
             return Ok(taskItemStatusSectionList);
         }

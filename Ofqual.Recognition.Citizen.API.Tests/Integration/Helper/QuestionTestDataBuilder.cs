@@ -36,7 +36,7 @@ public static class QuestionTestDataBuilder
             QuestionOrderNumber = order,
             QuestionTypeId = questionTypeId,
             QuestionContent = content,
-            QuestionURL = url,
+            QuestionNameUrl = url,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
             CreatedByUpn = "test@ofqual.gov.uk"
@@ -44,8 +44,8 @@ public static class QuestionTestDataBuilder
 
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO [recognitionCitizen].[Question]
-            (QuestionId, TaskId, OrderNumber, QuestionTypeId, QuestionContent, QuestionURL, CreatedDate, ModifiedDate, CreatedByUpn)
-            VALUES (@QuestionId, @TaskId, @QuestionOrderNumber, @QuestionTypeId, @QuestionContent, @QuestionURL, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
+            (QuestionId, TaskId, OrderNumber, QuestionTypeId, QuestionContent, QuestionNameUrl, CreatedDate, ModifiedDate, CreatedByUpn)
+            VALUES (@QuestionId, @TaskId, @QuestionOrderNumber, @QuestionTypeId, @QuestionContent, @QuestionNameUrl, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
             question,
             unitOfWork.Transaction);
 

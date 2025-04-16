@@ -12,7 +12,7 @@ public static class ApplicationMapper
     /// </summary>
     /// <param name="application">The application domain model to map.</param>
     /// <returns>The mapped <see cref="ApplicationDetailsDto"/>.</returns>
-    public static ApplicationDetailsDto MapToApplicationDetailsDto(Application application)
+    public static ApplicationDetailsDto ToDto(Application application)
     {
         return new ApplicationDetailsDto
         {

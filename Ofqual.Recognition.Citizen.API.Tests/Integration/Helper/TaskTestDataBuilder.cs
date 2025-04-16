@@ -7,12 +7,13 @@ namespace Ofqual.Recognition.Citizen.Tests.Integration.Helper;
 
 public static class TaskTestDataBuilder
 {
-    public static async Task<TaskItem> CreateTestTask(UnitOfWork unitOfWork, Guid sectionId)
+    public static async Task<TaskItem> CreateTestTask(UnitOfWork unitOfWork, Guid sectionId, string taskNameUrl)
     {
         var task = new TaskItem
         {
             TaskId = Guid.NewGuid(),
             TaskName = "Test Task",
+            TaskNameUrl = taskNameUrl,
             TaskOrderNumber = 1,
             SectionId = sectionId,
             CreatedDate = DateTime.UtcNow,
@@ -22,8 +23,8 @@ public static class TaskTestDataBuilder
 
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO [recognitionCitizen].[Task]
-            (TaskId, TaskName, OrderNumber, SectionId, CreatedDate, ModifiedDate, CreatedByUpn)
-            VALUES (@TaskId, @TaskName, @TaskOrderNumber, @SectionId, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
+            (TaskId, TaskName, TaskNameUrl, OrderNumber, SectionId, CreatedDate, ModifiedDate, CreatedByUpn)
+            VALUES (@TaskId, @TaskName, @TaskNameUrl, @TaskOrderNumber, @SectionId, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
             task,
             unitOfWork.Transaction);
 

@@ -26,7 +26,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId);
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
 
         unitOfWork.Commit();
 
@@ -60,7 +60,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId);
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
         var taskStatus = await TaskTestDataBuilder.CreateTestTaskStatus(unitOfWork, application.ApplicationId, task);
         var question = await QuestionTestDataBuilder.CreateTestQuestion(
@@ -88,7 +88,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.Equal(task.TaskName, item.TaskName);
         Assert.Equal(taskStatus.TaskStatusId, item.TaskStatusId);
         Assert.Equal((int)taskStatus.Status, (int)item.Status);
-        Assert.Equal(question.QuestionURL, item.QuestionURL);
+        Assert.Equal(question.QuestionNameUrl, item.QuestionNameUrl);
 
         // Clean up test container
         await _fixture.DisposeAsync();
@@ -105,8 +105,8 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task1 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId);
-        var task2 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId);
+        var task1 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-1-url");
+        var task2 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-2-url");
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
         await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, task1.TaskId, questionType.QuestionTypeId, 1, "url-task-1", "{\"title\":\"task 1 question\"}");
@@ -130,7 +130,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         {
             Assert.Contains(taskStatus.TaskId, tasks.Select(t => t.TaskId));
             Assert.Equal(TaskStatusEnum.NotStarted, taskStatus.Status);
-            Assert.False(string.IsNullOrWhiteSpace(taskStatus.QuestionURL));
+            Assert.False(string.IsNullOrWhiteSpace(taskStatus.QuestionNameUrl));
         }
 
         // Clean up test container
@@ -148,9 +148,9 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId);
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
-        
+
         await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, task.TaskId, questionType.QuestionTypeId, 1, "test-url", "{\"title\":\"Test\"}");
 
         // Insert initial TaskStatus
@@ -159,7 +159,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Act
         var success = await unitOfWork.TaskRepository.UpdateTaskStatus(application.ApplicationId, task.TaskId, TaskStatusEnum.Completed);
-        
+
         // Assert
         Assert.True(success);
 
@@ -168,6 +168,33 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
 
         var updated = taskStatuses[0];
         Assert.Equal(TaskStatusEnum.Completed, updated.Status);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Should_Return_Task_By_TaskNameUrl()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        var expectedTask = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "unique-task-url");
+        unitOfWork.Commit();
+
+        // Act
+        var result = await unitOfWork.TaskRepository.GetTaskByTaskNameUrl("unique-task-url");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(expectedTask.TaskId, result!.TaskId);
+        Assert.Equal(expectedTask.TaskName, result.TaskName);
+        Assert.Equal(expectedTask.TaskNameUrl, result.TaskNameUrl);
+        Assert.Equal(expectedTask.SectionId, result.SectionId);
 
         // Clean up test container
         await _fixture.DisposeAsync();

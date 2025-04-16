@@ -27,6 +27,7 @@ public class TaskRepository : ITaskRepository
                 SELECT
                     TaskId,
                     TaskName,
+                    TaskNameUrl,
                     SectionId,
                     OrderNumber,
                     CreatedDate,
@@ -34,13 +35,43 @@ public class TaskRepository : ITaskRepository
                     CreatedByUpn,
                     ModifiedByUpn
                 FROM [recognitionCitizen].[Task]";
-            
+
             return await _connection.QueryAsync<TaskItem>(query, null, _transaction);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error retrieving all tasks");
             return Enumerable.Empty<TaskItem>();
+        }
+    }
+
+    public async Task<TaskItem?> GetTaskByTaskNameUrl(string taskNameUrl)
+    {
+        try
+        {
+            const string query = @"
+                SELECT
+                    TaskId,
+                    TaskName,
+                    TaskNameUrl,
+                    SectionId,
+                    OrderNumber AS TaskOrderNumber,
+                    CreatedDate,
+                    ModifiedDate,
+                    CreatedByUpn,
+                    ModifiedByUpn
+                FROM [recognitionCitizen].[Task]
+                WHERE TaskNameUrl = @taskNameUrl";
+            
+            return await _connection.QueryFirstOrDefaultAsync<TaskItem>(query, new
+            {
+                taskNameUrl
+            }, _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while retrieving task with URL: {TaskNameUrl}", taskNameUrl);
+            return null;
         }
     }
 
@@ -54,11 +85,12 @@ public class TaskRepository : ITaskRepository
                     S.SectionName,
                     S.OrderNumber AS SectionOrderNumber,
                     T.TaskId,
+                    T.TaskNameUrl,
                     T.TaskName,
                     T.OrderNumber AS TaskOrderNumber,
                     TS.TaskStatusId,
                     TS.Status,
-                    Q.QuestionURL
+                    Q.QuestionNameUrl
                 FROM recognitionCitizen.TaskStatus TS
                 INNER JOIN recognitionCitizen.Task T ON TS.TaskId = T.TaskId
                 INNER JOIN recognitionCitizen.Section S ON T.SectionId = S.SectionId

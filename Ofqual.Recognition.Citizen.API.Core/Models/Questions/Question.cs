@@ -12,7 +12,7 @@ public class Question : IQuestion, IDataMetadata
     public int QuestionOrderNumber { get; set; }
     public Guid QuestionTypeId { get; set; }
     public required string QuestionContent { get; set; }
-    public required string QuestionURL { get; set; }
+    public required string QuestionNameUrl { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime ModifiedDate { get; set; }
     public required string CreatedByUpn  { get; set; }

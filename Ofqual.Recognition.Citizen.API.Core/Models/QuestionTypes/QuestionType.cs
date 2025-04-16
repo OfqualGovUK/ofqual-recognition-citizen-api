@@ -1,6 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
-
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 /// <summary>
