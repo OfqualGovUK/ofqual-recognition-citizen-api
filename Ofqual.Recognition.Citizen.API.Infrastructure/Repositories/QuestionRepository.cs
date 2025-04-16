@@ -62,7 +62,7 @@ public class QuestionRepository : IQuestionRepository
         {
             const string query = @"
                 SELECT TOP 1
-                    T.TaskNameUrl,
+                    T.TaskNameUrl AS NextTaskNameUrl,
                     [next].QuestionNameUrl AS NextQuestionNameUrl
                 FROM [recognitionCitizen].[Question] AS [current]
                 JOIN [recognitionCitizen].[Question] AS [next]
