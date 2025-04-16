@@ -150,7 +150,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
         var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
-        
+
         await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, task.TaskId, questionType.QuestionTypeId, 1, "test-url", "{\"title\":\"Test\"}");
 
         // Insert initial TaskStatus
@@ -159,7 +159,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Act
         var success = await unitOfWork.TaskRepository.UpdateTaskStatus(application.ApplicationId, task.TaskId, TaskStatusEnum.Completed);
-        
+
         // Assert
         Assert.True(success);
 
@@ -168,6 +168,33 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
 
         var updated = taskStatuses[0];
         Assert.Equal(TaskStatusEnum.Completed, updated.Status);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Should_Return_Task_By_TaskNameUrl()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        var expectedTask = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "unique-task-url");
+        unitOfWork.Commit();
+
+        // Act
+        var result = await unitOfWork.TaskRepository.GetTaskByTaskNameUrl("unique-task-url");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(expectedTask.TaskId, result!.TaskId);
+        Assert.Equal(expectedTask.TaskName, result.TaskName);
+        Assert.Equal(expectedTask.TaskNameUrl, result.TaskNameUrl);
+        Assert.Equal(expectedTask.SectionId, result.SectionId);
 
         // Clean up test container
         await _fixture.DisposeAsync();

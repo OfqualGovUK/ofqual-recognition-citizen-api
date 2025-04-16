@@ -62,6 +62,7 @@ public class TaskRepository : ITaskRepository
                     ModifiedByUpn
                 FROM [recognitionCitizen].[Task]
                 WHERE TaskNameUrl = @taskNameUrl";
+            
             return await _connection.QueryFirstOrDefaultAsync<TaskItem>(query, new
             {
                 taskNameUrl
