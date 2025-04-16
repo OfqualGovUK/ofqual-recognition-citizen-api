@@ -6,6 +6,6 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// </summary>
 public class QuestionAnswerSubmissionResponseDto
 {
-    public required string TaskNameUrl { get; set; }
+    public required string NextTaskNameUrl { get; set; }
     public required string NextQuestionNameUrl { get; set; }
 }

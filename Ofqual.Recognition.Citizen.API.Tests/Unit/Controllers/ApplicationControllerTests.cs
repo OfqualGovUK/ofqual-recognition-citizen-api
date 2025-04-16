@@ -241,7 +241,7 @@ public class ApplicationControllerTests
         var nextUrlDto = nextQuestionNameUrl != null && nextTaskQuestionNameUrl != null
             ? new QuestionAnswerSubmissionResponseDto { 
                 NextQuestionNameUrl = nextQuestionNameUrl,
-                TaskNameUrl = nextTaskQuestionNameUrl
+                NextTaskNameUrl = nextTaskQuestionNameUrl
                 }
             : null;
 
@@ -270,7 +270,7 @@ public class ApplicationControllerTests
         {
             var dtoResult = Assert.IsType<QuestionAnswerSubmissionResponseDto>(okResult.Value);
             Assert.Equal(nextQuestionNameUrl, dtoResult.NextQuestionNameUrl);
-            Assert.Equal(nextTaskQuestionNameUrl, dtoResult.TaskNameUrl);
+            Assert.Equal(nextTaskQuestionNameUrl, dtoResult.NextTaskNameUrl);
         }
     }
 
