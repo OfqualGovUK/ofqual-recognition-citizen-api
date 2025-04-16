@@ -17,7 +17,7 @@ public class QuestionRepository : IQuestionRepository
         _transaction = transaction;
     }
 
-    public async Task<TaskQuestion?> GetQuestion(string taskUrlName, string questionUrlName)
+    public async Task<TaskQuestion?> GetQuestion(string taskNameUrl, string questionNameUrl)
     {
         try
         {
@@ -39,19 +39,19 @@ public class QuestionRepository : IQuestionRepository
                 FROM recognitionCitizen.Question Q
                 INNER JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
                 INNER JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
-                WHERE Q.QuestionNameUrl = @questionUrlName AND T.TaskNameUrl = @taskUrlName";
+                WHERE Q.QuestionNameUrl = @questionNameUrl AND T.TaskNameUrl = @taskNameUrl";
 
             var result = await _connection.QueryFirstOrDefaultAsync<TaskQuestion>(query, new
             {
-                taskUrlName,
-                questionUrlName
+                taskNameUrl,
+                questionNameUrl
             }, _transaction);
 
             return result;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error retrieving question for TaskUrlName: {taskUrlName}, QuestionUrlName: {questionUrlName}", taskUrlName, questionUrlName);
+            Log.Error(ex, "Error retrieving question for TaskNameUrl: {TaskNameUrl}, QuestionNameUrl: {questionNameUrl}", taskNameUrl, questionNameUrl);
             return null;
         }
     }

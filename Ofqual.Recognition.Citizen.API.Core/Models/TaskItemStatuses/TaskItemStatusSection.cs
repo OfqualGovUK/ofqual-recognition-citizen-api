@@ -1,11 +1,10 @@
-using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 /// <summary>
 /// Represents a task's status within a section, combining section, task, status and question details.
-/// This model makes it easier to track task progress without needing multiple database queries.
 /// </summary>
 public class TaskItemStatusSection : ITaskItemStatus, ISection
 {

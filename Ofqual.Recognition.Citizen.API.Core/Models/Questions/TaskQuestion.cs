@@ -2,6 +2,9 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
+/// <summary>
+/// Represents a task question, combining question, task and question type details.
+/// </summary>
 public class TaskQuestion: IQuestion, IQuestionType
 {
     // Question table
@@ -17,8 +20,3 @@ public class TaskQuestion: IQuestion, IQuestionType
     // Task table
     public required string TaskNameUrl { get; set; }
 }
-
-
-
-
-
