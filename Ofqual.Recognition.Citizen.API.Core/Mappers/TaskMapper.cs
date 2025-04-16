@@ -7,36 +7,13 @@ namespace Ofqual.Recognition.Citizen.API.Core.Mappers;
 /// </summary>
 public static class TaskMapper
 {
-    /// <summary>
-    /// Maps a <see cref="TaskItemStatusSection"/> model to a <see cref="TaskItemStatusSectionDto"/>.
+    ///<summary>
+    /// Maps a collection of <see cref="TaskItemStatusSection"/> to a list of <see cref="TaskItemStatusSectionDto"/>,
+    /// ordered by section and then by task.
     /// </summary>
-    /// <param name="section">The <see cref="TaskItemStatusSection"/> model to be mapped.</param>
-    /// <returns>The mapped <see cref="TaskItemStatusSectionDto"/>.</returns>
-    public static TaskItemStatusSectionDto MapToSectionWithTasks(TaskItemStatusSection section)
-    {
-        return new TaskItemStatusSectionDto
-        {
-            SectionName = section.SectionName,
-            Tasks = new List<TaskItemStatusDto>
-                {
-                    new TaskItemStatusDto
-                    {
-                        TaskId = section.TaskId,
-                        TaskName = section.TaskName,
-                        Status = section.Status,
-                        FirstQuestionUrl = section.QuestionURL
-                    }
-                }
-        };
-    }
-
-    /// <summary>
-    /// Maps a collection of <see cref="TaskItemStatusSection"/> models to a list of <see cref="TaskItemStatusSectionDto"/>,
-    /// ensuring sections are ordered first, followed by tasks in their respective order.
-    /// </summary>
-    /// <param name="sections">The collection of <see cref="TaskItemStatusSection"/> models to be mapped.</param>
-    /// <returns>A list of mapped <see cref="TaskItemStatusSectionDto"/> objects.</returns>
-    public static List<TaskItemStatusSectionDto> MapToSectionsWithTasks(IEnumerable<TaskItemStatusSection> sections)
+    /// <param name="sections">The source collection to map.</param>
+    /// <returns>A list of <see cref="TaskItemStatusSectionDto"/>.</returns>
+    public static List<TaskItemStatusSectionDto> ToDto(IEnumerable<TaskItemStatusSection> sections)
     {
         return sections
             .GroupBy(ts => new { ts.SectionId, ts.SectionName, ts.SectionOrderNumber })
@@ -51,7 +28,7 @@ public static class TaskMapper
                         TaskId = ts.TaskId,
                         TaskName = ts.TaskName,
                         Status = ts.Status,
-                        FirstQuestionUrl = ts.QuestionURL
+                        FirstQuestionUrl = $"{ts.TaskNameUrl}/{ts.QuestionNameUrl}"
                     })
                     .ToList()
             })

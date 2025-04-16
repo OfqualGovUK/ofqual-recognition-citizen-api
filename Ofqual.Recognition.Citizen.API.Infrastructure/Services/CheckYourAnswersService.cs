@@ -7,16 +7,16 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
 public class CheckYourAnswersService : ICheckYourAnswersService
 {
-    public List<QuestionAnswerSectionDto> GetQuestionAnswers(IEnumerable<TaskQuestionAnswerDto> questions)
+    public List<QuestionAnswerSectionDto> GetQuestionAnswers(IEnumerable<TaskQuestionAnswer> questions)
     {
         var answerLookup = questions
             .Where(q => !string.IsNullOrWhiteSpace(q.Answer))
             .ToDictionary(
                 q => q.QuestionId,
-                q => new ParsedQuestionAnswerDto
+                q => new ParsedQuestionAnswer
                 {
                     AnswerData = JObject.Parse(q.Answer),
-                    QuestionUrl = q.QuestionUrl
+                    QuestionUrl = $"{q.TaskNameUrl}/{q.QuestionNameUrl}"
                 });
 
         var sections = new List<QuestionAnswerSectionDto>();
@@ -66,7 +66,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                         {
                             QuestionText = label,
                             AnswerValue = answerValue,
-                            QuestionUrl = parsedAnswer?.QuestionUrl ?? question.QuestionUrl
+                            QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
                         });
                     }
                 }
@@ -84,7 +84,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                         {
                             QuestionText = label,
                             AnswerValue = answerValue,
-                            QuestionUrl = parsedAnswer?.QuestionUrl ?? question.QuestionUrl
+                            QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
                         });
                     }
                 }
@@ -102,7 +102,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                         {
                             QuestionText = label,
                             AnswerValue = answerValue,
-                            QuestionUrl = parsedAnswer?.QuestionUrl ?? question.QuestionUrl
+                            QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
                         });
                     }
                 }
@@ -120,7 +120,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                         {
                             QuestionText = checkboxHeading,
                             AnswerValue = answerValue,
-                            QuestionUrl = parsedAnswer?.QuestionUrl ?? question.QuestionUrl
+                            QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
                         });
                     }
 
@@ -145,7 +145,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                                         {
                                             QuestionText = label,
                                             AnswerValue = conditionalAnswerValue,
-                                            QuestionUrl = parsedAnswer?.QuestionUrl ?? question.QuestionUrl
+                                            QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
                                         });
                                     }
                                 }

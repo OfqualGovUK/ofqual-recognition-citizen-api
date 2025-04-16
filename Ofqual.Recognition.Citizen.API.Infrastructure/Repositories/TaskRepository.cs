@@ -27,6 +27,7 @@ public class TaskRepository : ITaskRepository
                 SELECT
                     TaskId,
                     TaskName,
+                    TaskNameUrl,
                     SectionId,
                     OrderNumber,
                     CreatedDate,
@@ -54,11 +55,12 @@ public class TaskRepository : ITaskRepository
                     S.SectionName,
                     S.OrderNumber AS SectionOrderNumber,
                     T.TaskId,
+                    T.TaskNameUrl,
                     T.TaskName,
                     T.OrderNumber AS TaskOrderNumber,
                     TS.TaskStatusId,
                     TS.Status,
-                    Q.QuestionURL
+                    Q.QuestionNameUrl
                 FROM recognitionCitizen.TaskStatus TS
                 INNER JOIN recognitionCitizen.Task T ON TS.TaskId = T.TaskId
                 INNER JOIN recognitionCitizen.Section S ON T.SectionId = S.SectionId

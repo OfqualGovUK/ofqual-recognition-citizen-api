@@ -36,17 +36,18 @@ public class QuestionControllerTests
     public async Task GetQuestions_ReturnsQuestion_WhenQuestionExists(string taskName, string questionName)
     {
         // Arrange
-        var expectedQuestion = new QuestionDto
+        var expectedQuestion = new TaskQuestion
         {
-            CurrentQuestionUrl = "current/url",
+            CurrentQuestionNameUrl = questionName,
             QuestionContent = "{\"hint\":\"test.\"}",
             QuestionTypeName = "File Upload",
             QuestionId = Guid.NewGuid(),
-            TaskId = Guid.NewGuid()
+            TaskId = Guid.NewGuid(),
+            TaskNameUrl = taskName
         };
 
         _mockQuestionRepository
-            .Setup(repo => repo.GetQuestion($"{taskName}/{questionName}"))
+            .Setup(repo => repo.GetQuestion(taskName, questionName))
             .ReturnsAsync(expectedQuestion);
         
         // Act
@@ -56,7 +57,7 @@ public class QuestionControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedQuestion = Assert.IsType<QuestionDto>(okResult.Value);
 
-        Assert.Equal(expectedQuestion.CurrentQuestionUrl, returnedQuestion.CurrentQuestionUrl);
+        Assert.Equal($"{expectedQuestion.TaskNameUrl}/{expectedQuestion.CurrentQuestionNameUrl}", returnedQuestion.CurrentQuestionUrl);
         Assert.Equal(expectedQuestion.QuestionTypeName, returnedQuestion.QuestionTypeName);
         Assert.Equal(expectedQuestion.QuestionContent, returnedQuestion.QuestionContent);
         Assert.Equal(expectedQuestion.QuestionId, returnedQuestion.QuestionId);
@@ -70,8 +71,8 @@ public class QuestionControllerTests
     {
         // Arrange
         _mockQuestionRepository
-            .Setup(repo => repo.GetQuestion($"{taskName}/{questionName}"))
-            .ReturnsAsync((QuestionDto?)null);
+            .Setup(repo => repo.GetQuestion(taskName, questionName))
+            .ReturnsAsync((TaskQuestion?)null);
 
         // Act
         var result = await _controller.GetQuestions(taskName, questionName);

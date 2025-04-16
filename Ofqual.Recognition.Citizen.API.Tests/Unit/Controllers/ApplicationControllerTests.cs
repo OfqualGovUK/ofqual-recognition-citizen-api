@@ -68,8 +68,8 @@ public class ApplicationControllerTests
         var mockTasks = areTasksFound
             ? new List<TaskItem>
             {
-            new TaskItem { TaskId = Guid.NewGuid(), TaskName = "Task 1", SectionId = Guid.NewGuid(), TaskOrderNumber = 1, CreatedDate = DateTime.UtcNow, ModifiedDate = DateTime.UtcNow, CreatedByUpn = createdByUpn, ModifiedByUpn = modifiedByUpn },
-            new TaskItem { TaskId = Guid.NewGuid(), TaskName = "Task 2", SectionId = Guid.NewGuid(), TaskOrderNumber = 2, CreatedDate = DateTime.UtcNow, ModifiedDate = DateTime.UtcNow, CreatedByUpn = createdByUpn, ModifiedByUpn = modifiedByUpn }
+            new TaskItem { TaskId = Guid.NewGuid(), TaskName = "Task 1", TaskNameUrl = "testurl", SectionId = Guid.NewGuid(), TaskOrderNumber = 1, CreatedDate = DateTime.UtcNow, ModifiedDate = DateTime.UtcNow, CreatedByUpn = createdByUpn, ModifiedByUpn = modifiedByUpn },
+            new TaskItem { TaskId = Guid.NewGuid(), TaskName = "Task 2", TaskNameUrl = "testurl", SectionId = Guid.NewGuid(), TaskOrderNumber = 2, CreatedDate = DateTime.UtcNow, ModifiedDate = DateTime.UtcNow, CreatedByUpn = createdByUpn, ModifiedByUpn = modifiedByUpn }
             }
             : new List<TaskItem>();
 
@@ -124,10 +124,11 @@ public class ApplicationControllerTests
                 SectionOrderNumber = 1,
                 TaskId = Guid.NewGuid(),
                 TaskName = "Task 1",
+                TaskNameUrl = "testurl",
                 TaskOrderNumber = 1,
                 TaskStatusId = Guid.NewGuid(),
                 Status = TaskStatusEnum.Completed,
-                QuestionURL = "testurl/path"
+                QuestionNameUrl = "path"
             },
             new TaskItemStatusSection
             {
@@ -136,10 +137,11 @@ public class ApplicationControllerTests
                 SectionOrderNumber = 1,
                 TaskId = Guid.NewGuid(),
                 TaskName = "Task 2",
+                TaskNameUrl = "testurl",
                 TaskOrderNumber = 2,
                 TaskStatusId = Guid.NewGuid(),
                 Status = TaskStatusEnum.InProgress,
-                QuestionURL = "testurl/path"
+                QuestionNameUrl = "path"
             },
             new TaskItemStatusSection
             {
@@ -148,10 +150,11 @@ public class ApplicationControllerTests
                 SectionOrderNumber = 2,
                 TaskId = Guid.NewGuid(),
                 TaskName = "Task 3",
+                TaskNameUrl = "testurl",
                 TaskOrderNumber = 1,
                 TaskStatusId = Guid.NewGuid(),
                 Status = TaskStatusEnum.NotStarted,
-                QuestionURL = "testurl/path"
+                QuestionNameUrl = "path"
             }
         };
 
@@ -159,7 +162,7 @@ public class ApplicationControllerTests
             .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
             .ReturnsAsync(mockTaskItems);
 
-        var expectedSections = TaskMapper.MapToSectionsWithTasks(mockTaskItems);
+        var expectedSections = TaskMapper.ToDto(mockTaskItems);
 
         // Act
         var result = await _controller.GetApplicationTasks(applicationId);
@@ -225,9 +228,9 @@ public class ApplicationControllerTests
 
     [Theory]
     [Trait("Category", "Unit")]
-    [InlineData("Answer 1", "criteria-a/next-question")]
-    [InlineData("Answer 2", null)]
-    public async Task SubmitQuestionAnswer_ReturnsOk_WhenAnswerSaved_AndStatusUpdated(string answer, string? nextQuestionUrl)
+    [InlineData("Answer 1", "criteria-a", "next-question")]
+    [InlineData("Answer 2", null, null)]
+    public async Task SubmitQuestionAnswer_ReturnsOk_WhenAnswerSaved_AndStatusUpdated(string answer, string? nextTaskQuestionNameUrl, string? nextQuestionNameUrl)
     {
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -235,8 +238,11 @@ public class ApplicationControllerTests
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerSubmissionDto { Answer = answer };
 
-        var nextUrlDto = nextQuestionUrl != null
-            ? new QuestionAnswerSubmissionResponseDto { NextQuestionUrl = nextQuestionUrl }
+        var nextUrlDto = nextQuestionNameUrl != null && nextTaskQuestionNameUrl != null
+            ? new QuestionAnswerSubmissionResponseDto { 
+                NextQuestionNameUrl = nextQuestionNameUrl,
+                TaskNameUrl = nextTaskQuestionNameUrl
+                }
             : null;
 
         _mockQuestionRepository
@@ -256,14 +262,15 @@ public class ApplicationControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        if (nextQuestionUrl == null)
+        if (nextQuestionNameUrl == null && nextTaskQuestionNameUrl == null)
         {
             Assert.Null(okResult.Value);
         }
         else
         {
             var dtoResult = Assert.IsType<QuestionAnswerSubmissionResponseDto>(okResult.Value);
-            Assert.Equal(nextQuestionUrl, dtoResult.NextQuestionUrl);
+            Assert.Equal(nextQuestionNameUrl, dtoResult.NextQuestionNameUrl);
+            Assert.Equal(nextTaskQuestionNameUrl, dtoResult.TaskNameUrl);
         }
     }
 
@@ -323,16 +330,17 @@ public class ApplicationControllerTests
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
         
-        var mockAnswers = new List<TaskQuestionAnswerDto>
+        var mockAnswers = new List<TaskQuestionAnswer>
         {
-            new TaskQuestionAnswerDto
+            new TaskQuestionAnswer
             {
                 TaskId = taskId,
                 TaskName = "Task 1",
+                TaskNameUrl = "task-url",
                 TaskOrder = 1,
                 QuestionId = Guid.NewGuid(),
                 QuestionContent = "{\"formGroup\": { \"TextInput\": { \"SectionName\": \"Test Section\", \"TextInputs\": [ { \"name\": \"field\", \"label\": \"Sample Question\" } ] } } }",
-                QuestionUrl = "task/question/url",
+                QuestionNameUrl = "question-url",
                 Answer = "{\"field\":\"Sample Answer\"}"
             }
         };
@@ -348,7 +356,7 @@ public class ApplicationControllerTests
                     {
                         QuestionText = "Sample Question",
                         AnswerValue = new List<string> { "Sample Answer" },
-                        QuestionUrl = "task/question/url"
+                        QuestionUrl = "task-url/question-url"
                     }
                 }
             }
@@ -375,7 +383,7 @@ public class ApplicationControllerTests
         Assert.Single(returnedSection.QuestionAnswers);
         Assert.Equal("Sample Question", returnedSection.QuestionAnswers[0].QuestionText);
         Assert.Equal("Sample Answer", returnedSection.QuestionAnswers[0].AnswerValue[0]);
-        Assert.Equal("task/question/url", returnedSection.QuestionAnswers[0].QuestionUrl);
+        Assert.Equal("task-url/question-url", returnedSection.QuestionAnswers[0].QuestionUrl);
     }
 
     [Fact]
@@ -388,7 +396,7 @@ public class ApplicationControllerTests
 
         _mockQuestionRepository
             .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
-            .ReturnsAsync(new List<TaskQuestionAnswerDto>());
+            .ReturnsAsync(new List<TaskQuestionAnswer>());
 
         // Act
         var result = await _controller.GetTaskQuestionAnswers(applicationId, taskId);

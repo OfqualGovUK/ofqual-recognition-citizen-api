@@ -17,6 +17,7 @@ public class TaskItemStatusSection : ITaskItemStatus, ISection
     // Task Table
     public Guid TaskId { get; set; }
     public required string TaskName { get; set; }
+    public required string TaskNameUrl { get; set; }
     public int TaskOrderNumber { get; set; }
 
     // Task Status Table
@@ -24,5 +25,5 @@ public class TaskItemStatusSection : ITaskItemStatus, ISection
     public TaskStatusEnum Status { get; set; }
 
     // Question Table
-    public required string QuestionURL { get; set; }
+    public required string QuestionNameUrl { get; set; }
 }

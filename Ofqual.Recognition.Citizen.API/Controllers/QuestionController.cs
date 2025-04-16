@@ -1,4 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -25,26 +26,28 @@ public class QuestionController : ControllerBase
     /// <summary>
     /// Returns question content and type based on URL.
     /// </summary>
-    /// <param name="taskName">URL-formatted task name.</param>
-    /// <param name="questionName">Question name from the URL.</param>
+    /// <param name="taskUrlName">URL-formatted task name.</param>
+    /// <param name="questionUrlName">Question name from the URL.</param>
     /// <returns>The question with its content and type.</returns>
-    [HttpGet("{taskName}/{questionName}")]
-    public async Task<ActionResult<QuestionDto?>> GetQuestions(string taskName, string questionName)
+    [HttpGet("{taskUrlName}/{questionUrlName}")]
+    public async Task<ActionResult<QuestionDto?>> GetQuestions(string taskUrlName, string questionUrlName)
     {
         try
         {
-            QuestionDto? question = await _context.QuestionRepository.GetQuestion($"{taskName}/{questionName}");
+            TaskQuestion? question = await _context.QuestionRepository.GetQuestion(taskUrlName, questionUrlName);
 
             if (question == null)
             {
-                return BadRequest($"No question found with URL: {taskName}/{questionName}");
+                return BadRequest($"No question found with URL: {taskUrlName}/{questionUrlName}");
             }
 
-            return Ok(question);
+            QuestionDto questionDto = QuestionMapper.ToDto(question);
+
+            return Ok(questionDto);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "An error occurred while retrieving question for URL: {taskName}/{questionName}", taskName, questionName);
+            Log.Error(ex, "An error occurred while retrieving question for URL: {taskUrlName}/{questionName}", taskUrlName, questionUrlName);
             throw new Exception("An error occurred while fetching the question. Please try again later.");
         }
     }
