@@ -3,6 +3,8 @@ using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web.Resource;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -11,6 +13,8 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("questions")]
+[Authorize]
+[RequiredScope("Applications.Write")]
 public class QuestionController : ControllerBase
 {
     private readonly IUnitOfWork _context;
@@ -29,6 +33,7 @@ public class QuestionController : ControllerBase
     /// <param name="taskNameUrl">URL-formatted task name.</param>
     /// <param name="questionNameUrl">Question name from the URL.</param>
     /// <returns>The question with its content and type.</returns>
+    /// 
     [HttpGet("{taskNameUrl}/{questionNameUrl}")]
     public async Task<ActionResult<QuestionDto?>> GetQuestions(string taskNameUrl, string questionNameUrl)
     {

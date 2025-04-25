@@ -3,7 +3,9 @@ using System.Reflection;
 using CorrelationId;
 using CorrelationId.DependencyInjection;
 using CorrelationId.HttpClient;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.SqlClient;
+using Microsoft.Identity.Web;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
@@ -71,6 +73,14 @@ builder.Services.AddCors(o => o.AddPolicy("CORS_POLICY", builder =>
         .AllowAnyHeader();
 }));
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(options =>
+    {
+        builder.Configuration.Bind("AzureAdB2C", options);
+
+    },
+    options => { builder.Configuration.Bind("AzureAdB2C", options); });
+
 #endregion
 
 var app = builder.Build();
@@ -100,6 +110,7 @@ app.UseSerilogRequestLogging(opt =>
 });
 app.UseCors("CORS_POLICY");
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
