@@ -39,6 +39,7 @@ public class QuestionController : ControllerBase
     {
         try
         {
+            HttpContext con = HttpContext;
             TaskQuestion? question = await _context.QuestionRepository.GetQuestion(taskNameUrl, questionNameUrl);
 
             if (question == null)

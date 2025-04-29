@@ -1,5 +1,6 @@
 using System.Data;
 using System.Reflection;
+using System.Security.Claims;
 using CorrelationId;
 using CorrelationId.DependencyInjection;
 using CorrelationId.HttpClient;
@@ -77,9 +78,36 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(options =>
     {
         builder.Configuration.Bind("AzureAdB2C", options);
-        options.TokenValidationParameters.ValidateAudience = true; // Checks that the correct audience is used (i.e. it's for this client's app registration)
-        options.TokenValidationParameters.ValidateIssuer = true; // Checks that the token has came from the right tenant
-        options.TokenValidationParameters.ValidateActor = true; // Checks that the token has came from the right client (which should be the front-end app registration)
+        // Refer to https://learn.microsoft.com/en-us/entra/identity-platform/claims-validation for validation parameters
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidIssuer = $"https://login.microsoftonline.com/{builder.Configuration.GetValue<string>("AzureAdB2C:TenantId")}/v2.0", // Permits tokens only for our main tenant
+            ValidateIssuer = true,
+            ValidAudience = builder.Configuration.GetValue<string>("AzureAdB2C:ClientId"), // Permits tokens only for this app registration / client
+            ValidateAudience = true,
+            ValidateActor = true,
+            SaveSigninToken = true,
+            ValidateLifetime = true,
+            NameClaimType = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier" // This is the object id of the user
+        };
+        options.Events = new JwtBearerEvents()
+        {
+            OnTokenValidated = (context) =>
+            {
+                IEnumerable<Claim> oid = context.Principal.Claims.Where(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+                if (oid.Count() != 1)
+                {
+                    context.Fail("Invalid Token: No name identifier present");
+                }
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = (context) =>
+            {
+                
+                Log.Error(context.Exception, $"Exception raised when trying to validate a JWT token for B2C Authentication, in Program.cs::AddMicrosoftIdentityWebApi. Exception message: {context.Exception.Message}");
+                return Task.CompletedTask;
+            }
+        };
     },
     options => { builder.Configuration.Bind("AzureAdB2C", options); });
 
