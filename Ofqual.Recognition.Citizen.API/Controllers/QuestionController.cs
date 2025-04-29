@@ -39,7 +39,7 @@ public class QuestionController : ControllerBase
     {
         try
         {
-            HttpContext con = HttpContext;
+            var objectId = HttpContext.User.Identity.Name;
             TaskQuestion? question = await _context.QuestionRepository.GetQuestion(taskNameUrl, questionNameUrl);
 
             if (question == null)
