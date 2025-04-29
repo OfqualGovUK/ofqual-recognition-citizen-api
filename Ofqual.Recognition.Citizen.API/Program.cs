@@ -77,7 +77,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(options =>
     {
         builder.Configuration.Bind("AzureAdB2C", options);
-
+        options.TokenValidationParameters.ValidateAudience = true; // Checks that the correct audience is used (i.e. it's for this client's app registration)
+        options.TokenValidationParameters.ValidateIssuer = true; // Checks that the token has came from the right tenant
+        options.TokenValidationParameters.ValidateActor = true; // Checks that the token has came from the right client (which should be the front-end app registration)
     },
     options => { builder.Configuration.Bind("AzureAdB2C", options); });
 
