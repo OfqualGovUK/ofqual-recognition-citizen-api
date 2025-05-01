@@ -72,7 +72,7 @@ public class QuestionRepository : IQuestionRepository
                 WHERE [current].QuestionId = @QuestionId
                 AND [next].OrderNumber > [current].OrderNumber
                 ORDER BY [next].OrderNumber ASC";
-            
+
             var result = await _connection.QueryFirstOrDefaultAsync<QuestionAnswerSubmissionResponseDto>(query, new
             {
                 QuestionId = currentQuestionId
@@ -87,32 +87,21 @@ public class QuestionRepository : IQuestionRepository
         }
     }
 
-    public async Task<bool> InsertQuestionAnswer(Guid applicationId, Guid questionId, string answer)
+    public async Task<bool> UpsertQuestionAnswer(Guid applicationId, Guid questionId, string answer)
     {
         try
         {
             const string query = @"
-                IF NOT EXISTS (
-                    SELECT 1 FROM [recognitionCitizen].[ApplicationAnswers]
-                    WHERE ApplicationId = @ApplicationId AND QuestionId = @QuestionId
-                )
-                BEGIN
-                    INSERT INTO [recognitionCitizen].[ApplicationAnswers] (
-                        ApplicationId,
-                        QuestionId,
-                        Answer,
-                        CreatedByUpn,
-                        ModifiedByUpn
-                    )
-                    VALUES (
-                        @ApplicationId,
-                        @QuestionId,
-                        @Answer,
-                        @CreatedByUpn,
-                        @ModifiedByUpn
-                    )
-                END
-            ";
+                MERGE [recognitionCitizen].[ApplicationAnswers] AS target
+                USING (SELECT @ApplicationId AS ApplicationId, @QuestionId AS QuestionId) AS source
+                    ON target.ApplicationId = source.ApplicationId AND target.QuestionId = source.QuestionId
+                WHEN MATCHED THEN
+                    UPDATE SET
+                        Answer = @Answer,
+                        ModifiedByUpn = @ModifiedByUpn
+                WHEN NOT MATCHED THEN
+                    INSERT (ApplicationId, QuestionId, Answer, CreatedByUpn, ModifiedByUpn)
+                    VALUES (@ApplicationId, @QuestionId, @Answer, @CreatedByUpn, @ModifiedByUpn);";
 
             var rowsAffected = await _connection.ExecuteAsync(query, new
             {
@@ -122,12 +111,11 @@ public class QuestionRepository : IQuestionRepository
                 CreatedByUpn = "USER", // TODO: replace once auth gets added
                 ModifiedByUpn = "USER" // TODO: replace once auth gets added
             }, _transaction);
-
             return rowsAffected > 0;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error inserting application answer. ApplicationId: {ApplicationId}, QuestionId: {QuestionId}, Answer: {Answer}", applicationId, questionId, answer);
+            Log.Error(ex, "Error upserting application answer. ApplicationId: {ApplicationId}, QuestionId: {QuestionId}, Answer: {Answer}", applicationId, questionId, answer);
             return false;
         }
     }
@@ -165,6 +153,33 @@ public class QuestionRepository : IQuestionRepository
         {
             Log.Error(ex, "Failed to fetch question answers for TaskId: {TaskId}, ApplicationId: {ApplicationId}", taskId, applicationId);
             return Enumerable.Empty<TaskQuestionAnswer>();
+        }
+    }
+
+    public async Task<QuestionAnswerDto?> GetQuestionAnswer(Guid applicationId, Guid questionId)
+    {
+        try
+        {
+            const string query = @"
+            SELECT
+                q.QuestionId,
+                a.Answer
+            FROM [recognitionCitizen].[Question] q
+            LEFT JOIN [recognitionCitizen].[ApplicationAnswers] a
+                ON a.QuestionId = q.QuestionId AND a.ApplicationId = @ApplicationId
+            WHERE q.QuestionId = @QuestionId";
+        
+            return await _connection.QuerySingleOrDefaultAsync<QuestionAnswerDto>(query, new
+            {
+                ApplicationId = applicationId,
+                QuestionId = questionId
+            }, _transaction);
+        
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to fetch answer for QuestionId: {QuestionId}, ApplicationId: {ApplicationId}", questionId, applicationId);
+            return null;
         }
     }
 }

@@ -239,14 +239,15 @@ public class ApplicationControllerTests
         var dto = new QuestionAnswerSubmissionDto { Answer = answer };
 
         var nextUrlDto = nextQuestionNameUrl != null && nextTaskQuestionNameUrl != null
-            ? new QuestionAnswerSubmissionResponseDto { 
+            ? new QuestionAnswerSubmissionResponseDto
+            {
                 NextQuestionNameUrl = nextQuestionNameUrl,
                 NextTaskNameUrl = nextTaskQuestionNameUrl
-                }
+            }
             : null;
 
         _mockQuestionRepository
-            .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, answer))
+            .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, answer))
             .ReturnsAsync(true);
 
         _mockTaskRepository
@@ -285,7 +286,7 @@ public class ApplicationControllerTests
         var dto = new QuestionAnswerSubmissionDto { Answer = "Invalid Answer" };
 
         _mockQuestionRepository
-            .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, dto.Answer))
+            .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(false);
 
         // Act
@@ -307,7 +308,7 @@ public class ApplicationControllerTests
         var dto = new QuestionAnswerSubmissionDto { Answer = "Valid Answer" };
 
         _mockQuestionRepository
-            .Setup(r => r.InsertQuestionAnswer(applicationId, questionId, dto.Answer))
+            .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(true);
 
         _mockTaskRepository
@@ -329,7 +330,7 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
-        
+
         var mockAnswers = new List<TaskQuestionAnswer>
         {
             new TaskQuestionAnswer
@@ -404,5 +405,53 @@ public class ApplicationControllerTests
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
         Assert.Equal("No question answers found for the specified task and application.", notFoundResult.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetQuestionAnswer_ReturnsOk_WhenAnswerExists()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        
+        var expectedAnswer = new QuestionAnswerDto
+        {
+            QuestionId = questionId,
+            Answer = "Sample Answer"
+        };
+
+        _mockQuestionRepository
+            .Setup(repo => repo.GetQuestionAnswer(applicationId, questionId))
+            .ReturnsAsync(expectedAnswer);
+        
+        // Act
+        var result = await _controller.GetQuestionAnswer(applicationId, questionId);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedAnswer = Assert.IsType<QuestionAnswerDto>(okResult.Value);
+        Assert.Equal(expectedAnswer.QuestionId, returnedAnswer.QuestionId);
+        Assert.Equal(expectedAnswer.Answer, returnedAnswer.Answer);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetQuestionAnswer_ReturnsNotFound_WhenAnswerIsNull()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+
+        _mockQuestionRepository
+            .Setup(repo => repo.GetQuestionAnswer(applicationId, questionId))
+            .ReturnsAsync((QuestionAnswerDto?)null);
+        
+        // Act
+        var result = await _controller.GetQuestionAnswer(applicationId, questionId);
+
+        // Assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.Equal("No answer found for the specified question and application.", notFoundResult.Value);
     }
 }
