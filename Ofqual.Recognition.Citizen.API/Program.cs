@@ -81,13 +81,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         // Refer to https://learn.microsoft.com/en-us/entra/identity-platform/claims-validation for validation parameters
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
-            ValidIssuer = $"https://login.microsoftonline.com/{builder.Configuration.GetValue<string>("AzureAdB2C:TenantId")}/v2.0", // Permits tokens only for our main tenant
-            ValidateIssuer = true,
-            ValidAudience = builder.Configuration.GetValue<string>("AzureAdB2C:ClientId"), // Permits tokens only for this app registration / client
-            ValidateAudience = true,
-            ValidateActor = true,
             SaveSigninToken = true,
-            ValidateLifetime = true,
             NameClaimType = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier" // This is the object id of the user
         };
         options.Events = new JwtBearerEvents()
