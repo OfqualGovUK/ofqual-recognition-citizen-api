@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
+using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -39,7 +41,9 @@ public class QuestionController : ControllerBase
     {
         try
         {
-            var objectId = HttpContext.User.Identity.Name;
+            var objectId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var name = HttpContext.User.Identity.Name;
+            var accessToken = HttpContext.GetTokenAsync("access_token");
             TaskQuestion? question = await _context.QuestionRepository.GetQuestion(taskNameUrl, questionNameUrl);
 
             if (question == null)
