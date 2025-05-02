@@ -83,7 +83,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
             "second-question",
             "{\"title\":\"second question\"}"
         );
-        
+
         unitOfWork.Commit();
 
         // Act
@@ -223,7 +223,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         var answerJson = JsonSerializer.Serialize(new { value = "This is a test answer." });
 
         // Act
-        var success = await unitOfWork.QuestionRepository.InsertQuestionAnswer(
+        var success = await unitOfWork.QuestionRepository.UpsertQuestionAnswer(
             application.ApplicationId,
             question.QuestionId,
             answerJson
@@ -256,7 +256,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task Should_Not_Allow_Duplicate_Insert_For_Same_Application_And_Question()
+    public async Task Should_Upsert_Answer_For_Same_Application_And_Question()
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
@@ -266,39 +266,50 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
         var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
-
         var question = await QuestionTestDataBuilder.CreateTestQuestion(
             unitOfWork,
             task.TaskId,
             questionType.QuestionTypeId,
             1,
-            "integration-test/duplicate-insert",
-            "{\"title\":\"Duplicate check\"}"
+            "integration-test/upsert-test",
+            "{\"title\":\"Upsert check\"}"
         );
 
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
-        var answerJson = JsonSerializer.Serialize(new { value = "Answer once" });
+        var initialAnswer = JsonSerializer.Serialize(new { value = "First Answer" });
+        var updatedAnswer = JsonSerializer.Serialize(new { value = "Updated Answer" });
 
         unitOfWork.Commit();
 
-        // Act
-        var firstInsert = await unitOfWork.QuestionRepository.InsertQuestionAnswer(
+        // Act - Insert
+        var insertResult = await unitOfWork.QuestionRepository.UpsertQuestionAnswer(
             application.ApplicationId,
             question.QuestionId,
-            answerJson
+            initialAnswer
         );
 
-        var secondInsert = await unitOfWork.QuestionRepository.InsertQuestionAnswer(
+        // Verify Insert
+        var insertedAnswer = await QuestionTestDataBuilder.GetInsertedApplicationAnswer(unitOfWork, application.ApplicationId, question.QuestionId);
+        Assert.NotNull(insertedAnswer);
+        Assert.Equal(initialAnswer, insertedAnswer.Answer);
+
+        // Act - Update
+        var updateResult = await unitOfWork.QuestionRepository.UpsertQuestionAnswer(
             application.ApplicationId,
             question.QuestionId,
-            answerJson
+            updatedAnswer
         );
 
         unitOfWork.Commit();
+
+        // Verify Update
+        var updatedDbAnswer = await QuestionTestDataBuilder.GetInsertedApplicationAnswer(unitOfWork, application.ApplicationId, question.QuestionId);
+        Assert.NotNull(updatedDbAnswer);
+        Assert.Equal(updatedAnswer, updatedDbAnswer.Answer);
 
         // Assert
-        Assert.True(firstInsert);
-        Assert.False(secondInsert);
+        Assert.True(insertResult);
+        Assert.True(updateResult);
 
         // Clean up test container
         await _fixture.DisposeAsync();
@@ -330,7 +341,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         var answerJson = JsonSerializer.Serialize(new { value = "Integration answer" });
 
-        var inserted = await unitOfWork.QuestionRepository.InsertQuestionAnswer(
+        var inserted = await unitOfWork.QuestionRepository.UpsertQuestionAnswer(
             application.ApplicationId,
             question.QuestionId,
             answerJson
@@ -353,6 +364,84 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.Equal(question.QuestionContent, returned.QuestionContent);
         Assert.Equal(question.QuestionNameUrl, returned.QuestionNameUrl);
         Assert.Equal(answerJson, returned.Answer);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetQuestionAnswer_Should_Return_Answer_If_Exists()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "test-task");
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
+        var question = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task.TaskId,
+            questionType.QuestionTypeId,
+            1,
+            "test-question",
+            "{\"label\":\"Test question\"}"
+        );
+
+        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
+        var answerJson = JsonSerializer.Serialize(new[] { "email", "phone" });
+        var insertSuccess = await unitOfWork.QuestionRepository.UpsertQuestionAnswer(
+            application.ApplicationId,
+            question.QuestionId,
+            answerJson
+        );
+
+        unitOfWork.Commit();
+
+        // Act
+        var result = await unitOfWork.QuestionRepository.GetQuestionAnswer(application.ApplicationId, question.QuestionId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(question.QuestionId, result.QuestionId);
+        Assert.Equal(answerJson, result.Answer);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetQuestionAnswer_Should_Return_Null_If_No_Answer_Exists()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-without-answer");
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
+        var question = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task.TaskId,
+            questionType.QuestionTypeId,
+            1,
+            "question-without-answer",
+            "{\"label\":\"Question with no answer\"}"
+        );
+
+        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
+        unitOfWork.Commit();
+
+        // Act
+        var result = await unitOfWork.QuestionRepository.GetQuestionAnswer(application.ApplicationId, question.QuestionId);
+
+        // Assert
+        Assert.Null(result?.Answer);
+        Assert.Equal(question.QuestionId, result?.QuestionId);
 
         // Clean up test container
         await _fixture.DisposeAsync();

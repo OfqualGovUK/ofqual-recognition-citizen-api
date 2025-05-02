@@ -34,6 +34,7 @@ public static class TaskMapper
             })
             .ToList();
     }
+    
 
     /// <summary>
     /// Maps a <see cref="TaskItem"/> to a <see cref="TaskItemDto"/>.

@@ -137,9 +137,9 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            bool isAnswerInserted = await _context.QuestionRepository.InsertQuestionAnswer(applicationId, questionId, request.Answer);
+            bool isAnswerUpserted = await _context.QuestionRepository.UpsertQuestionAnswer(applicationId, questionId, request.Answer);
 
-            if (!isAnswerInserted)
+            if (!isAnswerUpserted)
             {
                 return BadRequest("Failed to save the question answer. Please check your input and try again.");
             }
@@ -158,7 +158,7 @@ public class ApplicationController : ControllerBase
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "An error occurred while inserting an answer for QuestionId: {QuestionId} in TaskId: {TaskId} of ApplicationId: {ApplicationId}.", questionId, taskId, applicationId);
+            Log.Error(ex, "An error occurred while upserting an answer for QuestionId: {QuestionId} in TaskId: {TaskId} of ApplicationId: {ApplicationId}.", questionId, taskId, applicationId);
             throw new Exception("An error occurred while saving the answer. Please try again later.");
         }
     }
@@ -188,6 +188,31 @@ public class ApplicationController : ControllerBase
         {
             Log.Error(ex, "An error occurred while retrieving question answers for TaskId: {TaskId} and ApplicationId: {ApplicationId}.", taskId, applicationId);
             throw new Exception("An error occurred while fetching the question answers. Please try again later.");
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the answer for a specific question in an application.
+    /// </summary>
+    /// <param name="applicationId">The ID of the application.</param>
+    /// <param name="questionId">The ID of the question.</param>
+    [HttpGet("{applicationId}/questions/{questionId}/answer")]
+    public async Task<ActionResult<QuestionAnswerDto>> GetQuestionAnswer(Guid applicationId, Guid questionId)
+    {
+        try
+        {
+            QuestionAnswerDto? answer = await _context.QuestionRepository.GetQuestionAnswer(applicationId, questionId);
+            if (answer is null)
+            {
+                return NotFound("No answer found for the specified question and application.");
+            }
+
+            return Ok(answer);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while retrieving the answer for QuestionId: {QuestionId} and ApplicationId: {ApplicationId}.", questionId, applicationId);
+            throw new Exception("An error occurred while fetching the question answer. Please try again later.");
         }
     }
 }
