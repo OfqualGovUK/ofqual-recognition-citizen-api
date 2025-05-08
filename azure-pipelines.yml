@@ -129,6 +129,26 @@ stages:
           severityThreshold: 'high'
           failOnIssues: false
           additionalArguments: '--all-projects'
+      # Step 7: Scan docker image     
+      - task: Docker@2
+        displayName: Build Docker Image
+        inputs:
+          command: build
+          repository: $(SNYK_DOCKER_REPOS)   #'register-frontend'
+          dockerfile: '$(dockerfilePath)'
+          tags: 'latest'
+      - script: docker images
+        displayName: List Docker Images
+      - task: SnykSecurityScan@1
+        inputs:
+          serviceConnectionEndpoint: 'snyk-integration-eu'
+          testType: 'container'
+          dockerImageName: '$(SNYK_DOCKER_REPOS):latest'
+          dockerfilePath: './Dockerfile'
+          monitorWhen: 'always'
+          severityThreshold: 'high'
+          failOnIssues: false
+
 
     # Audit job: This job audits dependencies for vulnerabilities.
     - job: Audit
