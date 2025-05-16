@@ -12,6 +12,7 @@ public class TaskRepository : ITaskRepository
 {
     private readonly IDbConnection _connection;
     private readonly IDbTransaction _transaction;
+    // Need a constant list of stages for the task status
 
     public TaskRepository(IDbConnection connection, IDbTransaction transaction)
     {
@@ -176,6 +177,41 @@ public class TaskRepository : ITaskRepository
         {
             Log.Error(ex, "Error updating task status for ApplicationId: {ApplicationId}, TaskId: {TaskId}, Status: {Status}", applicationId, taskId, status);
             return false;
+        }
+    }
+
+    public async Task<IEnumerable<TaskItemStatusSection>> GetPreEngagementTasksByStageTaskId(Guid stageTaskId)
+    {
+        try
+        {
+            var query = @"
+                SELECT
+                    S.SectionId,
+                    S.SectionName,
+                    S.OrderNumber AS SectionOrderNumber,
+                    T.TaskId,
+                    T.TaskNameUrl,
+                    T.TaskName,
+                    T.OrderNumber AS TaskOrderNumber,
+                    TS.TaskStatusId,
+                    TS.Status,
+                    Q.QuestionNameUrl
+                FROM recognitionCitizen.TaskStatus TS
+                INNER JOIN recognitionCitizen.Task T ON TS.TaskId = T.TaskId
+                INNER JOIN recognitionCitizen.Section S ON T.SectionId = S.SectionId
+                INNER JOIN recognitionCitizen.Question Q on T.TaskId = Q.TaskId AND Q.OrderNumber = 1
+                WHERE TS.ApplicationId = @applicationId
+                ORDER BY S.OrderNumber, T.OrderNumber";
+
+            return await _connection.QueryAsync<TaskItemStatusSection>(query, new
+            {
+                stageTaskId
+            }, _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error retrieving task statuses for ApplicationId: {ApplicationId}", stageTaskId);
+            return Enumerable.Empty<TaskItemStatusSection>();
         }
     }
 }
