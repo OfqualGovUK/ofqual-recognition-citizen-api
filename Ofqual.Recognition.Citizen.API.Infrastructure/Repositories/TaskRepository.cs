@@ -180,7 +180,7 @@ public class TaskRepository : ITaskRepository
         }
     }
 
-    public async Task<IEnumerable<TaskItemStatusSection>> GetPreEngagementTasksByStageTaskId(Guid stageTaskId)
+    public async Task<IEnumerable<TaskItemStatusSection>> GetPreEngagementTasksByStageTaskId(int stageTaskId)
     {
         try
         {

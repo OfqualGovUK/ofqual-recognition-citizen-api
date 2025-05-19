@@ -17,7 +17,7 @@ public class ApplicationRepository : IApplicationRepository
         _transaction = transaction;
     }
 
-    public async Task<Application> CreateApplication()
+    public async Task<Application?> CreateApplication()
     {
         try
         {
