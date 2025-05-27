@@ -5,6 +5,7 @@ using Ofqual.Recognition.Citizen.API.Core.Enums;
 using System.Data;
 using Serilog;
 using Dapper;
+using Ofqual.Recognition.Citizen.API.Core.Models.Pre_Engagement;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
@@ -63,7 +64,7 @@ public class TaskRepository : ITaskRepository
                     ModifiedByUpn
                 FROM [recognitionCitizen].[Task]
                 WHERE TaskNameUrl = @taskNameUrl";
-            
+
             return await _connection.QueryFirstOrDefaultAsync<TaskItem>(query, new
             {
                 taskNameUrl
@@ -180,38 +181,38 @@ public class TaskRepository : ITaskRepository
         }
     }
 
-    public async Task<IEnumerable<TaskItemStatusSection>> GetPreEngagementTasksByStageTaskId(int stageTaskId)
+    public async Task<IEnumerable<PreEngagement>> GetPreEngagementTasks()
     {
         try
         {
             var query = @"
-                SELECT
-                    S.SectionId,
-                    S.SectionName,
-                    S.OrderNumber AS SectionOrderNumber,
-                    T.TaskId,
-                    T.TaskNameUrl,
-                    T.TaskName,
-                    T.OrderNumber AS TaskOrderNumber,
-                    TS.TaskStatusId,
-                    TS.Status,
-                    Q.QuestionNameUrl
-                FROM recognitionCitizen.TaskStatus TS
-                INNER JOIN recognitionCitizen.Task T ON TS.TaskId = T.TaskId
-                INNER JOIN recognitionCitizen.Section S ON T.SectionId = S.SectionId
-                INNER JOIN recognitionCitizen.Question Q on T.TaskId = Q.TaskId AND Q.OrderNumber = 1
-                WHERE TS.ApplicationId = @applicationId
-                ORDER BY S.OrderNumber, T.OrderNumber";
+            SELECT  ROW_NUMBER() OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber ASC) AS OrderNumber,
+                    q.TaskId,
+                    s.SectionId,
+                    q.QuestionId,
+                    s.SectionName,
+                    t.TaskName,
+                    t.TaskNameUrl AS CurrentTaskNameUrl,        
+                    q.QuestionNameUrl AS CurrentQuestionNameUrl,
+                    q.QuestionContent,
+                    LEAD(t.TaskNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber ASC) AS NextTaskNameUrl,
+                    LEAD(q.QuestionNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber ASC) AS NextQuestionNameUrl,
+                    LAG(q.QuestionNameUrl) OVER(ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber ASC) AS PreviousQuestionUrl,
+                    qt.QuestionTypeName                                           
+            FROM    [recognitionCitizen].Question q
+            JOIN    [recognitionCitizen].Task t ON t.TaskId = q.TaskId
+            JOIN    [recognitionCitizen].QuestionType qt ON qt.QuestionTypeId = q.QuestionTypeId
+            JOIN    [recognitionCitizen].Section s ON s.SectionId = t.SectionId
+            JOIN    [recognitionCitizen].StageTask st ON st.TaskId = t.TaskId
+            JOIN    [recognitionCitizen].Ref_V_Stage rs ON rs.KeyValueId = st.StageId 
+            AND     rs.LookUpKey = N'Pre-application Enagagement';";
 
-            return await _connection.QueryAsync<TaskItemStatusSection>(query, new
-            {
-                stageTaskId
-            }, _transaction);
+            return await _connection.QueryAsync<PreEngagement>(query, null, _transaction);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error retrieving task statuses for ApplicationId: {ApplicationId}", stageTaskId);
-            return Enumerable.Empty<TaskItemStatusSection>();
+            Log.Error(ex, "Error retrieving Pre-EngagementTasks");
+            return Enumerable.Empty<PreEngagement>();
         }
     }
-}
+};

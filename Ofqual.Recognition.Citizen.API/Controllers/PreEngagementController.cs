@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Models.Pre_Engagement;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Serilog;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -15,32 +18,36 @@ public class PreEngagementController : Controller
 {
 
     private readonly IUnitOfWork _context;
+    //private readonly IMemoryCache _memoryCache;
+
+    public PreEngagementController(IUnitOfWork context /*IMemoryCache memoryCache*/)
+    {
+        _context = context;
+        //_memoryCache = memoryCache;
+    }
 
     /// <summary>
     /// Retrieves sections with Pre-Engagement tasks and their statuses for a given application.
     /// </summary>
-    /// <param name="stageTaskId">The stage Task ID.</param>
-    /// <returns>A list of sections containing Pre-Engagement tasks with statuses.</returns>
-    [HttpGet("{stageTaskId}/tasks")]
-    public async Task<ActionResult<List<TaskItemStatusSectionDto>>> GetPreEngagementTasks(int stageTaskId)
+    /// <returns>A list of sections containing Pre-Engagement tasks.</returns>
+    [HttpGet("tasks")]
+    public async Task<ActionResult<List<PreEngagement>>> GetPreEngagementTasks()
     {
         try
         {
-            var taskStatuses = await _context.TaskRepository.GetPreEngagementTasksByStageTaskId(stageTaskId);
+            var preEngagementTasks = await _context.TaskRepository.GetPreEngagementTasks();
 
-            if (taskStatuses == null || !taskStatuses.Any())
+            if (preEngagementTasks == null || !preEngagementTasks.Any())
             {
-                return BadRequest("No tasks found for the specified application.");
+                return BadRequest("No Pre-Engagement tasks found for the specified application.");
             }
 
-            var taskItemStatusSectionList = TaskMapper.ToDto(taskStatuses);
-
-            return Ok(taskItemStatusSectionList);
+            return Ok(preEngagementTasks);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "An error occurred while retrieving tasks for stage {stageTaskId}.", stageTaskId);
-            throw new Exception("An error occurred while fetching tasks for the application. Please try again later.");
+            Log.Error(ex, "An error occurred while retrieving the Pre-Engagement tasks.");
+            throw new Exception("An error occurred while fetching the Pre-Engagement tasks. Please try again later.");
         }
     }
 }

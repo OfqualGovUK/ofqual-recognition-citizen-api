@@ -1,6 +1,7 @@
 using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Ofqual.Recognition.Citizen.API.Core.Models.Pre_Engagement;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 
@@ -10,7 +11,7 @@ public interface ITaskRepository
     public Task<TaskItem?> GetTaskByTaskNameUrl(string taskNameUrl);
     public Task<IEnumerable<TaskItemStatusSection>> GetTaskStatusesByApplicationId(Guid applicationId);
 
-    public Task<IEnumerable<TaskItemStatusSection>> GetPreEngagementTasksByStageTaskId(int StageTaskId);
+    public Task<IEnumerable<PreEngagement>> GetPreEngagementTasks();
     public Task<bool> CreateTaskStatuses(Guid applicationId, IEnumerable<ITaskItem> tasks);
     public Task<bool> UpdateTaskStatus(Guid applicationId, Guid taskId, TaskStatusEnum status);
 }
