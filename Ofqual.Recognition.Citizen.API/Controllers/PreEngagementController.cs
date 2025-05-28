@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
-using Ofqual.Recognition.Citizen.API.Core.Models.Pre_Engagement;
+using Ofqual.Recognition.Citizen.API.Core.Models.PreEngagement;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Serilog;
 using static System.Collections.Specialized.BitVector32;

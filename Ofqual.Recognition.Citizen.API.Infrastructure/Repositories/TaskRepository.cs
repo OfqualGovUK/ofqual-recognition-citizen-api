@@ -5,7 +5,7 @@ using Ofqual.Recognition.Citizen.API.Core.Enums;
 using System.Data;
 using Serilog;
 using Dapper;
-using Ofqual.Recognition.Citizen.API.Core.Models.Pre_Engagement;
+using Ofqual.Recognition.Citizen.API.Core.Models.PreEngagement;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 

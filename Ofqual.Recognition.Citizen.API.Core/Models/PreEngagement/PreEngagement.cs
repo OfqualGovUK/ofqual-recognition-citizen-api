@@ -2,7 +2,7 @@
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using System.Threading.Tasks;
 
-namespace Ofqual.Recognition.Citizen.API.Core.Models.Pre_Engagement
+namespace Ofqual.Recognition.Citizen.API.Core.Models.PreEngagement
 {
     public class PreEngagement
     {
