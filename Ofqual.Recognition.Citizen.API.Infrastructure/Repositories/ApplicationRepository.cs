@@ -42,4 +42,21 @@ public class ApplicationRepository : IApplicationRepository
             return null!;
         }
     }
+
+    public async Task<Application?> GetApplicationByUserId(string userId)
+    {
+        try
+        {
+            const string query = @"
+                SELECT *
+                FROM [recognitionCitizen].[Application]
+                WHERE CreatedByUpn = @UserId";
+            return await _connection.QueryFirstOrDefaultAsync<Application>(query, new { UserId = userId }, _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error retrieving application for user ID: {UserId}", userId);
+            return null;
+        }
+    }
 }

@@ -5,26 +5,48 @@ using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web.Resource;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
 /// <summary>
 /// Controller for recognition citizen application
 /// </summary>
+[Authorize]
+[RequiredScope("Application.ReadWrite")]
 [ApiController]
 [Route("applications")]
 public class ApplicationController : ControllerBase
 {
     private readonly IUnitOfWork _context;
     private readonly ICheckYourAnswersService _checkYourAnswersService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ApplicationController"/>.
     /// </summary>
-    public ApplicationController(IUnitOfWork context, ICheckYourAnswersService checkYourAnswersService)
+    public ApplicationController(IUnitOfWork context, ICheckYourAnswersService checkYourAnswersService, IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
         _checkYourAnswersService = checkYourAnswersService;
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    private async Task<bool> DoesUserOwnApplication(Guid applicationId)
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+        var userId = user?.Identity?.Name;
+        if (string.IsNullOrEmpty(userId))
+        {
+            return false;
+        }
+        var application = await _context.ApplicationRepository.GetApplicationByUserId(userId);
+        if (application == null)
+        {
+            return false;
+        }
+        return application.CreatedByUpn == userId;
     }
 
     /// <summary>
@@ -34,6 +56,14 @@ public class ApplicationController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ApplicationDetailsDto>> CreateApplication()
     {
+        var user = _httpContextAccessor.HttpContext?.User;
+        var userId = user?.Identity?.Name;
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized("User is not authenticated.");
+        }
+
         try
         {
             Application? application = await _context.ApplicationRepository.CreateApplication();
@@ -80,6 +110,11 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            if (!await DoesUserOwnApplication(applicationId))
+            {
+                return Unauthorized("You do not have permission to access this application.");
+            }
+
             var taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
 
             if (taskStatuses == null || !taskStatuses.Any())
@@ -108,6 +143,10 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            if (!await DoesUserOwnApplication(applicationId))
+            {
+                return Unauthorized("You do not have permission to update this task.");
+            }
             bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, request.Status);
 
             if (!isStatusUpdated)
@@ -137,6 +176,10 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            if (!await DoesUserOwnApplication(applicationId))
+            {
+                return Unauthorized("You do not have permission to access this application.");
+            }
             bool isAnswerUpserted = await _context.QuestionRepository.UpsertQuestionAnswer(applicationId, questionId, request.Answer);
 
             if (!isAnswerUpserted)
@@ -173,6 +216,10 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            if (!await DoesUserOwnApplication(applicationId))
+            {
+                return Unauthorized("You do not have permission to access this application.");
+            }
             var taskQuestionAnswers = await _context.QuestionRepository.GetTaskQuestionAnswers(applicationId, taskId);
 
             if (!taskQuestionAnswers.Any())
@@ -201,6 +248,10 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            if (!await DoesUserOwnApplication(applicationId))
+            {
+                return Unauthorized("You do not have permission to access this application.");
+            }
             QuestionAnswerDto? answer = await _context.QuestionRepository.GetQuestionAnswer(applicationId, questionId);
             if (answer is null)
             {
