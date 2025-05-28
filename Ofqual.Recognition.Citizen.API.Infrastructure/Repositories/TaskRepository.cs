@@ -5,7 +5,6 @@ using Ofqual.Recognition.Citizen.API.Core.Enums;
 using System.Data;
 using Serilog;
 using Dapper;
-using Ofqual.Recognition.Citizen.API.Core.Models.PreEngagement;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
@@ -180,39 +179,4 @@ public class TaskRepository : ITaskRepository
             return false;
         }
     }
-
-    public async Task<IEnumerable<PreEngagement>> GetPreEngagementTasks()
-    {
-        try
-        {
-            var query = @"
-            SELECT  ROW_NUMBER() OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber ASC) AS OrderNumber,
-                    q.TaskId,
-                    s.SectionId,
-                    q.QuestionId,
-                    s.SectionName,
-                    t.TaskName,
-                    t.TaskNameUrl AS CurrentTaskNameUrl,        
-                    q.QuestionNameUrl AS CurrentQuestionNameUrl,
-                    q.QuestionContent,
-                    LEAD(t.TaskNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber ASC) AS NextTaskNameUrl,
-                    LEAD(q.QuestionNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber ASC) AS NextQuestionNameUrl,
-                    LAG(q.QuestionNameUrl) OVER(ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber ASC) AS PreviousQuestionUrl,
-                    qt.QuestionTypeName                                           
-            FROM    [recognitionCitizen].Question q
-            JOIN    [recognitionCitizen].Task t ON t.TaskId = q.TaskId
-            JOIN    [recognitionCitizen].QuestionType qt ON qt.QuestionTypeId = q.QuestionTypeId
-            JOIN    [recognitionCitizen].Section s ON s.SectionId = t.SectionId
-            JOIN    [recognitionCitizen].StageTask st ON st.TaskId = t.TaskId
-            JOIN    [recognitionCitizen].Ref_V_Stage rs ON rs.KeyValueId = st.StageId 
-            AND     rs.LookUpKey = N'Pre-application Enagagement';";
-
-            return await _connection.QueryAsync<PreEngagement>(query, null, _transaction);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error retrieving Pre-EngagementTasks");
-            return Enumerable.Empty<PreEngagement>();
-        }
-    }
-};
+}

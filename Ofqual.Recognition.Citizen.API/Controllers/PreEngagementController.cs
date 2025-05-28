@@ -1,11 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
-using Ofqual.Recognition.Citizen.API.Core.Models.PreEngagement;
-using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Microsoft.AspNetCore.Mvc;
 using Serilog;
-using static System.Collections.Specialized.BitVector32;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -16,38 +13,64 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 [Route("pre-engagement")]
 public class PreEngagementController : Controller
 {
-
     private readonly IUnitOfWork _context;
-    //private readonly IMemoryCache _memoryCache;
 
-    public PreEngagementController(IUnitOfWork context /*IMemoryCache memoryCache*/)
+    public PreEngagementController(IUnitOfWork context)
     {
         _context = context;
-        //_memoryCache = memoryCache;
     }
 
     /// <summary>
-    /// Retrieves sections with Pre-Engagement tasks and their statuses for a given application.
+    /// Retrieves the first Pre-Engagement question to begin the user flow.
     /// </summary>
-    /// <returns>A list of sections containing Pre-Engagement tasks.</returns>
-    [HttpGet("tasks")]
-    public async Task<ActionResult<List<PreEngagement>>> GetPreEngagementTasks()
+    /// <returns>The first Pre-Engagement question with navigation details.</returns>
+    [HttpGet("first-question")]
+    public async Task<ActionResult<PreEngagementQuestionDto>> GetFirstPreEngagementQuestion()
     {
         try
         {
-            var preEngagementTasks = await _context.TaskRepository.GetPreEngagementTasks();
+            PreEngagementQuestionDto? firstQuestion = await _context.QuestionRepository.GetFirstPreEngagementQuestion();
 
-            if (preEngagementTasks == null || !preEngagementTasks.Any())
+            if (firstQuestion == null)
             {
-                return BadRequest("No Pre-Engagement tasks found for the specified application.");
+                return NotFound("No Pre-Engagement question found.");
             }
-
-            return Ok(preEngagementTasks);
+            
+            return Ok(firstQuestion);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "An error occurred while retrieving the Pre-Engagement tasks.");
-            throw new Exception("An error occurred while fetching the Pre-Engagement tasks. Please try again later.");
+            Log.Error(ex, "An error occurred while retrieving the first Pre-Engagement question.");
+            throw new Exception("An error occurred while fetching the first Pre-Engagement question. Please try again later.");
+        }
+    }
+
+    /// <summary>
+    /// Returns pre-engagement question content and type based on URL.
+    /// </summary>
+    /// <param name="taskNameUrl">URL-formatted task name.</param>
+    /// <param name="questionNameUrl">Question name from the URL.</param>
+    /// <returns>The pre-engagement question with its content and type.</returns>
+    [HttpGet("{taskNameUrl}/{questionNameUrl}")]
+    public async Task<ActionResult<PreEngagementQuestionDetailsDto?>> GetPreEngagementQuestions(string taskNameUrl, string questionNameUrl)
+    {
+        try
+        {
+            PreEngagementQuestionDetails? question = await _context.QuestionRepository.GetPreEngagementQuestion(taskNameUrl, questionNameUrl);
+
+            if (question == null)
+            {
+                return BadRequest($"No pre-engagement question found for URL: {taskNameUrl}/{questionNameUrl}");
+            }
+
+            PreEngagementQuestionDetailsDto questionDto = QuestionMapper.ToDto(question);
+
+            return Ok(questionDto);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred whilst retrieving pre-engagement question for URL: {TaskNameUrl}/{QuestionNameUrl}", taskNameUrl, questionNameUrl);
+            throw new Exception("An error occurred while fetching the pre-engagement question. Please try again later.");
         }
     }
 }

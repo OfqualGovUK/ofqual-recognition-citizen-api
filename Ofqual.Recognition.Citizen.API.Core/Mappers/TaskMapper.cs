@@ -2,17 +2,11 @@ using Ofqual.Recognition.Citizen.API.Core.Models;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Mappers;
 
-/// <summary>
-/// Provides mapping functions for task-related models
-/// </summary>
 public static class TaskMapper
 {
-    ///<summary>
-    /// Maps a collection of <see cref="TaskItemStatusSection"/> to a list of <see cref="TaskItemStatusSectionDto"/>,
-    /// ordered by section and then by task.
+    /// <summary>
+    /// Maps a collection of <see cref="TaskItemStatusSection"/> to a list of <see cref="TaskItemStatusSectionDto"/>.
     /// </summary>
-    /// <param name="sections">The source collection to map.</param>
-    /// <returns>A list of <see cref="TaskItemStatusSectionDto"/>.</returns>
     public static List<TaskItemStatusSectionDto> ToDto(IEnumerable<TaskItemStatusSection> sections)
     {
         return sections
@@ -34,13 +28,10 @@ public static class TaskMapper
             })
             .ToList();
     }
-    
 
     /// <summary>
-    /// Maps a <see cref="TaskItem"/> to a <see cref="TaskItemDto"/>.
+    /// Maps a <see cref="TaskItem"/> data model to a <see cref="TaskItemDto"/>.
     /// </summary>
-    /// <param name="taskItem">The source task entity to map.</param>
-    /// <returns>A mapped <see cref="TaskItemDto"/> instance.</returns>
     public static TaskItemDto ToDto(TaskItem taskItem)
     {
         return new TaskItemDto
