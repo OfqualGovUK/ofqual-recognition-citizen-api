@@ -32,7 +32,7 @@ public class ApplicationController : ControllerBase
     /// </summary>
     /// <returns>The created application.</returns>
     [HttpPost]
-    public async Task<ActionResult<ApplicationDetailsDto>> CreateApplication()
+    public async Task<ActionResult<ApplicationDetailsDto>> CreateApplication([FromBody] IEnumerable<PreEngagementAnswerDto> PreEngagementAnswers)
     {
         try
         {
@@ -50,12 +50,18 @@ public class ApplicationController : ControllerBase
                 return BadRequest("No tasks found to create statuses for the application.");
             }
 
-            // Create Task Statuses for all Tasks
             bool isTaskStatusesCreated = await _context.TaskRepository.CreateTaskStatuses(application.ApplicationId, tasks);
 
             if (!isTaskStatusesCreated)
             {
                 return BadRequest("Failed to create task statuses for the new application.");
+            }
+
+            bool isPreEngagementAnswersInserted = await _context.QuestionRepository.InsertPreEngagementAnswers(application.ApplicationId, PreEngagementAnswers);
+
+            if (!isPreEngagementAnswersInserted)
+            {
+                return BadRequest("Failed to insert pre-engagement answers for the new application.");
             }
 
             ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);

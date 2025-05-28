@@ -12,7 +12,6 @@ public class TaskRepository : ITaskRepository
 {
     private readonly IDbConnection _connection;
     private readonly IDbTransaction _transaction;
-    // Need a constant list of stages for the task status
 
     public TaskRepository(IDbConnection connection, IDbTransaction transaction)
     {
@@ -141,7 +140,6 @@ public class TaskRepository : ITaskRepository
 
             int rowsAffected = await _connection.ExecuteAsync(query, taskStatusEntries, _transaction);
 
-            // Check if the number of inserted rows matches the number of tasks
             return rowsAffected == taskStatusEntries.Count;
         }
         catch (Exception ex)

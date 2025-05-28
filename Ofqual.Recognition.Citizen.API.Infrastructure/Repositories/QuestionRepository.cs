@@ -41,13 +41,11 @@ public class QuestionRepository : IQuestionRepository
                 INNER JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
                 WHERE Q.QuestionNameUrl = @questionNameUrl AND T.TaskNameUrl = @taskNameUrl";
 
-            var result = await _connection.QueryFirstOrDefaultAsync<TaskQuestion>(query, new
+            return await _connection.QueryFirstOrDefaultAsync<TaskQuestion>(query, new
             {
                 taskNameUrl,
                 questionNameUrl
             }, _transaction);
-
-            return result;
         }
         catch (Exception ex)
         {
@@ -94,13 +92,12 @@ public class QuestionRepository : IQuestionRepository
                     PreviousTaskNameUrl
                 FROM OrderedQuestions
                 WHERE CurrentTaskNameUrl = @taskNameUrl AND CurrentQuestionNameUrl = @questionNameUrl;";
-            
-            var result = await _connection.QueryFirstOrDefaultAsync<PreEngagementQuestionDetails>(query, new
+
+            return await _connection.QueryFirstOrDefaultAsync<PreEngagementQuestionDetails>(query, new
             {
                 taskNameUrl,
                 questionNameUrl
             }, _transaction);
-            return result;
         }
         catch (Exception ex)
         {
@@ -135,14 +132,54 @@ public class QuestionRepository : IQuestionRepository
                     CurrentQuestionNameUrl
                 FROM OrderedQuestions
                 WHERE RowNum = 1;";
-            
-            var result = await _connection.QueryFirstOrDefaultAsync<PreEngagementQuestionDto>(query, transaction: _transaction);
-            return result;
+
+            return await _connection.QueryFirstOrDefaultAsync<PreEngagementQuestionDto>(query, transaction: _transaction);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error retrieving first pre-engagement question.");
             return null;
+        }
+    }
+
+    public async Task<bool> InsertPreEngagementAnswers(Guid applicationId, IEnumerable<PreEngagementAnswerDto> answers)
+    {
+        try
+        {
+            const string query = @"
+                INSERT INTO [recognitionCitizen].[ApplicationAnswers] (
+                    ApplicationId,
+                    QuestionId,
+                    Answer,
+                    CreatedByUpn,
+                    ModifiedByUpn,
+                    CreatedDate
+                ) VALUES (
+                    @ApplicationId,
+                    @QuestionId,
+                    @Answer,
+                    @CreatedByUpn,
+                    @ModifiedByUpn,
+                    @CreatedDate
+                );";
+
+            var parameters = answers.Select(answer => new
+            {
+                ApplicationId = applicationId,
+                answer.QuestionId,
+                Answer = answer.AnswerJson,
+                CreatedByUpn = "USER",         // TODO: replace once auth gets added
+                ModifiedByUpn = "USER",        // TODO: replace once auth gets added
+                CreatedDate = answer.SubmittedDate
+            }).ToList();
+
+            int rowsAffected = await _connection.ExecuteAsync(query, parameters, _transaction);
+            return rowsAffected == parameters.Count;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error inserting application answers for ApplicationId: {ApplicationId}", applicationId);
+            return false;
         }
     }
 
@@ -163,12 +200,10 @@ public class QuestionRepository : IQuestionRepository
                 AND [next].OrderNumber > [current].OrderNumber
                 ORDER BY [next].OrderNumber ASC";
 
-            var result = await _connection.QueryFirstOrDefaultAsync<QuestionAnswerSubmissionResponseDto>(query, new
+            return await _connection.QueryFirstOrDefaultAsync<QuestionAnswerSubmissionResponseDto>(query, new
             {
                 QuestionId = currentQuestionId
             }, _transaction);
-
-            return result;
         }
         catch (Exception ex)
         {
@@ -201,6 +236,7 @@ public class QuestionRepository : IQuestionRepository
                 CreatedByUpn = "USER", // TODO: replace once auth gets added
                 ModifiedByUpn = "USER" // TODO: replace once auth gets added
             }, _transaction);
+
             return rowsAffected > 0;
         }
         catch (Exception ex)
@@ -231,13 +267,11 @@ public class QuestionRepository : IQuestionRepository
                 WHERE t.TaskId = @TaskId
                 ORDER BY t.OrderNumber, q.OrderNumber";
 
-            var results = await _connection.QueryAsync<TaskQuestionAnswer>(query, new
+            return await _connection.QueryAsync<TaskQuestionAnswer>(query, new
             {
                 ApplicationId = applicationId,
                 TaskId = taskId
             }, _transaction);
-
-            return results;
         }
         catch (Exception ex)
         {
@@ -251,20 +285,19 @@ public class QuestionRepository : IQuestionRepository
         try
         {
             const string query = @"
-            SELECT
-                q.QuestionId,
-                a.Answer
-            FROM [recognitionCitizen].[Question] q
-            LEFT JOIN [recognitionCitizen].[ApplicationAnswers] a
-                ON a.QuestionId = q.QuestionId AND a.ApplicationId = @ApplicationId
-            WHERE q.QuestionId = @QuestionId";
+                SELECT
+                    q.QuestionId,
+                    a.Answer
+                FROM [recognitionCitizen].[Question] q
+                LEFT JOIN [recognitionCitizen].[ApplicationAnswers] a
+                    ON a.QuestionId = q.QuestionId AND a.ApplicationId = @ApplicationId
+                WHERE q.QuestionId = @QuestionId";
 
             return await _connection.QuerySingleOrDefaultAsync<QuestionAnswerDto>(query, new
             {
                 ApplicationId = applicationId,
                 QuestionId = questionId
             }, _transaction);
-
         }
         catch (Exception ex)
         {
