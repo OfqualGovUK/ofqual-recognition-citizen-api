@@ -153,14 +153,16 @@ public class QuestionRepository : IQuestionRepository
                     Answer,
                     CreatedByUpn,
                     ModifiedByUpn,
-                    CreatedDate
+                    CreatedDate,
+                    ModifiedDate
                 ) VALUES (
                     @ApplicationId,
                     @QuestionId,
                     @Answer,
                     @CreatedByUpn,
                     @ModifiedByUpn,
-                    @CreatedDate
+                    @CreatedDate,
+                    @ModifiedDate
                 );";
 
             var parameters = answers.Select(answer => new
@@ -170,7 +172,8 @@ public class QuestionRepository : IQuestionRepository
                 Answer = answer.AnswerJson,
                 CreatedByUpn = "USER",         // TODO: replace once auth gets added
                 ModifiedByUpn = "USER",        // TODO: replace once auth gets added
-                CreatedDate = answer.SubmittedDate
+                CreatedDate = answer.SubmittedDate,
+                ModifiedDate = answer.SubmittedDate
             }).ToList();
 
             int rowsAffected = await _connection.ExecuteAsync(query, parameters, _transaction);
