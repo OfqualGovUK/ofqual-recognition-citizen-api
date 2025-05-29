@@ -110,7 +110,7 @@ public class TaskRepository : ITaskRepository
         }
     }
 
-    public async Task<bool> CreateTaskStatuses(Guid applicationId, IEnumerable<ITaskItem> tasks)
+    public async Task<bool> CreateTaskStatuses(IEnumerable<TaskItemStatus> statuses)
     {
         try
         {
@@ -128,23 +128,14 @@ public class TaskRepository : ITaskRepository
                     @CreatedByUpn,
                     @ModifiedByUpn
                 )";
-
-            var taskStatusEntries = tasks.Select(task => new
-            {
-                ApplicationId = applicationId,
-                task.TaskId,
-                Status = TaskStatusEnum.NotStarted,
-                CreatedByUpn = "USER", // TODO: replace once auth gets added
-                ModifiedByUpn = "USER" // TODO: replace once auth gets added
-            }).ToList();
-
-            int rowsAffected = await _connection.ExecuteAsync(query, taskStatusEntries, _transaction);
-
-            return rowsAffected == taskStatusEntries.Count;
+            
+            var rowsAffected = await _connection.ExecuteAsync(query, statuses, _transaction);
+            
+            return rowsAffected == statuses.Count();
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error creating task statuses for ApplicationId: {ApplicationId}. Task count: {TaskCount}", applicationId, tasks.Count());
+            Log.Error(ex, "Error creating task statuses. Task count: {TaskCount}", statuses.Count());
             return false;
         }
     }
