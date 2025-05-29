@@ -172,8 +172,8 @@ public class QuestionRepository : IQuestionRepository
                 Answer = answer.AnswerJson,
                 CreatedByUpn = "USER",         // TODO: replace once auth gets added
                 ModifiedByUpn = "USER",        // TODO: replace once auth gets added
-                CreatedDate = answer.SubmittedDate,
-                ModifiedDate = answer.SubmittedDate
+                answer.CreatedDate,
+                answer.ModifiedDate
             }).ToList();
 
             int rowsAffected = await _connection.ExecuteAsync(query, parameters, _transaction);
