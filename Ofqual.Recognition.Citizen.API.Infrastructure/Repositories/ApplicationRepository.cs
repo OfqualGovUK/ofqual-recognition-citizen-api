@@ -3,6 +3,8 @@ using Ofqual.Recognition.Citizen.API.Core.Models;
 using System.Data;
 using Serilog;
 using Dapper;
+using Moq;
+using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
@@ -43,3 +45,5 @@ public class ApplicationRepository : IApplicationRepository
         }
     }
 }
+    
+

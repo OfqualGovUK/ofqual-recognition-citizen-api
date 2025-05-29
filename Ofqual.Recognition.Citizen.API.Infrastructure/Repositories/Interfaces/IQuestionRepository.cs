@@ -10,4 +10,5 @@ public interface IQuestionRepository
     public Task<bool> UpsertQuestionAnswer(Guid applicationId, Guid questionId, string answer);
     public Task<IEnumerable<TaskQuestionAnswer>> GetTaskQuestionAnswers(Guid applicationId, Guid taskId);
     public Task<QuestionAnswerDto?> GetQuestionAnswer(Guid applicationId, Guid questionId);
+    public Task<bool> CheckIfQuestionAnswerExists(Guid questionId, string itemName, string itemAnswer);
 }

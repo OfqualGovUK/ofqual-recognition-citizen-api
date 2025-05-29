@@ -115,7 +115,11 @@ public class QuestionRepository : IQuestionRepository
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error upserting application answer. ApplicationId: {ApplicationId}, QuestionId: {QuestionId}, Answer: {Answer}", applicationId, questionId, answer);
+            Log.Error(ex, 
+                "Error upserting application answer. ApplicationId: {ApplicationId}, QuestionId: {QuestionId}, Answer: {Answer}", 
+                applicationId, 
+                questionId, 
+                answer);
             return false;
         }
     }
@@ -182,4 +186,11 @@ public class QuestionRepository : IQuestionRepository
             return null;
         }
     }
+
+    public async Task<bool> CheckIfQuestionAnswerExists(Guid questionId, string itemName, string itemAnswer) =>
+       await _connection.QuerySingleAsync<bool>(@"SELECT ISNULL((SELECT TOP(1) 1 [row] 
+                                                    FROM [recognitionCitizen].[ApplicationAnswers] 
+                                                    WHERE QuestionId = @questionId 
+                                                    AND JSON_VALUE([Answer], @itemName) = @itemAnswer),0);",
+           new { questionId, itemName, itemAnswer }, _transaction);
 }
