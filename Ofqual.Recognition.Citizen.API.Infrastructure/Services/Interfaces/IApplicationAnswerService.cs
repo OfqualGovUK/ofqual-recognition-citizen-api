@@ -5,7 +5,7 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
 public interface IApplicationAnswerService
 {
-    public Task<IEnumerable<ValidationErrorItemDto>> ValidateQuestionAnswers(string taskNameUrl, string questionNameUrl, QuestionAnswerSubmissionDto answer);
+    public Task<IEnumerable<ValidationErrorItemDto>?> ValidateQuestionAnswers(string taskNameUrl, string questionNameUrl, QuestionAnswerSubmissionDto answer);
 
 }
 

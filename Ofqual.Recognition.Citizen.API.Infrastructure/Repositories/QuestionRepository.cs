@@ -187,10 +187,15 @@ public class QuestionRepository : IQuestionRepository
         }
     }
 
-    public async Task<bool> CheckIfQuestionAnswerExists(Guid questionId, string itemName, string itemAnswer) =>
-       await _connection.QuerySingleAsync<bool>(@"SELECT ISNULL((SELECT TOP(1) 1 [row] 
-                                                    FROM [recognitionCitizen].[ApplicationAnswers] 
-                                                    WHERE QuestionId = @questionId 
-                                                    AND JSON_VALUE([Answer], @itemName) = @itemAnswer),0);",
-           new { questionId, itemName, itemAnswer }, _transaction);
+    public async Task<bool> CheckIfQuestionAnswerExists(string taskNameUrl, string questionNameUrl, string questionItemName, string questionItemAnswer) =>
+       await _connection.QuerySingleAsync<bool>(@"SELECT ISNULL((   
+                                                            SELECT TOP(1) 1 [row] 
+                                                            FROM   [recognitionCitizen].[ApplicationAnswers] AS A
+                                                            JOIN   [recognitionCitizen].[Question] AS Q ON Q.QuestionId = A.QuestionId 
+                                                            JOIN   [recognitionCitizen].[Task] AS T ON Q.TaskId = T.TaskId 
+                                                            WHERE  T.TaskNameUrl = @taskNameUrl
+                                                            AND    Q.QuestionNameUrl = @QuestionNameUrl
+                                                            AND    JSON_VALUE(A.[Answer], @questionItemName) = @questionItemAnswer
+                                                        ),0);",
+           new { taskNameUrl, questionNameUrl, questionItemName, questionItemAnswer }, _transaction);
 }
