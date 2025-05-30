@@ -36,12 +36,9 @@ The main application settings are defined in `appsettings.json` and can be tailo
     "BaseUri": "",
     "AuthToken": ""
   },
-  "AzureBlobStorage": {
-    "ConnectionString": "",
-    "ContainerName": ""
-  },
   "ConnectionStrings": {
-    "OfqualODS": ""
+    "OfqualODS": "",
+    "AzureBlobStorage": ""
   }
 }
 ```
@@ -54,20 +51,17 @@ The main application settings are defined in `appsettings.json` and can be tailo
 - **`LogzIo:Uri`**  
   The endpoint for sending log data to an external logging service such as Logz.io.
 
-- `AntiVirus:BaseUri`  
+- **`AntiVirus:BaseUri`**  
   The base address of the external anti-virus scanning API (e.g., `https://api.attachmentscanner.com`).
 
-- `AntiVirus:AuthToken`
+- **`AntiVirus:AuthToken`**
   The bearer token used to authenticate with the anti-virus scanning service.
-
-- `AzureBlobStorage:ConnectionString`  
-  The connection string for your Azure Storage account. This grants access to Blob containers and their contents.
-
-- `AzureBlobStorage:ContainerName`  
-  The name of the Blob container that will be used for reading, writing, and deleting files. This should already exist or will be created automatically by the application.
 
 - **`ConnectionStrings:OfqualODS`**  
   Connection string for accessing the Ofqual ODS (Organisational Data Service) database.
+
+- **`ConnectionStrings:AzureBlobStorage`**  
+  The connection string for your Azure Storage account. This grants access to Blob containers and their contents.
 
 > It’s recommended to manage environment-specific values in `appsettings.{Environment}.json` or override them via environment variables, especially in production.
 

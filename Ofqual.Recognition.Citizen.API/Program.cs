@@ -65,11 +65,8 @@ builder.Services.AddSingleton<AntiVirusConfiguration>(sp =>
 builder.Services.AddScoped<IAntiVirusService, AntiVirusService>();
 
 // Register Azure blob storage service 
-builder.Services.Configure<AzureBlobStorageOptions>(
-    builder.Configuration.GetSection("AzureBlobStorage"));
-builder.Services.AddSingleton(sp =>
-    sp.GetRequiredService<IOptions<AzureBlobStorageOptions>>().Value);
-builder.Services.AddScoped<IAzureBlobStorageService, AzureBlobStorageService>();
+var blobConnectionString = builder.Configuration.GetConnectionString("AzureBlobStorage")!;
+builder.Services.AddSingleton<IAzureBlobStorageService>(new AzureBlobStorageService(blobConnectionString));
 
 // Add controllers
 builder.Services.AddControllers();

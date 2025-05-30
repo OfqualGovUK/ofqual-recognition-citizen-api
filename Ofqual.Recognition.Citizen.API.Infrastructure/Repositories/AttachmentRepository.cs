@@ -18,38 +18,67 @@ public class AttachmentRepository : IAttachmentRepository
         _transaction = transaction;
     }
 
-    public async Task<Attachment?> GetAttachment(Guid attachmentId)
+    public async Task<Attachment?> GetLinkedAttachment(Guid applicationId, Guid attachmentId, Guid linkId, LinkTypeEnum linkType)
     {
         try
         {
             const string query = @"
-                SELECT
-                    AttachmentId,
-                    FileName,
-                    BlobId,
-                    DirectoryPath,
-                    FileMIMEtype,
-                    FileSize,
-                    CreatedDate,
-                    ModifiedDate,
-                    CreatedByUpn,
-                    ModifiedByUpn
-                FROM [recognitionCitizen].[Attachment]
-                WHERE AttachmentId = @AttachmentId;";
+                SELECT A.AttachmentId, A.FileName, A.BlobId, A.DirectoryPath, A.FileMIMEtype, A.FileSize,
+                    A.CreatedDate, A.ModifiedDate, A.CreatedByUpn, A.ModifiedByUpn
+                FROM [recognitionCitizen].[Attachment] A
+                INNER JOIN [recognitionCitizen].[AttachmentLink] AL
+                    ON A.AttachmentId = AL.AttachmentId
+                WHERE A.AttachmentId = @AttachmentId
+                AND AL.LinkId = @LinkId
+                AND AL.LinkTypeId = @LinkTypeId
+                AND AL.ApplicationId = @ApplicationId;";
 
-            return await _connection.QuerySingleOrDefaultAsync<Attachment>(query, new
+            return await _connection.QueryFirstOrDefaultAsync<Attachment>(query, new
             {
-                AttachmentId = attachmentId
+                AttachmentId = attachmentId,
+                LinkId = linkId,
+                LinkTypeId = (int)linkType,
+                ApplicationId = applicationId
             }, _transaction);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error retrieving attachment with AttachmentId {AttachmentId}", attachmentId);
+            Log.Error(ex,
+                "Error retrieving linked attachment for AttachmentId {AttachmentId}, LinkId {LinkId}, LinkType {LinkType}, ApplicationId {ApplicationId}",
+                attachmentId, linkId, linkType, applicationId);
             return null;
         }
     }
 
-    public async Task<Attachment?> CreateAttachment(Attachment attachment)
+    public async Task<IEnumerable<Attachment>> GetAllAttachmentsForLink(Guid applicationId, Guid linkId, LinkTypeEnum linkType)
+    {
+        try
+        {
+            const string query = @"
+                SELECT A.AttachmentId, A.FileName, A.BlobId, A.DirectoryPath, A.FileMIMEtype, A.FileSize,
+                    A.CreatedDate, A.ModifiedDate, A.CreatedByUpn, A.ModifiedByUpn
+                FROM [recognitionCitizen].[Attachment] A
+                INNER JOIN [recognitionCitizen].[AttachmentLink] AL
+                    ON A.AttachmentId = AL.AttachmentId
+                WHERE AL.LinkId = @LinkId
+                AND AL.LinkTypeId = @LinkTypeId
+                AND AL.ApplicationId = @ApplicationId;";
+
+            return await _connection.QueryAsync<Attachment>(query, new
+            {
+                LinkId = linkId,
+                LinkTypeId = (int)linkType,
+                ApplicationId = applicationId
+            }, _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error retrieving attachments for LinkId {LinkId}, LinkType {LinkType}, ApplicationId {ApplicationId}", linkId, linkType, applicationId);
+            return Enumerable.Empty<Attachment>();
+        }
+    }
+
+    public async Task<Attachment?> CreateAttachment(string fileName, string contentType, long size)
     {
         try
         {
@@ -74,79 +103,22 @@ public class AttachmentRepository : IAttachmentRepository
 
             return await _connection.QuerySingleAsync<Attachment>(query, new
             {
-                attachment.FileName,
-                attachment.BlobId,
-                attachment.DirectoryPath,
-                attachment.FileMIMEtype,
-                attachment.FileSize,
+                FileName = fileName,
+                BlobId = Guid.NewGuid(),
+                FileMIMEtype = contentType,
+                FileSize = size,
                 CreatedByUpn = "USER",      // TODO: replace once auth gets added
                 ModifiedByUpn = "USER"      // TODO: replace once auth gets added
             }, _transaction);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error inserting attachment with FileName '{FileName}'", attachment.FileName);
+            Log.Error(ex, "Error inserting attachment with FileName {FileName}", fileName);
             return null!;
         }
     }
 
-    public async Task<bool> DeleteAttachment(Guid attachmentId)
-    {
-        try
-        {
-            const string query = @"
-                DELETE FROM [recognitionCitizen].[Attachment]
-                WHERE AttachmentId = @AttachmentId;";
-            var rows = await _connection.ExecuteAsync(query, new
-            {
-                AttachmentId = attachmentId
-            }, _transaction);
-            
-            return rows > 0;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error deleting attachment with AttachmentId {AttachmentId}", attachmentId);
-            return false;
-        }
-    }
-
-    public async Task<AttachmentLink?> GetAttachmentLink(Guid attachmentId, Guid linkId, Guid applicationId)
-    {
-        try
-        {
-            const string query = @"
-                SELECT
-                    AttachmentLinkId,
-                    AttachmentId,
-                    LinkId,
-                    LinkTypeId,
-                    ApplicationId,
-                    CreatedDate,
-                    ModifiedDate,
-                    CreatedByUpn,
-                    ModifiedByUpn
-                FROM [recognitionCitizen].[AttachmentLink]
-                WHERE AttachmentId = @AttachmentId
-                  AND LinkId = @LinkId
-                  AND ApplicationId = @ApplicationId;";
-
-            return await _connection.QuerySingleOrDefaultAsync<AttachmentLink>(query, new
-            {
-                AttachmentId = attachmentId,
-                LinkId = linkId,
-                ApplicationId = applicationId
-            }, _transaction);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error retrieving attachment link with AttachmentId {AttachmentId}, LinkId {LinkId}, ApplicationId {ApplicationId}",
-                attachmentId, linkId, applicationId);
-            return null;
-        }
-    }
-
-    public async Task<bool> CreateAttachmentLink(Guid attachmentId, Guid linkId, LinkTypeEnum linkTypeId, Guid applicationId)
+    public async Task<bool> CreateAttachmentLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkTypeEnum linkTypeId)
     {
         try
         {
@@ -186,24 +158,36 @@ public class AttachmentRepository : IAttachmentRepository
             return false;
         }
     }
-    public async Task<bool> DeleteAttachmentLink(Guid attachmentLinkId)
+
+    public async Task<bool> DeleteAttachmentWithLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkTypeEnum linkType)
     {
         try
         {
             const string query = @"
                 DELETE FROM [recognitionCitizen].[AttachmentLink]
-                WHERE AttachmentLinkId = @AttachmentLinkId;";
+                WHERE AttachmentId = @AttachmentId
+                AND LinkId = @LinkId
+                AND LinkTypeId = @LinkTypeId
+                AND ApplicationId = @ApplicationId;
+                
+                DELETE FROM [recognitionCitizen].[Attachment]
+                WHERE AttachmentId = @AttachmentId;";
 
             var rows = await _connection.ExecuteAsync(query, new
             {
-                AttachmentLinkId = attachmentLinkId
+                AttachmentId = attachmentId,
+                LinkId = linkId,
+                LinkTypeId = (int)linkType,
+                ApplicationId = applicationId
             }, _transaction);
 
             return rows > 0;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error deleting attachment link with AttachmentLinkId {AttachmentLinkId}", attachmentLinkId);
+            Log.Error(ex,
+                "Error deleting attachment and link for AttachmentId {AttachmentId}, LinkId {LinkId}, LinkType {LinkType}, ApplicationId {ApplicationId}",
+                attachmentId, linkId, linkType, applicationId);
             return false;
         }
     }

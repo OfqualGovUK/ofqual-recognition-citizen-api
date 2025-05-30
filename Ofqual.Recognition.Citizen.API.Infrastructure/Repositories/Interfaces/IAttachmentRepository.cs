@@ -5,10 +5,9 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 
 public interface IAttachmentRepository
 {
-    public Task<Attachment?> GetAttachment(Guid attachmentId);
-    public Task<Attachment?> CreateAttachment(Attachment attachment);
-    public Task<bool> DeleteAttachment(Guid attachmentId);
-    public Task<AttachmentLink?> GetAttachmentLink(Guid attachmentId, Guid linkId, Guid applicationId);
-    public Task<bool> CreateAttachmentLink(Guid attachmentId, Guid linkId, LinkTypeEnum linkTypeId, Guid applicationId);
-    public Task<bool> DeleteAttachmentLink(Guid attachmentLinkId);
+    public Task<Attachment?> GetLinkedAttachment(Guid applicationId, Guid attachmentId, Guid linkId, LinkTypeEnum linkType);
+    public Task<IEnumerable<Attachment>> GetAllAttachmentsForLink(Guid applicationId, Guid linkId, LinkTypeEnum linkType);
+    public Task<Attachment?> CreateAttachment(string fileName, string contentType, long size);
+    public Task<bool> CreateAttachmentLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkTypeEnum linkTypeId);
+    public Task<bool> DeleteAttachmentWithLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkTypeEnum linkType);
 }
