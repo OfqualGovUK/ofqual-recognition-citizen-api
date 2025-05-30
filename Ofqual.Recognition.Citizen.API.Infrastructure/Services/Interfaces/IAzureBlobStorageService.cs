@@ -2,8 +2,8 @@
 
 public interface IAzureBlobStorageService
 {
-    Task Write(Guid blobId, Stream stream, bool isPublicAccess = false);
-    Task<Stream> Read(Guid blobId);
-    Task<string> GetBlobUri(Guid blobId);
-    Task Delete(Guid blobId);
+    public Task Write(Guid blobId, Stream stream, bool isPublicAccess = false);
+    public Task<Stream> Read(Guid blobId);
+    public Task<string> GetBlobUri(Guid blobId);
+    public Task Delete(Guid blobId);
 }
