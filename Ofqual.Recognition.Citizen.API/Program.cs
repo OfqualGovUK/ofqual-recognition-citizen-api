@@ -1,15 +1,17 @@
-using System.Data;
-using System.Reflection;
-using CorrelationId;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
+using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Core.Models;
 using CorrelationId.DependencyInjection;
+using Microsoft.Extensions.Options;
 using CorrelationId.HttpClient;
 using Microsoft.Data.SqlClient;
-using Ofqual.Recognition.Citizen.API.Infrastructure;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
-using Serilog;
-using Serilog.Events;
 using Serilog.Sinks.Http;
+using System.Reflection;
+using Serilog.Events;
+using CorrelationId;
+using System.Data;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +57,12 @@ builder.Services.AddScoped<IDbConnection>(sp =>
 // Register application services
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ICheckYourAnswersService, CheckYourAnswersService>();
+
+// Register AntiVirus service and config
+builder.Services.Configure<AntiVirusConfiguration>(builder.Configuration.GetSection("AntiVirus"));
+builder.Services.AddSingleton<AntiVirusConfiguration>(sp =>
+    sp.GetRequiredService<IOptions<AntiVirusConfiguration>>().Value);
+builder.Services.AddScoped<IAntiVirusService, AntiVirusService>();
 
 // Add controllers
 builder.Services.AddControllers();
