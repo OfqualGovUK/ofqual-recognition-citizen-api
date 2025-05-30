@@ -58,11 +58,18 @@ builder.Services.AddScoped<IDbConnection>(sp =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ICheckYourAnswersService, CheckYourAnswersService>();
 
-// Register AntiVirus service and config
+// Register AntiVirus service
 builder.Services.Configure<AntiVirusConfiguration>(builder.Configuration.GetSection("AntiVirus"));
 builder.Services.AddSingleton<AntiVirusConfiguration>(sp =>
     sp.GetRequiredService<IOptions<AntiVirusConfiguration>>().Value);
 builder.Services.AddScoped<IAntiVirusService, AntiVirusService>();
+
+// Register Azure blob storage service 
+builder.Services.Configure<AzureBlobStorageOptions>(
+    builder.Configuration.GetSection("AzureBlobStorage"));
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<IOptions<AzureBlobStorageOptions>>().Value);
+builder.Services.AddScoped<IAzureBlobStorageService, AzureBlobStorageService>();
 
 // Add controllers
 builder.Services.AddControllers();
