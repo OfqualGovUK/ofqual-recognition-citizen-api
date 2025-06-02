@@ -5,6 +5,7 @@ using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using Ofqual.Recognition.Citizen.API.Core.Models.ApplicationQueryParameter.cs;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -219,6 +220,29 @@ public class ApplicationController : ControllerBase
         {
             Log.Error(ex, "An error occurred while retrieving the answer for QuestionId: {QuestionId} and ApplicationId: {ApplicationId}.", questionId, applicationId);
             throw new Exception("An error occurred while fetching the question answer. Please try again later.");
+        }
+    }
+
+    [HttpGet("/application")]
+    public async Task<ActionResult> SearchApplication(ApplicationQueryParameter searchParams = []) 
+    {
+        if (searchParams != null || searchParams.Any())
+        {
+            // apply them to get apps() call
+        }
+
+        try
+        {
+            // get applications from _context.ApplicationRepository.GetApplications(searchParams);
+
+            if (// ApplicationRepository.GetApplications() == Any())
+            {
+                return Ok(// all returned records from ApplicationRepository.GetApplications());
+            }
+            else
+            {
+                return NoContent();
+            }
         }
     }
 }
