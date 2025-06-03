@@ -16,17 +16,17 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 public class ApplicationController : ControllerBase
 {
     private readonly IUnitOfWork _context;
-    private readonly ICheckYourAnswersService _checkYourAnswersService;
     private readonly ITaskStatusService _taskStatusService;
+    private readonly IApplicationAnswersService _applicationAnswersService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ApplicationController"/>.
     /// </summary>
-    public ApplicationController(IUnitOfWork context, ICheckYourAnswersService checkYourAnswersService, ITaskStatusService taskStatusService)
+    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService)
     {
         _context = context;
-        _checkYourAnswersService = checkYourAnswersService;
         _taskStatusService = taskStatusService;
+        _applicationAnswersService = applicationAnswersService;
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ public class ApplicationController : ControllerBase
 
             if (PreEngagementAnswers != null && PreEngagementAnswers.Any())
             {
-                bool isPreEngagementAnswersInserted = await _context.QuestionRepository.InsertPreEngagementAnswers(application.ApplicationId, PreEngagementAnswers);
+                bool isPreEngagementAnswersInserted = await _applicationAnswersService.SavePreEngagementAnswers(application.ApplicationId, PreEngagementAnswers);
                 if (!isPreEngagementAnswersInserted)
                 {
                     return BadRequest("Failed to insert pre-engagement answers for the new application.");
@@ -174,7 +174,7 @@ public class ApplicationController : ControllerBase
                 return NotFound("No question answers found for the specified task and application.");
             }
 
-            var reviewAnswers = _checkYourAnswersService.GetQuestionAnswers(taskQuestionAnswers);
+            var reviewAnswers = _applicationAnswersService.GetQuestionAnswers(taskQuestionAnswers);
 
             return Ok(reviewAnswers);
         }

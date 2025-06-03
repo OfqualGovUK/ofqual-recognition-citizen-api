@@ -150,44 +150,6 @@ public class QuestionRepository : IQuestionRepository
         }
     }
 
-    public async Task<bool> InsertPreEngagementAnswers(Guid applicationId, IEnumerable<PreEngagementAnswerDto> answers)
-    {
-        try
-        {
-            const string query = @"
-                INSERT INTO [recognitionCitizen].[ApplicationAnswers] (
-                    ApplicationId,
-                    QuestionId,
-                    Answer,
-                    CreatedByUpn,
-                    ModifiedByUpn
-                ) VALUES (
-                    @ApplicationId,
-                    @QuestionId,
-                    @Answer,
-                    @CreatedByUpn,
-                    @ModifiedByUpn
-                );";
-
-            var parameters = answers.Select(answer => new
-            {
-                ApplicationId = applicationId,
-                answer.QuestionId,
-                Answer = answer.AnswerJson,
-                CreatedByUpn = "USER",         // TODO: replace once auth gets added
-                ModifiedByUpn = "USER"        // TODO: replace once auth gets added
-            }).ToList();
-
-            int rowsAffected = await _connection.ExecuteAsync(query, parameters, _transaction);
-            return rowsAffected == parameters.Count;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error inserting application answers for ApplicationId: {ApplicationId}", applicationId);
-            return false;
-        }
-    }
-
     public async Task<bool> UpsertQuestionAnswer(Guid applicationId, Guid questionId, string answer)
     {
         try

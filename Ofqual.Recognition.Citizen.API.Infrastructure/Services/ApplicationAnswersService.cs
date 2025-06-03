@@ -1,12 +1,33 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
-using Ofqual.Recognition.Citizen.API.Core.Helpers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Helpers;
 using Newtonsoft.Json.Linq;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
-public class CheckYourAnswersService : ICheckYourAnswersService
+public class ApplicationAnswersService : IApplicationAnswersService
 {
+    private readonly IUnitOfWork _context;
+
+    public ApplicationAnswersService(IUnitOfWork context)
+    {
+        _context = context;
+    }
+
+    public async Task<bool> SavePreEngagementAnswers(Guid applicationId, IEnumerable<PreEngagementAnswerDto> answers)
+    {
+        foreach (var answer in answers)
+        {
+            bool success = await _context.QuestionRepository.UpsertQuestionAnswer(applicationId, answer.QuestionId, answer.AnswerJson);
+            if (!success)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public List<QuestionAnswerSectionDto> GetQuestionAnswers(IEnumerable<TaskQuestionAnswer> questions)
     {
         var answerLookup = questions
@@ -15,7 +36,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                 q => q.QuestionId,
                 q => new ParsedQuestionAnswer
                 {
-                    AnswerData = JObject.Parse(q.Answer),
+                    AnswerData = JObject.Parse(q.Answer!),
                     QuestionUrl = $"{q.TaskNameUrl}/{q.QuestionNameUrl}"
                 });
 
@@ -56,11 +77,12 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                         var fieldName = JsonHelper.GetString(input, "name");
                         var label = JsonHelper.GetString(input, "label");
 
-                        if (string.IsNullOrWhiteSpace(fieldName) || string.IsNullOrWhiteSpace(label)) {
+                        if (string.IsNullOrWhiteSpace(fieldName) || string.IsNullOrWhiteSpace(label))
+                        {
                             continue;
                         }
 
-                        var answerValue = GetFieldAnswerValue(fieldName, parsedAnswer?.AnswerData);
+                        var answerValue = JsonHelper.GetFlattenedStringValuesByKey(parsedAnswer?.AnswerData, fieldName);
 
                         section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                         {
@@ -78,7 +100,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
 
                     if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
                     {
-                        var answerValue = GetFieldAnswerValue(fieldName, parsedAnswer?.AnswerData);
+                        var answerValue = JsonHelper.GetFlattenedStringValuesByKey(parsedAnswer?.AnswerData, fieldName);
 
                         section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                         {
@@ -96,7 +118,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
 
                     if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
                     {
-                        var answerValue = GetFieldAnswerValue(fieldName, parsedAnswer?.AnswerData);
+                        var answerValue = JsonHelper.GetFlattenedStringValuesByKey(parsedAnswer?.AnswerData, fieldName);
 
                         section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                         {
@@ -114,7 +136,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
 
                     if (!string.IsNullOrWhiteSpace(checkboxName) && !string.IsNullOrWhiteSpace(checkboxHeading))
                     {
-                        var answerValue = GetFieldAnswerValue(checkboxName, parsedAnswer?.AnswerData);
+                        var answerValue = JsonHelper.GetFlattenedStringValuesByKey(parsedAnswer?.AnswerData, checkboxName);
 
                         section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                         {
@@ -124,29 +146,37 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                         });
                     }
 
-                    var selectedCheckboxes = GetCheckboxValues(parsedAnswer?.AnswerData?[checkboxName]);
-                    foreach (var checkboxOption in JsonHelper.GetArray(groupValue, "checkBoxes") ?? Enumerable.Empty<JToken>())
+                    if (!string.IsNullOrWhiteSpace(checkboxName))
                     {
-                        var checkboxValue = JsonHelper.GetString(checkboxOption, "value");
-                        if (selectedCheckboxes.Contains(checkboxValue))
-                        {
-                            var conditionalFields = JsonHelper.GetArray(checkboxOption, "conditionalInputs") ?? JsonHelper.GetArray(checkboxOption, "conditionalSelects");
-                            if (conditionalFields != null)
-                            {
-                                foreach (var conditionalField in conditionalFields)
-                                {
-                                    var fieldName = JsonHelper.GetString(conditionalField, "name");
-                                    var label = JsonHelper.GetString(conditionalField, "label");
+                        var selectedValues = JsonHelper.GetStringSetFromToken(parsedAnswer?.AnswerData?[checkboxName]);
 
-                                    if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
+                        foreach (var checkboxOption in JsonHelper.GetArray(groupValue, "checkBoxes") ?? Enumerable.Empty<JToken>())
+                        {
+                            var checkboxValue = JsonHelper.GetString(checkboxOption, "value");
+
+                            if (!string.IsNullOrWhiteSpace(checkboxValue) && selectedValues.Contains(checkboxValue))
+                            {
+                                var conditionalFields = JsonHelper.GetArray(checkboxOption, "conditionalInputs")
+                                    ?? JsonHelper.GetArray(checkboxOption, "conditionalSelects");
+                                
+                                if (conditionalFields != null)
+                                {
+                                    foreach (var conditionalField in conditionalFields)
                                     {
-                                        var conditionalAnswerValue = GetFieldAnswerValue(fieldName, parsedAnswer?.AnswerData);
-                                        section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                                        var fieldName = JsonHelper.GetString(conditionalField, "name");
+                                        var label = JsonHelper.GetString(conditionalField, "label");
+
+                                        if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
                                         {
-                                            QuestionText = label,
-                                            AnswerValue = conditionalAnswerValue,
-                                            QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                                        });
+                                            var conditionalAnswer = JsonHelper.GetFlattenedStringValuesByKey(parsedAnswer?.AnswerData, fieldName);
+                                            
+                                            section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                                            {
+                                                QuestionText = label,
+                                                AnswerValue = conditionalAnswer,
+                                                QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
+                                            });
+                                        }
                                     }
                                 }
                             }
@@ -160,72 +190,7 @@ public class CheckYourAnswersService : ICheckYourAnswersService
                 }
             }
         }
+
         return sections;
-    }
-
-    private static List<string> GetFieldAnswerValue(string fieldName, JObject? answerData)
-    {
-        if (answerData == null)
-        {
-            return new List<string> { "Not provided" };
-        }
-
-        var token = answerData[fieldName] ?? FindNestedAnswer(answerData, fieldName);
-
-        if (token == null)
-        {
-            return new List<string> { "Not provided" };
-        }
-
-        return token.Type == JTokenType.Array
-            ? token.Values<string>().ToList()
-            : new List<string> { token.ToString() };
-    }
-
-    private static JToken? FindNestedAnswer(JToken? token, string fieldName)
-    {
-        if (token == null)
-        {
-            return null;
-        }
-
-        if (token.Type == JTokenType.Object)
-        {
-            foreach (var property in token.Children<JProperty>())
-            {
-                if (property.Name == fieldName)
-                {
-                    return property.Value;
-                }
-
-                var nestedResult = FindNestedAnswer(property.Value, fieldName);
-                if (nestedResult != null)
-                {
-                    return nestedResult;
-                }
-            }
-        }
-        else if (token.Type == JTokenType.Array)
-        {
-            foreach (var item in token)
-            {
-                var nestedResult = FindNestedAnswer(item, fieldName);
-                if (nestedResult != null)
-                {
-                    return nestedResult;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static HashSet<string> GetCheckboxValues(JToken? token)
-    {
-        return token switch
-        {
-            JArray array => array.Values<string>().ToHashSet(),
-            JValue value when !string.IsNullOrWhiteSpace(value.ToString()) => new HashSet<string> { value.ToString()! },
-            _ => new HashSet<string>()
-        };
     }
 }

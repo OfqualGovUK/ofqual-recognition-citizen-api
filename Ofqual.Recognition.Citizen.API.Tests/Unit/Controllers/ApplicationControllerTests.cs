@@ -19,14 +19,14 @@ public class ApplicationControllerTests
     private readonly Mock<IApplicationRepository> _mockApplicationRepository;
     private readonly Mock<IQuestionRepository> _mockQuestionRepository;
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-    private readonly Mock<ICheckYourAnswersService> _mockCheckYourAnswersService;
     private readonly Mock<ITaskStatusService> _mockTaskStatusService;
+    private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService;
 
     public ApplicationControllerTests()
     {
         _mockUnitOfWork = new Mock<IUnitOfWork>();
-        _mockCheckYourAnswersService = new Mock<ICheckYourAnswersService>();
         _mockTaskStatusService = new Mock<ITaskStatusService>();
+        _mockApplicationAnswersService = new Mock<IApplicationAnswersService>();
 
         _mockQuestionRepository = new Mock<IQuestionRepository>();
         _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
@@ -37,7 +37,7 @@ public class ApplicationControllerTests
         _mockApplicationRepository = new Mock<IApplicationRepository>();
         _mockUnitOfWork.Setup(u => u.ApplicationRepository).Returns(_mockApplicationRepository.Object);
 
-        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockCheckYourAnswersService.Object, _mockTaskStatusService.Object);
+        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockTaskStatusService.Object, _mockApplicationAnswersService.Object);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()
@@ -103,7 +103,7 @@ public class ApplicationControllerTests
 
         _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync(app);
         _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, preAnswers)).ReturnsAsync(true);
-        _mockQuestionRepository.Setup(x => x.InsertPreEngagementAnswers(app.ApplicationId, preAnswers)).ReturnsAsync(false);
+        _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, preAnswers)).ReturnsAsync(false);
 
         // Act
         var result = await _controller.CreateApplication(preAnswers);
@@ -134,7 +134,7 @@ public class ApplicationControllerTests
 
         _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync(app);
         _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, preAnswers)).ReturnsAsync(true);
-        _mockQuestionRepository.Setup(x => x.InsertPreEngagementAnswers(app.ApplicationId, preAnswers)).ReturnsAsync(true);
+        _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, preAnswers)).ReturnsAsync(true);
 
         // Act
         var result = await _controller.CreateApplication(preAnswers);
@@ -442,7 +442,7 @@ public class ApplicationControllerTests
             .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
             .ReturnsAsync(mockAnswers);
 
-        _mockCheckYourAnswersService
+        _mockApplicationAnswersService
             .Setup(service => service.GetQuestionAnswers(mockAnswers))
             .Returns(expectedReviewAnswers);
 

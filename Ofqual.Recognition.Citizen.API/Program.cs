@@ -54,8 +54,8 @@ builder.Services.AddScoped<IDbConnection>(sp =>
 
 // Register application services
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<ICheckYourAnswersService, CheckYourAnswersService>();
 builder.Services.AddScoped<ITaskStatusService, TaskStatusService>();
+builder.Services.AddScoped<IApplicationAnswersService, ApplicationAnswersService>();
 
 // Add controllers
 builder.Services.AddControllers();
