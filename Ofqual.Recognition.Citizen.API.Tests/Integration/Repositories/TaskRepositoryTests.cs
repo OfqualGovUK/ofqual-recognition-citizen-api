@@ -94,48 +94,71 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         await _fixture.DisposeAsync();
     }
 
-    // [Fact]
-    // [Trait("Category", "Integration")]
-    // public async Task Should_Create_Task_Statuses_For_All_Tasks()
-    // {
-    //     // Initialise test container and connection
-    //     await using var connection = await _fixture.InitNewTestDatabaseContainer();
-    //     using var unitOfWork = new UnitOfWork(connection);
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Should_Create_Task_Statuses_For_All_Tasks()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
 
-    //     // Arrange
-    //     var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
-    //     var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-    //     var task1 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-1-url");
-    //     var task2 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-2-url");
-    //     var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
+        // Arrange
+        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        var task1 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-1-url");
+        var task2 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-2-url");
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
-    //     await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, task1.TaskId, questionType.QuestionTypeId, 1, "url-task-1", "{\"title\":\"task 1 question\"}");
-    //     await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, task2.TaskId, questionType.QuestionTypeId, 1, "url-task-2", "{\"title\":\"task 2 question\"}");
+        await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, task1.TaskId, questionType.QuestionTypeId, 1, "url-task-1", "{\"title\":\"task 1 question\"}");
+        await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, task2.TaskId, questionType.QuestionTypeId, 1, "url-task-2", "{\"title\":\"task 2 question\"}");
 
-    //     unitOfWork.Commit();
+        unitOfWork.Commit();
 
-    //     var tasks = new List<TaskItem> { task1, task2 };
+        var statuses = new List<TaskItemStatus>
+        {
+            new TaskItemStatus
+            {
+                TaskStatusId = Guid.NewGuid(),
+                ApplicationId = application.ApplicationId,
+                TaskId = task1.TaskId,
+                Status = TaskStatusEnum.NotStarted,
+                CreatedByUpn = "test@ofqual.gov.uk",
+                ModifiedByUpn = "test@ofqual.gov.uk"
+            },
+            new TaskItemStatus
+            {
+                TaskStatusId = Guid.NewGuid(),
+                ApplicationId = application.ApplicationId,
+                TaskId = task2.TaskId,
+                Status = TaskStatusEnum.NotStarted,
+                CreatedByUpn = "test@ofqual.gov.uk",
+                ModifiedByUpn = "test@ofqual.gov.uk"
+            }
+        };
 
-    //     // Act
-    //     var success = await unitOfWork.TaskRepository.CreateTaskStatuses(application.ApplicationId, tasks);
+        // Act
+        var success = await unitOfWork.TaskRepository.CreateTaskStatuses(statuses);
 
-    //     // Assert
-    //     Assert.True(success);
+        // Assert
+        Assert.True(success);
 
-    //     // Verify
-    //     var result = (await unitOfWork.TaskRepository.GetTaskStatusesByApplicationId(application.ApplicationId)).ToList();
-    //     Assert.Equal(2, result.Count);
+        // Act
+        var result = (await unitOfWork.TaskRepository.GetTaskStatusesByApplicationId(application.ApplicationId)).ToList();
 
-    //     foreach (var taskStatus in result)
-    //     {
-    //         Assert.Contains(taskStatus.TaskId, tasks.Select(t => t.TaskId));
-    //         Assert.Equal(TaskStatusEnum.NotStarted, taskStatus.Status);
-    //         Assert.False(string.IsNullOrWhiteSpace(taskStatus.QuestionNameUrl));
-    //     }
+        // Assert
+        Assert.Equal(2, result.Count);
+        foreach (var item in result)
+        {
+            Assert.Contains(item.TaskId, statuses.Select(s => s.TaskId));
+            Assert.Contains(item.TaskName, new[] { "Test Task" });
+            Assert.False(string.IsNullOrWhiteSpace(item.TaskNameUrl));
+            Assert.False(string.IsNullOrWhiteSpace(item.QuestionNameUrl));
+            Assert.Equal(TaskStatusEnum.NotStarted, item.Status);
+        }
 
-    //     // Clean up test container
-    //     await _fixture.DisposeAsync();
-    // }
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
 
     [Fact]
     [Trait("Category", "Integration")]

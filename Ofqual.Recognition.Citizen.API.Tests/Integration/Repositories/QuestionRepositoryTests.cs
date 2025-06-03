@@ -28,26 +28,27 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
-        var expectedQuestion = await QuestionTestDataBuilder.CreateTestQuestion(
-            unitOfWork,
-            task.TaskId,
-            questionType.QuestionTypeId,
-            1,
-            "question-url",
-            "{\"title\":\"sample question\"}"
-        );
+        var q1 = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork, task.TaskId, questionType.QuestionTypeId, 1, "q1", "{\"title\":\"q1\"}");
+        var q2 = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork, task.TaskId, questionType.QuestionTypeId, 2, "q2", "{\"title\":\"q2\"}");
+        var q3 = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork, task.TaskId, questionType.QuestionTypeId, 3, "q3", "{\"title\":\"q3\"}");
 
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.QuestionRepository.GetQuestion(task.TaskNameUrl, expectedQuestion.QuestionNameUrl);
+        var result = await unitOfWork.QuestionRepository.GetQuestion(task.TaskNameUrl, "q2");
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(expectedQuestion.QuestionId, result!.QuestionId);
-        Assert.Equal(expectedQuestion.QuestionContent, result.QuestionContent);
-        Assert.Equal(expectedQuestion.TaskId, result.TaskId);
-        Assert.Equal(questionType.QuestionTypeName, result.QuestionTypeName);
+        Assert.Equal(q2.QuestionId, result!.QuestionId);
+        Assert.Equal(q2.QuestionContent, result.QuestionContent);
+        Assert.Equal(q2.TaskId, result.TaskId);
+        Assert.Equal("q2", result.CurrentQuestionNameUrl);
+        Assert.Equal("q1", result.PreviousQuestionNameUrl);
+        Assert.Equal("q3", result.NextQuestionNameUrl);
+        Assert.Equal(task.TaskNameUrl, result.TaskNameUrl);
 
         // Clean up test container
         await _fixture.DisposeAsync();
@@ -55,7 +56,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task Should_Return_Previous_Question_Url()
+    public async Task Should_Return_Previous_Question_Url_And_Null_Next_For_Last_Question()
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
@@ -63,36 +64,26 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-url");
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
-        var firstQuestion = await QuestionTestDataBuilder.CreateTestQuestion(
-            unitOfWork,
-            task.TaskId,
-            questionType.QuestionTypeId,
-            1,
-            "first-question",
-            "{\"title\":\"first question\"}"
-        );
-
-        var secondQuestion = await QuestionTestDataBuilder.CreateTestQuestion(
-            unitOfWork,
-            task.TaskId,
-            questionType.QuestionTypeId,
-            2,
-            "second-question",
-            "{\"title\":\"second question\"}"
-        );
+        var first = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork, task.TaskId, questionType.QuestionTypeId, 1, "first", "{\"title\":\"1\"}");
+        var last = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork, task.TaskId, questionType.QuestionTypeId, 2, "last", "{\"title\":\"2\"}");
 
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.QuestionRepository.GetQuestion(task.TaskNameUrl, secondQuestion.QuestionNameUrl);
+        var result = await unitOfWork.QuestionRepository.GetQuestion(task.TaskNameUrl, "last");
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(secondQuestion.QuestionId, result!.QuestionId);
-        Assert.Equal("first-question", result.PreviousQuestionNameUrl);
+        Assert.Equal(last.QuestionId, result!.QuestionId);
+        Assert.Equal("first", result.PreviousQuestionNameUrl);
+        Assert.Null(result.NextQuestionNameUrl);
+        Assert.Equal("last", result.CurrentQuestionNameUrl);
+        Assert.Equal(task.TaskNameUrl, result.TaskNameUrl);
 
         // Clean up test container
         await _fixture.DisposeAsync();
@@ -107,10 +98,43 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Act
-        var result = await unitOfWork.QuestionRepository.GetQuestion("non-existent-task-url", "non-existent-question-url");
+        var result = await unitOfWork.QuestionRepository.GetQuestion("non-task", "non-question");
 
         // Assert
         Assert.Null(result);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Should_Return_Null_Previous_Url_For_First_Question()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-url");
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
+
+        var first = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork, task.TaskId, questionType.QuestionTypeId, 1, "first", "{\"title\":\"1\"}");
+        var second = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork, task.TaskId, questionType.QuestionTypeId, 2, "second", "{\"title\":\"2\"}");
+
+        unitOfWork.Commit();
+
+        // Act
+        var result = await unitOfWork.QuestionRepository.GetQuestion(task.TaskNameUrl, "first");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("first", result.CurrentQuestionNameUrl);
+        Assert.Null(result.PreviousQuestionNameUrl);
+        Assert.Equal("second", result.NextQuestionNameUrl);
 
         // Clean up test container
         await _fixture.DisposeAsync();
@@ -364,6 +388,56 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         // Assert
         Assert.Null(result?.Answer);
         Assert.Equal(question.QuestionId, result?.QuestionId);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Should_Return_All_Inserted_Questions()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-url");
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
+
+        var question1 = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task.TaskId,
+            questionType.QuestionTypeId,
+            1,
+            "question-1",
+            "{\"title\":\"first question\"}");
+        var question2 = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task.TaskId,
+            questionType.QuestionTypeId,
+            2,
+            "question-2",
+            "{\"title\":\"second question\"}");
+
+        unitOfWork.Commit();
+
+        // Act
+        var result = (await unitOfWork.QuestionRepository.GetAllQuestions()).ToList();
+
+        // Assert
+        Assert.NotEmpty(result);
+        Assert.Contains(result, q => q.QuestionId == question1.QuestionId);
+        Assert.Contains(result, q => q.QuestionId == question2.QuestionId);
+
+        Assert.All(result, q =>
+        {
+            Assert.NotEqual(Guid.Empty, q.QuestionId);
+            Assert.False(string.IsNullOrWhiteSpace(q.QuestionNameUrl));
+            Assert.False(string.IsNullOrWhiteSpace(q.QuestionContent));
+            Assert.NotEqual(default, q.CreatedDate);
+        });
 
         // Clean up test container
         await _fixture.DisposeAsync();
