@@ -4,10 +4,9 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Json.QuestionContent;
 using Ofqual.Recognition.Citizen.API.Core.Models.Json.QuestionContent.Components;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 public class ApplicationAnswerService: IApplicationAnswerService
@@ -20,11 +19,10 @@ public class ApplicationAnswerService: IApplicationAnswerService
     }
 
 
-    public async Task<IEnumerable<ValidationErrorItemDto>?> ValidateQuestionAnswers(string taskNameUrl, string questionNameUrl, QuestionAnswerSubmissionDto answerDto)
-    {
-        var errors = new List<ValidationErrorItemDto>();
+    public async Task<IEnumerable<ValidationErrorItemDto>?> ValidateQuestionAnswers(Guid taskId, Guid questionId, QuestionAnswerSubmissionDto answerDto)
+    {        
 
-        var questionDetails = await _questionRepository.GetQuestion(taskNameUrl, questionNameUrl);
+        var questionDetails = await _questionRepository.GetQuestion(taskId, questionId);
         if(questionDetails == null) 
             return null;
 
@@ -33,8 +31,11 @@ public class ApplicationAnswerService: IApplicationAnswerService
             return null;
 
         var answerValue = JsonSerializer.Deserialize<Dictionary<string, string>>(answerDto.Answer);
-        if (answerValue == null) return null;
+        if (answerValue == null) 
+            return null;
 
+
+        var errors = new List<ValidationErrorItemDto>();
         foreach (var answerItem in answerValue)
         {
             var component = questionContent
@@ -62,7 +63,7 @@ public class ApplicationAnswerService: IApplicationAnswerService
 
             if (component.Validation.Unique ?? false)
             { 
-               if(await _questionRepository.CheckIfQuestionAnswerExists(taskNameUrl, questionNameUrl, answerItem.Key, answerItem.Value))
+               if(await _questionRepository.CheckIfQuestionAnswerExists(taskId, questionId, answerItem.Key, answerItem.Value))
                     errors.Add(new ValidationErrorItemDto
                     {
                         Property = answerItem.Key,
@@ -73,42 +74,49 @@ public class ApplicationAnswerService: IApplicationAnswerService
 
             if (component is TextInput)
             {
-                errors.AddRange(ValidateTextLength(component, answerItem));
+                var textLengthError = ValidateTextLength(component, answerItem);
+                if (textLengthError != null)
+                {
+                    errors.Add(textLengthError);
+                    continue;
+                }
                 
                 if (!string.IsNullOrWhiteSpace(component.Validation.Pattern)) 
                 {
                     var regex = new Regex(component.Validation.Pattern);
                     if (!regex.IsMatch(answerItem.Value))
                         errors.Add(new ValidationErrorItemDto { Property = answerItem.Key, ErrorMessage = $"answer does not match the required format" });
-
+                    continue;
                 }
             }
 
-            if (component is RadioButton)
+            if (component is RadioButton button)
             {
                 if (component.Validation.MinSelected.HasValue)
                 { 
-                    if(((RadioButton)component).Radios.Count() < component.Validation.MinSelected)
+                    if(button.Radios.Count() < component.Validation.MinSelected)
                         errors.Add(new ValidationErrorItemDto { Property = answerItem.Key, ErrorMessage = "minimum number of items has not been selected" });
+                    continue;
                 }
                 if (component.Validation.MaxSelected.HasValue)
                 {
-                    if (((RadioButton)component).Radios.Count() < component.Validation.MaxSelected)
+                    if (button.Radios.Count() < component.Validation.MaxSelected)
                         errors.Add(new ValidationErrorItemDto { Property = answerItem.Key, ErrorMessage = "too many items have been selected" });
+                    continue;
                 }
             }
         }
         return errors;
     }
 
-    private static ValidationErrorItemDto[] ValidateTextLength(IComponent component, KeyValuePair<string, string> answerItem)
+    private static ValidationErrorItemDto? ValidateTextLength(IComponent component, KeyValuePair<string, string> answerItem)
     {
         var hasMinValue = component.Validation?.MinLength.HasValue ?? false;
         var hasMaxValue = component.Validation?.MaxLength.HasValue ?? false;
 
         //Skip if we dont have min or max values set
         if (!hasMinValue && !hasMaxValue)
-            return Array.Empty<ValidationErrorItemDto>();
+            return null;
 
         //are we counting characters or words?
         var countWords = component.Validation?.CountWords ?? false;
@@ -137,10 +145,9 @@ public class ApplicationAnswerService: IApplicationAnswerService
             else
                 itemDto.ErrorMessage += $"between {component.Validation!.MinLength} " 
                     + $"and {component.Validation!.MaxLength} {countType}";
-            return [itemDto];
+            return itemDto;
         }
-                
-        return Array.Empty<ValidationErrorItemDto>();
+        return null;
     }
 }
 

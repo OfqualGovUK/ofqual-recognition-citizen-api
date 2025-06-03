@@ -17,14 +17,16 @@ public class ApplicationController : ControllerBase
 {
     private readonly IUnitOfWork _context;
     private readonly ICheckYourAnswersService _checkYourAnswersService;
+    private readonly IApplicationAnswerService _applicationAnswerService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ApplicationController"/>.
     /// </summary>
-    public ApplicationController(IUnitOfWork context, ICheckYourAnswersService checkYourAnswersService)
+    public ApplicationController(IUnitOfWork context, ICheckYourAnswersService checkYourAnswersService, IApplicationAnswerService applicationAnswerService)
     {
         _context = context;
         _checkYourAnswersService = checkYourAnswersService;
+        _applicationAnswerService = applicationAnswerService;
     }
 
     /// <summary>
@@ -137,6 +139,20 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            var listErrors = await _applicationAnswerService.ValidateQuestionAnswers(taskId, questionId, request);
+
+            if (listErrors == null)
+                return BadRequest("Unable do validate, the request body is not in a correct format");
+
+            if(listErrors.Any())
+            {
+                return BadRequest(new
+                {
+                    Message = "Failed to save question answer. There were validation errors within the request.",
+                    Errors = listErrors
+                });
+            }
+
             bool isAnswerUpserted = await _context.QuestionRepository.UpsertQuestionAnswer(applicationId, questionId, request.Answer);
 
             if (!isAnswerUpserted)

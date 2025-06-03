@@ -7,6 +7,6 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// </summary>
 public class ParsedQuestionAnswer
 {
-    public JObject AnswerData { get; set; }
-    public string QuestionUrl { get; set; }
+    public JObject? AnswerData { get; set; }
+    public string? QuestionUrl { get; set; }
 }

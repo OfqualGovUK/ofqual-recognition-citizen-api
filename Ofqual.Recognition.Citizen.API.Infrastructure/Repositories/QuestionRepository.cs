@@ -56,6 +56,46 @@ public class QuestionRepository : IQuestionRepository
         }
     }
 
+    public async Task<TaskQuestion?> GetQuestion(Guid taskId, Guid questionId)
+    {
+        try
+        {
+            var query = @"
+                SELECT
+                    Q.QuestionId,
+                    Q.QuestionContent,
+                    Q.TaskId,
+                    Q.QuestionNameUrl AS CurrentQuestionNameUrl,
+                    QT.QuestionTypeName,
+                    (
+                        SELECT TOP 1 prev.QuestionNameUrl
+                        FROM recognitionCitizen.Question prev
+                        WHERE prev.TaskId = Q.TaskId
+                        AND prev.OrderNumber < Q.OrderNumber
+                        ORDER BY prev.OrderNumber DESC
+                    ) AS PreviousQuestionNameUrl,
+                    T.TaskNameUrl
+                FROM recognitionCitizen.Question Q
+                INNER JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
+                INNER JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
+                WHERE Q.QuestionId = @questionId AND T.TaskId = @taskId";
+
+            var result = await _connection.QueryFirstOrDefaultAsync<TaskQuestion>(query, new
+            {
+                taskId,
+                questionId
+            }, _transaction);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error retrieving question for TaskId: {TaskId}, QuestionId: {questionId}", taskId, questionId);
+            return null;
+        }
+    }
+
+
     public async Task<QuestionAnswerSubmissionResponseDto?> GetNextQuestionUrl(Guid currentQuestionId)
     {
         try
@@ -187,15 +227,14 @@ public class QuestionRepository : IQuestionRepository
         }
     }
 
-    public async Task<bool> CheckIfQuestionAnswerExists(string taskNameUrl, string questionNameUrl, string questionItemName, string questionItemAnswer) =>
+    public async Task<bool> CheckIfQuestionAnswerExists(Guid taskId, Guid questionId, string questionItemName, string questionItemAnswer) =>
        await _connection.QuerySingleAsync<bool>(@"SELECT ISNULL((   
                                                             SELECT TOP(1) 1 [row] 
                                                             FROM   [recognitionCitizen].[ApplicationAnswers] AS A
                                                             JOIN   [recognitionCitizen].[Question] AS Q ON Q.QuestionId = A.QuestionId 
                                                             JOIN   [recognitionCitizen].[Task] AS T ON Q.TaskId = T.TaskId 
-                                                            WHERE  T.TaskNameUrl = @taskNameUrl
-                                                            AND    Q.QuestionNameUrl = @QuestionNameUrl
-                                                            AND    JSON_VALUE(A.[Answer], @questionItemName) = @questionItemAnswer
-                                                        ),0);",
-           new { taskNameUrl, questionNameUrl, questionItemName, questionItemAnswer }, _transaction);
+                                                            WHERE  T.TaskId = @taskId
+                                                            AND    Q.QuestionId = @QuestionId
+                                                            AND    JSON_VALUE(A.[Answer], @questionItemName) = @questionItemAnswer),0);",
+           new { taskId, questionId, questionItemName, questionItemAnswer }, _transaction);
 }
