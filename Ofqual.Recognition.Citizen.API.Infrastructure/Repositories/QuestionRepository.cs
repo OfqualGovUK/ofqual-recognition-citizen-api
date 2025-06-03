@@ -17,7 +17,7 @@ public class QuestionRepository : IQuestionRepository
         _transaction = transaction;
     }
 
-    public async Task<TaskQuestion?> GetQuestion(string taskNameUrl, string questionNameUrl)
+    public async Task<QuestionDetails?> GetQuestion(string taskNameUrl, string questionNameUrl)
     {
         try
         {
@@ -35,13 +35,21 @@ public class QuestionRepository : IQuestionRepository
                         AND prev.OrderNumber < Q.OrderNumber
                         ORDER BY prev.OrderNumber DESC
                     ) AS PreviousQuestionNameUrl,
+                    (
+                        SELECT TOP 1 next.QuestionNameUrl
+                        FROM recognitionCitizen.Question next
+                        WHERE next.TaskId = Q.TaskId
+                        AND next.OrderNumber > Q.OrderNumber
+                        ORDER BY next.OrderNumber ASC
+                    ) AS NextQuestionNameUrl,
                     T.TaskNameUrl
                 FROM recognitionCitizen.Question Q
-                INNER JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
-                INNER JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
-                WHERE Q.QuestionNameUrl = @questionNameUrl AND T.TaskNameUrl = @taskNameUrl";
-
-            return await _connection.QueryFirstOrDefaultAsync<TaskQuestion>(query, new
+                JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
+                JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
+                WHERE Q.QuestionNameUrl = @questionNameUrl
+                AND T.TaskNameUrl = @taskNameUrl";
+            
+            return await _connection.QueryFirstOrDefaultAsync<QuestionDetails>(query, new
             {
                 taskNameUrl,
                 questionNameUrl
@@ -49,7 +57,7 @@ public class QuestionRepository : IQuestionRepository
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error retrieving question for TaskNameUrl: {TaskNameUrl}, QuestionNameUrl: {questionNameUrl}", taskNameUrl, questionNameUrl);
+            Log.Error(ex, "Error retrieving question for TaskNameUrl: {TaskNameUrl}, QuestionNameUrl: {QuestionNameUrl}", taskNameUrl, questionNameUrl);
             return null;
         }
     }
@@ -152,17 +160,13 @@ public class QuestionRepository : IQuestionRepository
                     QuestionId,
                     Answer,
                     CreatedByUpn,
-                    ModifiedByUpn,
-                    CreatedDate,
-                    ModifiedDate
+                    ModifiedByUpn
                 ) VALUES (
                     @ApplicationId,
                     @QuestionId,
                     @Answer,
                     @CreatedByUpn,
-                    @ModifiedByUpn,
-                    @CreatedDate,
-                    @ModifiedDate
+                    @ModifiedByUpn
                 );";
 
             var parameters = answers.Select(answer => new
@@ -171,9 +175,7 @@ public class QuestionRepository : IQuestionRepository
                 answer.QuestionId,
                 Answer = answer.AnswerJson,
                 CreatedByUpn = "USER",         // TODO: replace once auth gets added
-                ModifiedByUpn = "USER",        // TODO: replace once auth gets added
-                answer.CreatedDate,
-                answer.ModifiedDate
+                ModifiedByUpn = "USER"        // TODO: replace once auth gets added
             }).ToList();
 
             int rowsAffected = await _connection.ExecuteAsync(query, parameters, _transaction);
@@ -183,35 +185,6 @@ public class QuestionRepository : IQuestionRepository
         {
             Log.Error(ex, "Error inserting application answers for ApplicationId: {ApplicationId}", applicationId);
             return false;
-        }
-    }
-
-    public async Task<QuestionAnswerSubmissionResponseDto?> GetNextQuestionUrl(Guid currentQuestionId)
-    {
-        try
-        {
-            const string query = @"
-                SELECT TOP 1
-                    T.TaskNameUrl AS NextTaskNameUrl,
-                    [next].QuestionNameUrl AS NextQuestionNameUrl
-                FROM [recognitionCitizen].[Question] AS [current]
-                JOIN [recognitionCitizen].[Question] AS [next]
-                    ON [current].TaskId = [next].TaskId
-                JOIN [recognitionCitizen].[Task] AS T
-                    ON [next].TaskId = T.TaskId
-                WHERE [current].QuestionId = @QuestionId
-                AND [next].OrderNumber > [current].OrderNumber
-                ORDER BY [next].OrderNumber ASC";
-
-            return await _connection.QueryFirstOrDefaultAsync<QuestionAnswerSubmissionResponseDto>(query, new
-            {
-                QuestionId = currentQuestionId
-            }, _transaction);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error retrieving next question URL for QuestionId: {QuestionId}", currentQuestionId);
-            return null;
         }
     }
 
@@ -228,8 +201,20 @@ public class QuestionRepository : IQuestionRepository
                         Answer = @Answer,
                         ModifiedByUpn = @ModifiedByUpn
                 WHEN NOT MATCHED THEN
-                    INSERT (ApplicationId, QuestionId, Answer, CreatedByUpn, ModifiedByUpn)
-                    VALUES (@ApplicationId, @QuestionId, @Answer, @CreatedByUpn, @ModifiedByUpn);";
+                    INSERT (
+                        ApplicationId, 
+                        QuestionId,
+                        Answer, 
+                        CreatedByUpn, 
+                        ModifiedByUpn
+                    )
+                    VALUES (
+                        @ApplicationId, 
+                        @QuestionId, 
+                        @Answer, 
+                        @CreatedByUpn, 
+                        @ModifiedByUpn
+                    );";
 
             var rowsAffected = await _connection.ExecuteAsync(query, new
             {
@@ -306,6 +291,33 @@ public class QuestionRepository : IQuestionRepository
         {
             Log.Error(ex, "Failed to fetch answer for QuestionId: {QuestionId}, ApplicationId: {ApplicationId}", questionId, applicationId);
             return null;
+        }
+    }
+
+    public async Task<IEnumerable<Question>> GetAllQuestions()
+    {
+        try
+        {
+            const string query = @"
+                SELECT
+                    QuestionId,
+                    TaskId,
+                    OrderNumber,
+                    QuestionTypeId,
+                    QuestionContent,
+                    QuestionNameUrl,
+                    CreatedDate,
+                    ModifiedDate,
+                    CreatedByUpn,
+                    ModifiedByUpn
+                FROM [recognitionCitizen].[Question]";
+
+            return await _connection.QueryAsync<Question>(query, transaction: _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to fetch all questions");
+            return Enumerable.Empty<Question>();
         }
     }
 }

@@ -34,7 +34,7 @@ public class ApplicationController : ControllerBase
     /// </summary>
     /// <returns>The created application.</returns>
     [HttpPost]
-    public async Task<ActionResult<ApplicationDetailsDto>> CreateApplication([FromBody] IEnumerable<PreEngagementAnswerDto> PreEngagementAnswers)
+    public async Task<ActionResult<ApplicationDetailsDto>> CreateApplication([FromBody] IEnumerable<PreEngagementAnswerDto>? PreEngagementAnswers)
     {
         try
         {
@@ -50,10 +50,13 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Failed to create task statuses for the new application.");
             }
 
-            bool isPreEngagementAnswersInserted = await _context.QuestionRepository.InsertPreEngagementAnswers(application.ApplicationId, PreEngagementAnswers);
-            if (!isPreEngagementAnswersInserted)
+            if (PreEngagementAnswers != null && PreEngagementAnswers.Any())
             {
-                return BadRequest("Failed to insert pre-engagement answers for the new application.");
+                bool isPreEngagementAnswersInserted = await _context.QuestionRepository.InsertPreEngagementAnswers(application.ApplicationId, PreEngagementAnswers);
+                if (!isPreEngagementAnswersInserted)
+                {
+                    return BadRequest("Failed to insert pre-engagement answers for the new application.");
+                }
             }
 
             ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
@@ -129,7 +132,7 @@ public class ApplicationController : ControllerBase
     /// <param name="questionId">The ID of the question being answered.</param>
     /// <param name="request">The answer payload.</param>
     [HttpPost("{applicationId}/tasks/{taskId}/questions/{questionId}")]
-    public async Task<ActionResult<QuestionAnswerSubmissionResponseDto?>> SubmitQuestionAnswer(Guid applicationId, Guid taskId, Guid questionId, [FromBody] QuestionAnswerSubmissionDto request)
+    public async Task<IActionResult> SubmitQuestionAnswer(Guid applicationId, Guid taskId, Guid questionId, [FromBody] QuestionAnswerSubmissionDto request)
     {
         try
         {
@@ -145,10 +148,8 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Failed to update task status. Either the task does not exist or belongs to a different application.");
             }
 
-            QuestionAnswerSubmissionResponseDto? redirectUrl = await _context.QuestionRepository.GetNextQuestionUrl(questionId);
-
             _context.Commit();
-            return Ok(redirectUrl);
+            return NoContent();
         }
         catch (Exception ex)
         {
@@ -195,7 +196,7 @@ public class ApplicationController : ControllerBase
         try
         {
             QuestionAnswerDto? answer = await _context.QuestionRepository.GetQuestionAnswer(applicationId, questionId);
-            if (answer is null)
+            if (answer == null)
             {
                 return NotFound("No answer found for the specified question and application.");
             }

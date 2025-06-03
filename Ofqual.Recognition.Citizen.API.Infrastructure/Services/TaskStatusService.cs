@@ -14,25 +14,61 @@ public class TaskStatusService : ITaskStatusService
         _context = context;
     }
 
-    public async Task<bool> DetermineAndCreateTaskStatuses(Guid applicationId, IEnumerable<PreEngagementAnswerDto> answers)
+    public async Task<bool> DetermineAndCreateTaskStatuses(Guid applicationId, IEnumerable<PreEngagementAnswerDto>? answers)
     {
-        var tasks = await _context.TaskRepository.GetAllTask();
-
+        var tasks = (await _context.TaskRepository.GetAllTask())?.ToList();
         if (tasks == null || !tasks.Any())
         {
             return false;
         }
 
+        var questions = (await _context.QuestionRepository.GetAllQuestions())?.ToList();
+        if (questions == null || !questions.Any())
+        {
+            return false;
+        }
+
+        var questionsByTask = questions
+            .GroupBy(q => q.TaskId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var answeredQuestionIds = answers?
+            .Where(a => !string.IsNullOrWhiteSpace(a.AnswerJson) && !JsonHelper.IsEmptyJsonObject(a.AnswerJson))
+            .Select(a => a.QuestionId)
+            .ToHashSet() ?? new HashSet<Guid>();
+
         var statuses = tasks.Select(task =>
         {
-            var answer = answers.FirstOrDefault(a => a.TaskId == task.TaskId);
-            var isComplete = answer != null && !string.IsNullOrWhiteSpace(answer.AnswerJson) && !JsonHelper.IsEmptyJsonObject(answer.AnswerJson);
-            
+            var taskQuestions = questionsByTask.TryGetValue(task.TaskId, out var qList) ? qList : new List<Question>();
+
+            TaskStatusEnum status;
+
+            if (taskQuestions.Count == 0)
+            {
+                status = TaskStatusEnum.NotStarted;
+            }
+            else
+            {
+                var answeredCount = taskQuestions.Count(q => answeredQuestionIds.Contains(q.QuestionId));
+                if (answeredCount == 0)
+                {
+                    status = TaskStatusEnum.NotStarted;
+                }
+                else if (answeredCount == taskQuestions.Count)
+                {
+                    status = TaskStatusEnum.Completed;
+                }
+                else
+                {
+                    status = TaskStatusEnum.InProgress;
+                }
+            }
+
             return new TaskItemStatus
             {
                 ApplicationId = applicationId,
                 TaskId = task.TaskId,
-                Status = isComplete ? TaskStatusEnum.Completed : TaskStatusEnum.NotStarted,
+                Status = status,
                 CreatedByUpn = "USER",
                 ModifiedByUpn = "USER"
             };

@@ -5,11 +5,11 @@ namespace Ofqual.Recognition.Citizen.API.Core.Mappers;
 public static class QuestionMapper
 {
     /// <summary>
-    /// Maps a <see cref="TaskQuestion"/> data model to a <see cref="QuestionDto"/>.
+    /// Maps a <see cref="QuestionDetails"/> data model to a <see cref="QuestionDetailsDto"/>.
     /// </summary>
-    public static QuestionDto ToDto(TaskQuestion taskQuestion)
+    public static QuestionDetailsDto ToDto(QuestionDetails taskQuestion)
     {
-        return new QuestionDto
+        return new QuestionDetailsDto
         {
             QuestionId = taskQuestion.QuestionId,
             TaskId = taskQuestion.TaskId,
@@ -18,6 +18,9 @@ public static class QuestionMapper
             CurrentQuestionUrl = $"{taskQuestion.TaskNameUrl}/{taskQuestion.CurrentQuestionNameUrl}",
             PreviousQuestionUrl = taskQuestion.PreviousQuestionNameUrl != null
                 ? $"{taskQuestion.TaskNameUrl}/{taskQuestion.PreviousQuestionNameUrl}"
+                : null,
+            NextQuestionUrl = taskQuestion.NextQuestionNameUrl != null
+                ? $"{taskQuestion.TaskNameUrl}/{taskQuestion.NextQuestionNameUrl}"
                 : null
         };
     }
