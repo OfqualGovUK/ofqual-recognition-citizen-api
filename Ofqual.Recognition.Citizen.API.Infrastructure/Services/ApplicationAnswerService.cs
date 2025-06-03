@@ -7,6 +7,7 @@ using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 public class ApplicationAnswerService: IApplicationAnswerService
@@ -30,8 +31,6 @@ public class ApplicationAnswerService: IApplicationAnswerService
         var questionContent = JsonSerializer.Deserialize<QuestionContent>(questionDetails.QuestionContent);
         if (questionContent?.FormGroup?.Components == null)
             return null;
-
-
 
         var answerValue = JsonSerializer.Deserialize<Dictionary<string, string>>(answerDto.Answer);
         if (answerValue == null) return null;
@@ -74,38 +73,8 @@ public class ApplicationAnswerService: IApplicationAnswerService
 
             if (component is TextInput)
             {
-                if (component.Validation.MinLength.HasValue)
-                {
-                    if (component.Validation.CountWords ?? false)
-                    {
-
-                    }
-                    else
-                    {
-                        if(answerItem.Value.Length < component.Validation.MinLength)
-                            errors.Add(new ValidationErrorItemDto 
-                            { 
-                                Property = answerItem.Key, 
-                                ErrorMessage = $"{answerItem.Key} must be {component.Validation.MinLength} characters or more" 
-                            });
-                    }
-                }
-                if (component.Validation.MaxLength.HasValue)
-                {
-                    if (component.Validation.CountWords ?? false)
-                    {
-
-                    }
-                    else
-                    {
-                        if (answerItem.Value.Length < component.Validation.MaxLength)
-                            errors.Add(new ValidationErrorItemDto
-                            {
-                                Property = answerItem.Key,
-                                ErrorMessage = $"{answerItem.Key} must be {component.Validation.MaxLength} characters or less"
-                            });
-                    }
-                }
+                errors.AddRange(ValidateTextLength(component, answerItem));
+                
                 if (!string.IsNullOrWhiteSpace(component.Validation.Pattern)) 
                 {
                     var regex = new Regex(component.Validation.Pattern);
@@ -128,11 +97,50 @@ public class ApplicationAnswerService: IApplicationAnswerService
                         errors.Add(new ValidationErrorItemDto { Property = answerItem.Key, ErrorMessage = "too many items have been selected" });
                 }
             }
-            
-
         }
-
         return errors;
+    }
+
+    private static ValidationErrorItemDto[] ValidateTextLength(IComponent component, KeyValuePair<string, string> answerItem)
+    {
+        var hasMinValue = component.Validation?.MinLength.HasValue ?? false;
+        var hasMaxValue = component.Validation?.MaxLength.HasValue ?? false;
+
+        //Skip if we dont have min or max values set
+        if (!hasMinValue && !hasMaxValue)
+            return Array.Empty<ValidationErrorItemDto>();
+
+        //are we counting characters or words?
+        var countWords = component.Validation?.CountWords ?? false;
+        var answerLength = countWords
+            ? answerItem.Value.Split(['\t', '\r', '\n', ' '], StringSplitOptions.RemoveEmptyEntries).Length
+            : answerItem.Value.Length;
+
+        //WHERE minimum value is set AND size is smaller than minimum value
+        //OR maximum value is set AND size is bigger than maxiimum value
+        //THEN return an error
+        if ((hasMinValue && answerLength < component.Validation!.MinLength)
+        ||  (hasMaxValue && answerLength > component.Validation!.MaxLength))
+        {
+            var itemDto = new ValidationErrorItemDto 
+            { 
+                Property = answerItem.Key, 
+                ErrorMessage = $"{answerItem.Key} must be " 
+            };
+
+            var countType = countWords ? "words": "characters";
+           
+            if (!hasMinValue)
+                itemDto.ErrorMessage += $"{component.Validation!.MaxLength} {countType} or more";
+            else if (!hasMaxValue)
+                itemDto.ErrorMessage += $"{component.Validation!.MinLength} {countType} or less";
+            else
+                itemDto.ErrorMessage += $"between {component.Validation!.MinLength} " 
+                    + $"and {component.Validation!.MaxLength} {countType}";
+            return [itemDto];
+        }
+                
+        return Array.Empty<ValidationErrorItemDto>();
     }
 }
 
