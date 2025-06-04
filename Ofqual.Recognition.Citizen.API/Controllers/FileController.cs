@@ -54,8 +54,8 @@ public class FileController : ControllerBase
             }
 
             await using var scanStream = file.OpenReadStream();
-            var scanResult = await _antiVirus.ScanFile(scanStream, file.FileName);
-            if (scanResult.Outcome != VirusScanOutcome.Clean)
+            AttachmentScannerResult? scanResult = await _antiVirus.ScanFile(scanStream, file.FileName);
+            if (scanResult?.Status != ScanStatus.Ok)
             {
                 return BadRequest("The uploaded file failed a virus scan and cannot be accepted.");
             }

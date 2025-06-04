@@ -64,7 +64,7 @@ public class FileControllerTests
             ModifiedDate = DateTime.UtcNow
         };
 
-        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), fileName)).ReturnsAsync(new VirusScan { Outcome = VirusScanOutcome.Clean });
+        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), fileName)).ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
         _mockAttachmentRepo.Setup(r => r.CreateAttachment(fileName, formFile.ContentType, formFile.Length)).ReturnsAsync(attachment);
         _mockAttachmentRepo.Setup(r => r.CreateAttachmentLink(It.IsAny<Guid>(), attachment.AttachmentId, It.IsAny<Guid>(), It.IsAny<LinkType>())).ReturnsAsync(true);
         _mockBlobStorage.Setup(s => s.Write(It.IsAny<Guid>(), attachment.BlobId, It.IsAny<Stream>(), false)).Returns(Task.CompletedTask);
@@ -152,7 +152,7 @@ public class FileControllerTests
             ContentDisposition = "form-data; name=\"file\"; filename=\"unsafe.pdf\""
         };
 
-        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync(new VirusScan { Outcome = VirusScanOutcome.Infected });
+        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Found });
 
         // Act
         var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
@@ -176,7 +176,7 @@ public class FileControllerTests
         };
 
         _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>()))
-                      .ReturnsAsync(new VirusScan { Outcome = VirusScanOutcome.Clean });
+                      .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
         _mockAttachmentRepo.Setup(r => r.CreateAttachment(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<long>()))
                            .ReturnsAsync((Attachment?)null);
 
@@ -215,7 +215,7 @@ public class FileControllerTests
         };
 
         _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>()))
-                      .ReturnsAsync(new VirusScan { Outcome = VirusScanOutcome.Clean });
+                      .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
         _mockAttachmentRepo.Setup(r => r.CreateAttachment(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<long>()))
                            .ReturnsAsync(attachment);
         _mockAttachmentRepo.Setup(r => r.CreateAttachmentLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
@@ -459,7 +459,7 @@ public class FileControllerTests
         // Arrange
         _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync((Attachment?)null);
-        
+
         // Act
         var result = await _controller.DeleteFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
