@@ -39,7 +39,7 @@ public class ApplicationRepository : IApplicationRepository
         catch (Exception ex)
         {
             Log.Error(ex, "Error creating a new application");
-            return null!;
+            return null;
         }
     }
 }

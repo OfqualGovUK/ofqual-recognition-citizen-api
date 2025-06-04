@@ -36,7 +36,7 @@ public class QuestionControllerTests
     public async Task GetQuestions_ReturnsQuestion_WhenQuestionExists(string taskName, string questionName)
     {
         // Arrange
-        var expectedQuestion = new TaskQuestion
+        var expectedQuestion = new QuestionDetails
         {
             CurrentQuestionNameUrl = questionName,
             QuestionContent = "{\"hint\":\"test.\"}",
@@ -55,7 +55,7 @@ public class QuestionControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnedQuestion = Assert.IsType<QuestionDto>(okResult.Value);
+        var returnedQuestion = Assert.IsType<QuestionDetailsDto>(okResult.Value);
 
         Assert.Equal($"{expectedQuestion.TaskNameUrl}/{expectedQuestion.CurrentQuestionNameUrl}", returnedQuestion.CurrentQuestionUrl);
         Assert.Equal(expectedQuestion.QuestionTypeName, returnedQuestion.QuestionTypeName);
@@ -72,7 +72,7 @@ public class QuestionControllerTests
         // Arrange
         _mockQuestionRepository
             .Setup(repo => repo.GetQuestion(taskName, questionName))
-            .ReturnsAsync((TaskQuestion?)null);
+            .ReturnsAsync((QuestionDetails?)null);
 
         // Act
         var result = await _controller.GetQuestions(taskName, questionName);

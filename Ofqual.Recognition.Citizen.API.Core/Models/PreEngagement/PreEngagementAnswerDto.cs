@@ -4,6 +4,5 @@ public class PreEngagementAnswerDto
 {
     public Guid QuestionId { get; set; }
     public Guid TaskId { get; set; }
-    public string? AnswerJson { get; set; }
-    public DateTime SubmittedDate { get; set; }
+    public required string AnswerJson { get; set; }
 }
