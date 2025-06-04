@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 namespace Ofqual.Recognition.Citizen.API.Core.Helpers;
 
 public static class FileValidationHelper
@@ -9,9 +11,26 @@ public static class FileValidationHelper
         ".json", ".odt", ".rtf", ".txt"
     };
 
-    public static bool IsAllowedExtension(string fileName)
+    private static readonly HashSet<string> AllowedMimeTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        var extension = Path.GetExtension(fileName);
-        return !string.IsNullOrEmpty(extension) && AllowedExtensions.Contains(extension);
+        "text/csv",
+        "image/jpeg",
+        "image/png",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/pdf",
+        "application/json",
+        "application/vnd.oasis.opendocument.text",
+        "application/rtf",
+        "text/plain"
+    };
+
+    public static bool IsAllowedFile(IFormFile file)
+    {
+        var extension = Path.GetExtension(file.FileName);
+        return !string.IsNullOrEmpty(extension)
+               && AllowedExtensions.Contains(extension)
+               && AllowedMimeTypes.Contains(file.ContentType);
     }
 }

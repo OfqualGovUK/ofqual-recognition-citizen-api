@@ -34,7 +34,7 @@ public class FileController : ControllerBase
     [HttpPost("linked/{linkType}/{linkId}/application/{applicationId}")]
     [RequestSizeLimit(25 * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = 25 * 1024 * 1024)]
-    public async Task<ActionResult<AttachmentDto>> UploadFile(LinkTypeEnum linkType, Guid linkId, Guid applicationId, IFormFile file)
+    public async Task<ActionResult<AttachmentDto>> UploadFile(LinkType linkType, Guid linkId, Guid applicationId, IFormFile file)
     {
         try
         {
@@ -48,14 +48,14 @@ public class FileController : ControllerBase
                 return BadRequest("The file exceeds the maximum allowed size of 25MB.");
             }
 
-            if (!FileValidationHelper.IsAllowedExtension(file.FileName))
+            if (!FileValidationHelper.IsAllowedFile(file))
             {
-                return BadRequest("Unsupported file type. Allowed types: CSV, JPEG, PNG, Excel, Word, PDF and text formats.");
+                return BadRequest("Unsupported file type or content. Allowed: CSV, JPEG, PNG, Excel, Word, PDF and text formats.");
             }
 
             await using var scanStream = file.OpenReadStream();
             var scanResult = await _antiVirus.ScanFile(scanStream, file.FileName);
-            if (!scanResult.IsOk)
+            if (scanResult.Outcome != VirusScanOutcome.Clean)
             {
                 return BadRequest("The uploaded file failed a virus scan and cannot be accepted.");
             }
@@ -94,7 +94,7 @@ public class FileController : ControllerBase
     /// <param name="linkId">The unique identifier of the entity the files are linked to.</param>
     /// <returns>A list of attachments linked to the specified entity.</returns>
     [HttpGet("linked/{linkType}/{linkId}/application/{applicationId}")]
-    public async Task<ActionResult<List<Attachment>>> GetAllFiles(LinkTypeEnum linkType, Guid linkId, Guid applicationId)
+    public async Task<ActionResult<List<Attachment>>> GetAllFiles(LinkType linkType, Guid linkId, Guid applicationId)
     {
         try
         {
@@ -124,7 +124,7 @@ public class FileController : ControllerBase
     /// <param name="applicationId">The unique identifier of the application to associate the file with.</param>
     /// <returns>The file stream with appropriate MIME type and file name.</returns>
     [HttpGet("linked/{linkType}/{linkId}/attachment/{attachmentId}/application/{applicationId}")]
-    public async Task<IActionResult> DownloadFile(LinkTypeEnum linkType, Guid linkId, Guid attachmentId, Guid applicationId)
+    public async Task<IActionResult> DownloadFile(LinkType linkType, Guid linkId, Guid attachmentId, Guid applicationId)
     {
         try
         {
@@ -158,7 +158,7 @@ public class FileController : ControllerBase
     /// <param name="applicationId">The unique identifier of the application to associate the file with.</param>
     /// <returns>No content if the deletion is successful.</returns>
     [HttpDelete("linked/{linkType}/{linkId}/attachment/{attachmentId}/application/{applicationId}")]
-    public async Task<IActionResult> DeleteFile(LinkTypeEnum linkType, Guid linkId, Guid attachmentId, Guid applicationId)
+    public async Task<IActionResult> DeleteFile(LinkType linkType, Guid linkId, Guid attachmentId, Guid applicationId)
     {
         try
         {

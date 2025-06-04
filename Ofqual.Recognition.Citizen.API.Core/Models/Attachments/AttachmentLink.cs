@@ -7,7 +7,7 @@ public class AttachmentLink
     public Guid AttachmentLinkId { get; set; }
     public Guid AttachmentId { get; set; }
     public Guid LinkId { get; set; }
-    public LinkTypeEnum LinkTypeId { get; set; }
+    public LinkType LinkTypeId { get; set; }
     public Guid ApplicationId { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime ModifiedDate { get; set; }

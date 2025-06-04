@@ -18,7 +18,7 @@ public class AttachmentRepository : IAttachmentRepository
         _transaction = transaction;
     }
 
-    public async Task<Attachment?> GetLinkedAttachment(Guid applicationId, Guid attachmentId, Guid linkId, LinkTypeEnum linkType)
+    public async Task<Attachment?> GetLinkedAttachment(Guid applicationId, Guid attachmentId, Guid linkId, LinkType linkType)
     {
         try
         {
@@ -50,7 +50,7 @@ public class AttachmentRepository : IAttachmentRepository
         }
     }
 
-    public async Task<IEnumerable<Attachment>> GetAllAttachmentsForLink(Guid applicationId, Guid linkId, LinkTypeEnum linkType)
+    public async Task<IEnumerable<Attachment>> GetAllAttachmentsForLink(Guid applicationId, Guid linkId, LinkType linkType)
     {
         try
         {
@@ -115,7 +115,7 @@ public class AttachmentRepository : IAttachmentRepository
         }
     }
 
-    public async Task<bool> CreateAttachmentLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkTypeEnum linkTypeId)
+    public async Task<bool> CreateAttachmentLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkType linkTypeId)
     {
         try
         {
@@ -156,7 +156,7 @@ public class AttachmentRepository : IAttachmentRepository
         }
     }
 
-    public async Task<bool> DeleteAttachmentWithLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkTypeEnum linkType)
+    public async Task<bool> DeleteAttachmentWithLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkType linkType)
     {
         try
         {

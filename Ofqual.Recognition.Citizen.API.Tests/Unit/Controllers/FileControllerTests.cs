@@ -64,13 +64,13 @@ public class FileControllerTests
             ModifiedDate = DateTime.UtcNow
         };
 
-        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), fileName)).ReturnsAsync(new VirusScan { IsOk = true });
+        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), fileName)).ReturnsAsync(new VirusScan { Outcome = VirusScanOutcome.Clean });
         _mockAttachmentRepo.Setup(r => r.CreateAttachment(fileName, formFile.ContentType, formFile.Length)).ReturnsAsync(attachment);
-        _mockAttachmentRepo.Setup(r => r.CreateAttachmentLink(It.IsAny<Guid>(), attachment.AttachmentId, It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>())).ReturnsAsync(true);
+        _mockAttachmentRepo.Setup(r => r.CreateAttachmentLink(It.IsAny<Guid>(), attachment.AttachmentId, It.IsAny<Guid>(), It.IsAny<LinkType>())).ReturnsAsync(true);
         _mockBlobStorage.Setup(s => s.Write(It.IsAny<Guid>(), attachment.BlobId, It.IsAny<Stream>(), false)).Returns(Task.CompletedTask);
 
         // Act
-        var result = await _controller.UploadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), formFile);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -84,7 +84,7 @@ public class FileControllerTests
     public async Task UploadFile_ReturnsBadRequest_WhenFileIsNull()
     {
         // Act
-        var result = await _controller.UploadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), null);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), null);
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -99,7 +99,7 @@ public class FileControllerTests
         var file = new Mock<IFormFile>();
         file.Setup(f => f.Length).Returns(0);
         // Act
-        var result = await _controller.UploadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), file.Object);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file.Object);
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Equal("A file must be provided and must not be empty.", badRequest.Value);
@@ -115,7 +115,7 @@ public class FileControllerTests
         file.Setup(f => f.FileName).Returns("large.pdf");
 
         // Act
-        var result = await _controller.UploadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), file.Object);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file.Object);
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -132,7 +132,7 @@ public class FileControllerTests
         file.Setup(f => f.FileName).Returns("malware.exe");
 
         // Act
-        var result = await _controller.UploadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), file.Object);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file.Object);
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -152,10 +152,10 @@ public class FileControllerTests
             ContentDisposition = "form-data; name=\"file\"; filename=\"unsafe.pdf\""
         };
 
-        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync(new VirusScan { IsOk = false });
+        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync(new VirusScan { Outcome = VirusScanOutcome.Infected });
 
         // Act
-        var result = await _controller.UploadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), formFile);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -176,12 +176,12 @@ public class FileControllerTests
         };
 
         _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>()))
-                      .ReturnsAsync(new VirusScan { IsOk = true });
+                      .ReturnsAsync(new VirusScan { Outcome = VirusScanOutcome.Clean });
         _mockAttachmentRepo.Setup(r => r.CreateAttachment(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<long>()))
                            .ReturnsAsync((Attachment?)null);
 
         // Act
-        var result = await _controller.UploadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), formFile);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -215,14 +215,14 @@ public class FileControllerTests
         };
 
         _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>()))
-                      .ReturnsAsync(new VirusScan { IsOk = true });
+                      .ReturnsAsync(new VirusScan { Outcome = VirusScanOutcome.Clean });
         _mockAttachmentRepo.Setup(r => r.CreateAttachment(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<long>()))
                            .ReturnsAsync(attachment);
-        _mockAttachmentRepo.Setup(r => r.CreateAttachmentLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.CreateAttachmentLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(false);
 
         // Act
-        var result = await _controller.UploadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), formFile);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -250,11 +250,11 @@ public class FileControllerTests
             }
         };
 
-        _mockAttachmentRepo.Setup(r => r.GetAllAttachmentsForLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.GetAllAttachmentsForLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachments);
 
         // Act
-        var result = await _controller.GetAllFiles(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid());
+        var result = await _controller.GetAllFiles(LinkType.Question, Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -266,11 +266,11 @@ public class FileControllerTests
     public async Task GetAllFiles_ReturnsNotFound_WhenNoAttachmentsExist()
     {
         // Arrange
-        _mockAttachmentRepo.Setup(r => r.GetAllAttachmentsForLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.GetAllAttachmentsForLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(new List<Attachment>());
 
         // Act
-        var result = await _controller.GetAllFiles(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid());
+        var result = await _controller.GetAllFiles(LinkType.Question, Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         var notFound = Assert.IsType<NotFoundObjectResult>(result.Result);
@@ -296,13 +296,13 @@ public class FileControllerTests
 
         var stream = new MemoryStream(Encoding.UTF8.GetBytes("content"));
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
         _mockBlobStorage.Setup(s => s.Read(It.IsAny<Guid>(), It.IsAny<Guid>()))
                         .ReturnsAsync(stream);
 
         // Act
-        var result = await _controller.DownloadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var result = await _controller.DownloadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         var fileResult = Assert.IsType<FileStreamResult>(result);
@@ -314,11 +314,11 @@ public class FileControllerTests
     public async Task DownloadFile_ReturnsBadRequest_WhenAttachmentNotFound()
     {
         // Arrange
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync((Attachment?)null);
 
         // Act
-        var result = await _controller.DownloadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var result = await _controller.DownloadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
@@ -342,13 +342,13 @@ public class FileControllerTests
             ModifiedDate = DateTime.UtcNow
         };
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
         _mockBlobStorage.Setup(s => s.Read(It.IsAny<Guid>(), It.IsAny<Guid>()))
                         .ReturnsAsync((Stream?)null);
 
         // Act
-        var result = await _controller.DownloadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var result = await _controller.DownloadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
@@ -374,13 +374,13 @@ public class FileControllerTests
 
         var emptyStream = new MemoryStream();
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
         _mockBlobStorage.Setup(s => s.Read(It.IsAny<Guid>(), It.IsAny<Guid>()))
                         .ReturnsAsync(emptyStream);
 
         // Act
-        var result = await _controller.DownloadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var result = await _controller.DownloadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
@@ -406,13 +406,13 @@ public class FileControllerTests
 
         var stream = new MemoryStream(Encoding.UTF8.GetBytes("some content"));
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
         _mockBlobStorage.Setup(s => s.Read(It.IsAny<Guid>(), It.IsAny<Guid>()))
                         .ReturnsAsync(stream);
 
         // Act
-        var result = await _controller.DownloadFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var result = await _controller.DownloadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
@@ -437,15 +437,15 @@ public class FileControllerTests
             ModifiedDate = DateTime.UtcNow
         };
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
-        _mockAttachmentRepo.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(true);
         _mockBlobStorage.Setup(s => s.Delete(It.IsAny<Guid>(), It.IsAny<Guid>()))
                         .Returns(Task.CompletedTask);
 
         // Act
-        var result = await _controller.DeleteFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), attachment.AttachmentId, Guid.NewGuid());
+        var result = await _controller.DeleteFile(LinkType.Question, Guid.NewGuid(), attachment.AttachmentId, Guid.NewGuid());
 
         // Assert
         Assert.IsType<NoContentResult>(result);
@@ -457,11 +457,11 @@ public class FileControllerTests
     public async Task DeleteFile_ReturnsBadRequest_WhenAttachmentNotFound()
     {
         // Arrange
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync((Attachment?)null);
         
         // Act
-        var result = await _controller.DeleteFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var result = await _controller.DeleteFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
@@ -486,13 +486,13 @@ public class FileControllerTests
             ModifiedDate = DateTime.UtcNow
         };
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
-        _mockAttachmentRepo.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkTypeEnum>()))
+        _mockAttachmentRepo.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(false);
 
         // Act
-        var result = await _controller.DeleteFile(LinkTypeEnum.QuestionId, Guid.NewGuid(), attachment.AttachmentId, Guid.NewGuid());
+        var result = await _controller.DeleteFile(LinkType.Question, Guid.NewGuid(), attachment.AttachmentId, Guid.NewGuid());
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);

@@ -1,4 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Mappers;
 
@@ -11,9 +12,15 @@ public static class AntiVirusMapper
     {
         return new VirusScan
         {
-            IsOk = result.Status == "ok",
-            IsPending = result.Status == "pending",
-            ScanId = result.Id
+            ScanId = result.Id,
+            Outcome = result.Status switch
+            {
+                "ok" => VirusScanOutcome.Clean,
+                "pending" => VirusScanOutcome.Pending,
+                "infected" => VirusScanOutcome.Infected,
+                "error" => VirusScanOutcome.ScanFailed,
+                _ => VirusScanOutcome.ScanFailed
+            }
         };
     }
 }

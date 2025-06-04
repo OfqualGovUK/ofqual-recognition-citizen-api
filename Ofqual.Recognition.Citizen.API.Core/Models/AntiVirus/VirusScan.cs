@@ -1,8 +1,9 @@
-﻿namespace Ofqual.Recognition.Citizen.API.Core.Models;
+﻿using Ofqual.Recognition.Citizen.API.Core.Enums;
+
+namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 public class VirusScan
 {
-    public bool IsOk { get; set; }
-    public bool IsPending { get; set; }
-    public string ScanId { get; set; }
+    public string ScanId { get; set; } = string.Empty;
+    public VirusScanOutcome Outcome { get; set; }
 }

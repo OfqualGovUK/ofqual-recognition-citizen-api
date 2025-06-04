@@ -1,6 +1,7 @@
 ﻿using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
 using Serilog;
@@ -12,6 +13,7 @@ public class AntiVirusService : IAntiVirusService
     private readonly IHttpClientFactory _clientFactory;
     private readonly AntiVirusConfiguration _config;
     private const int PollingIntervalSeconds = 5;
+    private const int MaxPollingDurationSeconds = 30;
 
     public AntiVirusService(IHttpClientFactory clientFactory, AntiVirusConfiguration config)
     {
@@ -29,27 +31,44 @@ public class AntiVirusService : IAntiVirusService
         form.Add(fileContent, "file", fileName);
 
         var initialResponse = await client.PostAsync(_config.BaseUri, form);
-
         if (!initialResponse.IsSuccessStatusCode)
         {
             Log.Warning("Failed to initiate virus scan for file '{FileName}'. HTTP {StatusCode}", fileName, initialResponse.StatusCode);
-            return new VirusScan { IsOk = false };
+            return new VirusScan
+            {
+                ScanId = string.Empty,
+                Outcome = VirusScanOutcome.ScanFailed
+            };
         }
 
         var scanResult = await DeserialiseResponse(initialResponse);
         var virusScan = AntiVirusMapper.MapToVirusScan(scanResult);
 
         int totalWaitTime = 0;
-        while (virusScan.IsPending)
+        while (virusScan.Outcome == VirusScanOutcome.Pending && totalWaitTime < MaxPollingDurationSeconds)
         {
             await Task.Delay(PollingIntervalSeconds * 1000);
             totalWaitTime += PollingIntervalSeconds;
             virusScan = await PollScanResult(client, virusScan.ScanId);
         }
 
-        if (!virusScan.IsOk)
+        if (virusScan.Outcome == VirusScanOutcome.Pending)
         {
-            Log.Warning("Virus detected in file '{FileName}' or scan failed. ScanId: {ScanId}", fileName, virusScan.ScanId);
+            Log.Warning("Virus scan timed out for file '{FileName}'. ScanId: {ScanId}", fileName, virusScan.ScanId);
+            return new VirusScan
+            {
+                ScanId = virusScan.ScanId,
+                Outcome = VirusScanOutcome.TimedOut
+            };
+        }
+
+        if (virusScan.Outcome == VirusScanOutcome.Infected)
+        {
+            Log.Warning("Infected file detected: '{FileName}'. ScanId: {ScanId}", fileName, virusScan.ScanId);
+        }
+        else if (virusScan.Outcome == VirusScanOutcome.ScanFailed)
+        {
+            Log.Warning("Scan failed for file '{FileName}'. ScanId: {ScanId}", fileName, virusScan.ScanId);
         }
 
         return virusScan;
@@ -63,7 +82,11 @@ public class AntiVirusService : IAntiVirusService
         if (!response.IsSuccessStatusCode)
         {
             Log.Warning("Failed to retrieve scan result for ID '{ScanId}'. HTTP {StatusCode}", scanId, response.StatusCode);
-            return new VirusScan { IsOk = false, IsPending = false, ScanId = scanId };
+            return new VirusScan
+            {
+                ScanId = scanId,
+                Outcome = VirusScanOutcome.ScanFailed
+            };
         }
 
         var result = await DeserialiseResponse(response);
@@ -74,7 +97,7 @@ public class AntiVirusService : IAntiVirusService
     {
         var json = await response.Content.ReadAsStringAsync();
         var result = JsonConvert.DeserializeObject<AttachmentScannerResult>(json);
-        
+
         return result ?? throw new JsonException("Failed to deserialise scan result.");
     }
 }
