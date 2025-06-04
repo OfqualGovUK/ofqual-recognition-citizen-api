@@ -26,7 +26,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url", orderNumber: 1);
 
         unitOfWork.Commit();
 
@@ -60,7 +60,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
         var taskStatus = await TaskTestDataBuilder.CreateTestTaskStatus(unitOfWork, application.ApplicationId, task);
         var question = await QuestionTestDataBuilder.CreateTestQuestion(
@@ -105,8 +105,8 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task1 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-1-url");
-        var task2 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-2-url");
+        var task1 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-1-url", orderNumber: 1);
+        var task2 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-2-url", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
         await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, task1.TaskId, questionType.QuestionTypeId, 1, "url-task-1", "{\"title\":\"task 1 question\"}");
@@ -171,7 +171,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
         await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, task.TaskId, questionType.QuestionTypeId, 1, "test-url", "{\"title\":\"Test\"}");
@@ -206,7 +206,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var expectedTask = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "unique-task-url");
+        var expectedTask = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "unique-task-url", orderNumber: 1);
         unitOfWork.Commit();
 
         // Act

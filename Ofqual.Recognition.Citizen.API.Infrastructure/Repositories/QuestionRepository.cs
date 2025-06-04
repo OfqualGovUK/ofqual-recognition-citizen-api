@@ -48,7 +48,7 @@ public class QuestionRepository : IQuestionRepository
                 JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
                 WHERE Q.QuestionNameUrl = @questionNameUrl
                 AND T.TaskNameUrl = @taskNameUrl";
-            
+
             return await _connection.QueryFirstOrDefaultAsync<QuestionDetails>(query, new
             {
                 taskNameUrl,
@@ -67,40 +67,28 @@ public class QuestionRepository : IQuestionRepository
         try
         {
             var query = @"
-                WITH OrderedQuestions AS (
-                    SELECT 
+                SELECT *
+                FROM (
+                    SELECT
                         q.QuestionId,
                         q.QuestionContent,
                         q.TaskId,
                         q.QuestionNameUrl AS CurrentQuestionNameUrl,
                         qt.QuestionTypeName,
                         t.TaskNameUrl AS CurrentTaskNameUrl,
-                        LEAD(q.QuestionNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber) AS NextQuestionNameUrl,
-                        LEAD(t.TaskNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber) AS NextTaskNameUrl,
-                        LAG(q.QuestionNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber) AS PreviousQuestionNameUrl,
-                        LAG(t.TaskNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber) AS PreviousTaskNameUrl
+                        LEAD(q.QuestionNameUrl) OVER (ORDER BY vst.OrderNumber) AS NextQuestionNameUrl,
+                        LEAD(t.TaskNameUrl) OVER (ORDER BY vst.OrderNumber) AS NextTaskNameUrl,
+                        LAG(q.QuestionNameUrl) OVER (ORDER BY vst.OrderNumber) AS PreviousQuestionNameUrl,
+                        LAG(t.TaskNameUrl) OVER (ORDER BY vst.OrderNumber) AS PreviousTaskNameUrl
                     FROM recognitionCitizen.Question q
                     INNER JOIN recognitionCitizen.QuestionType qt ON q.QuestionTypeId = qt.QuestionTypeId
                     INNER JOIN recognitionCitizen.Task t ON q.TaskId = t.TaskId
-                    INNER JOIN recognitionCitizen.Section s ON t.SectionId = s.SectionId
-                    INNER JOIN recognitionCitizen.StageTask st ON st.TaskId = t.TaskId
-                    INNER JOIN recognitionCitizen.Ref_V_Stage rs ON rs.KeyValueId = st.StageId
-                    WHERE rs.LookUpKey = N'Pre-application Enagagement'
-                )
-                SELECT
-                    QuestionId,
-                    QuestionContent,
-                    TaskId,
-                    CurrentQuestionNameUrl,
-                    QuestionTypeName,
-                    CurrentTaskNameUrl,
-                    NextQuestionNameUrl,
-                    NextTaskNameUrl,
-                    PreviousQuestionNameUrl,
-                    PreviousTaskNameUrl
-                FROM OrderedQuestions
-                WHERE CurrentTaskNameUrl = @taskNameUrl AND CurrentQuestionNameUrl = @questionNameUrl;";
-
+                    INNER JOIN recognitionCitizen.v_StageTask vst ON vst.TaskId = t.TaskId
+                    WHERE vst.Stage = N'Pre-application Enagagement'
+                ) ordered
+                WHERE ordered.CurrentTaskNameUrl = @taskNameUrl
+                AND ordered.CurrentQuestionNameUrl = @questionNameUrl;";
+            
             return await _connection.QueryFirstOrDefaultAsync<PreEngagementQuestionDetails>(query, new
             {
                 taskNameUrl,
@@ -113,33 +101,22 @@ public class QuestionRepository : IQuestionRepository
             return null;
         }
     }
-
+    
     public async Task<PreEngagementQuestionDto?> GetFirstPreEngagementQuestion()
     {
         try
         {
             var query = @"
-                WITH OrderedQuestions AS (
-                    SELECT
-                        q.QuestionId,
-                        q.TaskId,
-                        q.QuestionNameUrl AS CurrentQuestionNameUrl,
-                        t.TaskNameUrl AS CurrentTaskNameUrl,
-                        ROW_NUMBER() OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber) AS RowNum
-                    FROM recognitionCitizen.Question q
-                    INNER JOIN recognitionCitizen.Task t ON q.TaskId = t.TaskId
-                    INNER JOIN recognitionCitizen.Section s ON t.SectionId = s.SectionId
-                    INNER JOIN recognitionCitizen.StageTask st ON st.TaskId = t.TaskId
-                    INNER JOIN recognitionCitizen.Ref_V_Stage rs ON rs.KeyValueId = st.StageId
-                    WHERE rs.LookUpKey = N'Pre-application Enagagement'
-                )
-                SELECT
-                    QuestionId,
-                    TaskId,
-                    CurrentTaskNameUrl,
-                    CurrentQuestionNameUrl
-                FROM OrderedQuestions
-                WHERE RowNum = 1;";
+                SELECT TOP 1
+                    q.QuestionId,
+                    q.TaskId,
+                    t.TaskNameUrl AS CurrentTaskNameUrl,
+                    q.QuestionNameUrl AS CurrentQuestionNameUrl
+                FROM recognitionCitizen.Question q
+                INNER JOIN recognitionCitizen.Task t ON q.TaskId = t.TaskId
+                INNER JOIN recognitionCitizen.v_StageTask vst ON vst.TaskId = t.TaskId
+                WHERE vst.Stage = N'Pre-application Enagagement'
+                ORDER BY vst.OrderNumber;";
 
             return await _connection.QueryFirstOrDefaultAsync<PreEngagementQuestionDto>(query, transaction: _transaction);
         }

@@ -25,7 +25,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
         var q1 = await QuestionTestDataBuilder.CreateTestQuestion(
@@ -64,7 +64,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-url");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-url", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
         var first = await QuestionTestDataBuilder.CreateTestQuestion(
@@ -117,7 +117,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-url");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-url", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
         var first = await QuestionTestDataBuilder.CreateTestQuestion(
@@ -150,7 +150,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
         var question = await QuestionTestDataBuilder.CreateTestQuestion(
@@ -210,7 +210,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
         var question = await QuestionTestDataBuilder.CreateTestQuestion(
             unitOfWork,
@@ -271,7 +271,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-name-url", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
         var question = await QuestionTestDataBuilder.CreateTestQuestion(
@@ -325,7 +325,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "test-task");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "test-task", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
         var question = await QuestionTestDataBuilder.CreateTestQuestion(
             unitOfWork,
@@ -368,7 +368,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-without-answer");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-without-answer", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
         var question = await QuestionTestDataBuilder.CreateTestQuestion(
             unitOfWork,
@@ -403,7 +403,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-url");
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, section.SectionId, "task-url", orderNumber: 1);
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
 
         var question1 = await QuestionTestDataBuilder.CreateTestQuestion(
@@ -438,6 +438,115 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
             Assert.False(string.IsNullOrWhiteSpace(q.QuestionContent));
             Assert.NotEqual(default, q.CreatedDate);
         });
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetFirstPreEngagementQuestion_Should_Return_First_Ordered_Question()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        var task1 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, sectionId: section.SectionId, taskNameUrl: "test", orderNumber: 2);
+        var task2 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, sectionId: section.SectionId, taskNameUrl: "test", orderNumber: 1);
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
+
+        var q1 = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task1.TaskId,
+            questionType.QuestionTypeId,
+            order: 1,
+            url: "q-task1",
+            content: "{\"title\":\"second question\"}");
+
+        var q2 = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task2.TaskId,
+            questionType.QuestionTypeId,
+            order: 1,
+            url: "q-task2",
+            content: "{\"title\":\"first question\"}");
+
+        await StageTestDataBuilder.CreateStageTask(unitOfWork, stageId: 1, taskId: task1.TaskId, order: 2);
+        await StageTestDataBuilder.CreateStageTask(unitOfWork, stageId: 1, taskId: task2.TaskId, order: 1);
+
+        unitOfWork.Commit();
+
+        // Act
+        var result = await unitOfWork.QuestionRepository.GetFirstPreEngagementQuestion();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(q2.QuestionId, result.QuestionId);
+        Assert.Equal(task2.TaskId, result.TaskId);
+        Assert.Equal(task2.TaskNameUrl, result.CurrentTaskNameUrl);
+        Assert.Equal(q2.QuestionNameUrl, result.CurrentQuestionNameUrl);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetPreEngagementQuestion_Should_Return_Correct_Question_With_Navigation()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+        
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, sectionId: section.SectionId, taskNameUrl: "task-url", orderNumber: 1);
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
+      
+        var question1 = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task.TaskId,
+            questionType.QuestionTypeId,
+            order: 1,
+            url: "question-1",
+            content: "{\"label\":\"First\"}");
+        
+        var question2 = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task.TaskId,
+            questionType.QuestionTypeId,
+            order: 2,
+            url: "question-2",
+            content: "{\"label\":\"Middle\"}");
+        
+        var question3 = await QuestionTestDataBuilder.CreateTestQuestion(
+            unitOfWork,
+            task.TaskId,
+            questionType.QuestionTypeId,
+            order: 3,
+            url: "question-3",
+            content: "{\"label\":\"Last\"}");
+
+        await StageTestDataBuilder.CreateStageTask(unitOfWork, stageId: 1, taskId: task.TaskId, order: 1);
+
+        unitOfWork.Commit();
+
+        // Act
+        var result = await unitOfWork.QuestionRepository.GetPreEngagementQuestion("task-url", "question-2");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(question2.QuestionId, result.QuestionId);
+        Assert.Equal(task.TaskId, result.TaskId);
+        Assert.Equal(task.TaskNameUrl, result.CurrentTaskNameUrl);
+        Assert.Equal(question2.QuestionNameUrl, result.CurrentQuestionNameUrl);
+        Assert.Equal("question-1", result.PreviousQuestionNameUrl);
+        Assert.Equal("question-3", result.NextQuestionNameUrl);
+        Assert.Equal("task-url", result.PreviousTaskNameUrl);
+        Assert.Equal("task-url", result.NextTaskNameUrl);
 
         // Clean up test container
         await _fixture.DisposeAsync();
