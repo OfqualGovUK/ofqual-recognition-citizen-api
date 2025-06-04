@@ -14,16 +14,20 @@ public class TaskControllerTests
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<ITaskRepository> _mockTaskRepository;
     private readonly TaskController _controller;
-    
+
     public TaskControllerTests()
     {
         _mockUnitOfWork = new Mock<IUnitOfWork>();
+
         _mockTaskRepository = new Mock<ITaskRepository>();
         _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
-        _controller = new TaskController(_mockUnitOfWork.Object);
-        _controller.ControllerContext = new ControllerContext
+        
+        _controller = new TaskController(_mockUnitOfWork.Object)
         {
-            HttpContext = new DefaultHttpContext()
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
         };
     }
 

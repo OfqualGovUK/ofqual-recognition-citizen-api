@@ -85,7 +85,6 @@ public class AttachmentRepository : IAttachmentRepository
             const string query = @"
                 INSERT INTO [recognitionCitizen].[Attachment] (
                     FileName,
-                    BlobId,
                     FileMIMEtype,
                     FileSize,
                     CreatedByUpn,
@@ -94,7 +93,6 @@ public class AttachmentRepository : IAttachmentRepository
                 OUTPUT INSERTED.*
                 VALUES (
                     @FileName,
-                    @BlobId,
                     @FileMIMEtype,
                     @FileSize,
                     @CreatedByUpn,
@@ -104,7 +102,6 @@ public class AttachmentRepository : IAttachmentRepository
             return await _connection.QuerySingleAsync<Attachment>(query, new
             {
                 FileName = fileName,
-                BlobId = Guid.NewGuid(),
                 FileMIMEtype = contentType,
                 FileSize = size,
                 CreatedByUpn = "USER",      // TODO: replace once auth gets added

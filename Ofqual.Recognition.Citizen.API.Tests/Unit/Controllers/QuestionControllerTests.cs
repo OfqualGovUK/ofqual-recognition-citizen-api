@@ -22,10 +22,12 @@ public class QuestionControllerTests
         _mockQuestionRepository = new Mock<IQuestionRepository>();
         _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
 
-        _controller = new QuestionController(_mockUnitOfWork.Object);
-        _controller.ControllerContext = new ControllerContext
+        _controller = new QuestionController(_mockUnitOfWork.Object)
         {
-            HttpContext = new DefaultHttpContext()
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
         };
     }
 

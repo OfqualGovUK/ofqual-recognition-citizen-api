@@ -1,6 +1,7 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Helpers;
+using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Microsoft.AspNetCore.Mvc;
@@ -29,12 +30,11 @@ public class FileController : ControllerBase
     /// <param name="linkType">The type of link the file is associated with.</param>
     /// <param name="linkId">The unique identifier of the entity the file is linked to.</param>
     /// <param name="applicationId">The unique identifier of the application to associate the file with.</param>
-    /// <param name="file">The file to upload.</param>
     /// <returns>The created attachment details.</returns>
     [HttpPost("linked/{linkType}/{linkId}/application/{applicationId}")]
     [RequestSizeLimit(25 * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = 25 * 1024 * 1024)]
-    public async Task<ActionResult<Attachment>> UploadFile(LinkTypeEnum linkType, Guid linkId, Guid applicationId, IFormFile file)
+    public async Task<ActionResult<AttachmentDto>> UploadFile(LinkTypeEnum linkType, Guid linkId, Guid applicationId, IFormFile file)
     {
         try
         {
@@ -60,13 +60,13 @@ public class FileController : ControllerBase
                 return BadRequest("The uploaded file failed a virus scan and cannot be accepted.");
             }
 
-            var savedAttachment = await _context.AttachmentRepository.CreateAttachment(file.FileName, file.ContentType, file.Length);
+            Attachment? savedAttachment = await _context.AttachmentRepository.CreateAttachment(file.FileName, file.ContentType, file.Length);
             if (savedAttachment == null)
             {
                 return BadRequest("Failed to save attachment metadata.");
             }
 
-            var linkCreated = await _context.AttachmentRepository.CreateAttachmentLink(applicationId, savedAttachment.AttachmentId, linkId, linkType);
+            bool linkCreated = await _context.AttachmentRepository.CreateAttachmentLink(applicationId, savedAttachment.AttachmentId, linkId, linkType);
             if (!linkCreated)
             {
                 return BadRequest("Failed to create attachment link.");
@@ -75,7 +75,10 @@ public class FileController : ControllerBase
             await using var writeStream = file.OpenReadStream();
             await _blobStorage.Write(applicationId, savedAttachment.BlobId, writeStream);
 
-            return Ok(savedAttachment);
+            AttachmentDto savedAttachmentDto = AttachmentMapper.ToDto(savedAttachment);
+
+            _context.Commit();
+            return Ok(savedAttachmentDto);
         }
         catch (Exception ex)
         {
@@ -91,7 +94,7 @@ public class FileController : ControllerBase
     /// <param name="linkId">The unique identifier of the entity the files are linked to.</param>
     /// <returns>A list of attachments linked to the specified entity.</returns>
     [HttpGet("linked/{linkType}/{linkId}/application/{applicationId}")]
-    public async Task<ActionResult<IEnumerable<Attachment>>> GetAllFiles(LinkTypeEnum linkType, Guid linkId, Guid applicationId)
+    public async Task<ActionResult<List<Attachment>>> GetAllFiles(LinkTypeEnum linkType, Guid linkId, Guid applicationId)
     {
         try
         {
@@ -101,7 +104,9 @@ public class FileController : ControllerBase
                 return NotFound("No attachments found for the specified entity.");
             }
 
-            return Ok(attachments);
+            var attachmentDtos = AttachmentMapper.ToDto(attachments);
+
+            return Ok(attachmentDtos);
         }
         catch (Exception ex)
         {
@@ -118,18 +123,18 @@ public class FileController : ControllerBase
     /// <param name="attachmentId">The unique identifier of the attachment to download.</param>
     /// <param name="applicationId">The unique identifier of the application to associate the file with.</param>
     /// <returns>The file stream with appropriate MIME type and file name.</returns>
-    [HttpGet("linked/{linkType}/{linkId}/{attachmentId}/application/{applicationId}")]
+    [HttpGet("linked/{linkType}/{linkId}/attachment/{attachmentId}/application/{applicationId}")]
     public async Task<IActionResult> DownloadFile(LinkTypeEnum linkType, Guid linkId, Guid attachmentId, Guid applicationId)
     {
         try
         {
-            var attachment = await _context.AttachmentRepository.GetLinkedAttachment(applicationId, attachmentId, linkId, linkType);
+            Attachment? attachment = await _context.AttachmentRepository.GetLinkedAttachment(applicationId, attachmentId, linkId, linkType);
             if (attachment == null)
             {
                 return BadRequest("Attachment is not linked to the specified entity or does not exist.");
             }
 
-            var stream = await _blobStorage.Read(applicationId, attachment.BlobId);
+            Stream stream = await _blobStorage.Read(applicationId, attachment.BlobId);
             if (stream == null || stream.Length == 0 || string.IsNullOrWhiteSpace(attachment.FileMIMEtype) || string.IsNullOrWhiteSpace(attachment.FileName))
             {
                 return BadRequest("Invalid or incomplete file data. Download cannot proceed.");
@@ -152,18 +157,18 @@ public class FileController : ControllerBase
     /// <param name="attachmentId">The unique identifier of the attachment to delete.</param>
     /// <param name="applicationId">The unique identifier of the application to associate the file with.</param>
     /// <returns>No content if the deletion is successful.</returns>
-    [HttpDelete("linked/{linkType}/{linkId}/{attachmentId}/application/{applicationId}")]
+    [HttpDelete("linked/{linkType}/{linkId}/attachment/{attachmentId}/application/{applicationId}")]
     public async Task<IActionResult> DeleteFile(LinkTypeEnum linkType, Guid linkId, Guid attachmentId, Guid applicationId)
     {
         try
         {
-            var attachment = await _context.AttachmentRepository.GetLinkedAttachment(applicationId, attachmentId, linkId, linkType);
+            Attachment? attachment = await _context.AttachmentRepository.GetLinkedAttachment(applicationId, attachmentId, linkId, linkType);
             if (attachment == null)
             {
                 return BadRequest("Attachment is not linked to the specified entity or does not exist.");
             }
 
-            var deleted = await _context.AttachmentRepository.DeleteAttachmentWithLink(applicationId, attachmentId, linkId, linkType);
+            bool deleted = await _context.AttachmentRepository.DeleteAttachmentWithLink(applicationId, attachmentId, linkId, linkType);
             if (!deleted)
             {
                 return BadRequest("Failed to delete attachment metadata.");
@@ -171,6 +176,7 @@ public class FileController : ControllerBase
 
             await _blobStorage.Delete(applicationId, attachment.BlobId);
 
+            _context.Commit();
             return NoContent();
         }
         catch (Exception ex)
