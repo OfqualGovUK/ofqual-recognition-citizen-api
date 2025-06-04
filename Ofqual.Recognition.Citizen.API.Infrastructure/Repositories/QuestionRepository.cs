@@ -17,7 +17,7 @@ public class QuestionRepository : IQuestionRepository
         _transaction = transaction;
     }
 
-    public async Task<TaskQuestion?> GetQuestion(string taskNameUrl, string questionNameUrl)
+    public async Task<QuestionDetails?> GetQuestion(string taskNameUrl, string questionNameUrl)
     {
         try
         {
@@ -35,13 +35,21 @@ public class QuestionRepository : IQuestionRepository
                         AND prev.OrderNumber < Q.OrderNumber
                         ORDER BY prev.OrderNumber DESC
                     ) AS PreviousQuestionNameUrl,
+                    (
+                        SELECT TOP 1 next.QuestionNameUrl
+                        FROM recognitionCitizen.Question next
+                        WHERE next.TaskId = Q.TaskId
+                        AND next.OrderNumber > Q.OrderNumber
+                        ORDER BY next.OrderNumber ASC
+                    ) AS NextQuestionNameUrl,
                     T.TaskNameUrl
                 FROM recognitionCitizen.Question Q
-                INNER JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
-                INNER JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
-                WHERE Q.QuestionNameUrl = @questionNameUrl AND T.TaskNameUrl = @taskNameUrl";
+                JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
+                JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
+                WHERE Q.QuestionNameUrl = @questionNameUrl
+                AND T.TaskNameUrl = @taskNameUrl";
 
-            return await _connection.QueryFirstOrDefaultAsync<TaskQuestion>(query, new
+            return await _connection.QueryFirstOrDefaultAsync<QuestionDetails>(query, new
             {
                 taskNameUrl,
                 questionNameUrl
@@ -49,7 +57,7 @@ public class QuestionRepository : IQuestionRepository
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error retrieving question for TaskNameUrl: {TaskNameUrl}, QuestionNameUrl: {questionNameUrl}", taskNameUrl, questionNameUrl);
+            Log.Error(ex, "Error retrieving question for TaskNameUrl: {TaskNameUrl}, QuestionNameUrl: {QuestionNameUrl}", taskNameUrl, questionNameUrl);
             return null;
         }
     }
@@ -59,40 +67,28 @@ public class QuestionRepository : IQuestionRepository
         try
         {
             var query = @"
-                WITH OrderedQuestions AS (
-                    SELECT 
+                SELECT *
+                FROM (
+                    SELECT
                         q.QuestionId,
                         q.QuestionContent,
                         q.TaskId,
                         q.QuestionNameUrl AS CurrentQuestionNameUrl,
                         qt.QuestionTypeName,
                         t.TaskNameUrl AS CurrentTaskNameUrl,
-                        LEAD(q.QuestionNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber) AS NextQuestionNameUrl,
-                        LEAD(t.TaskNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber) AS NextTaskNameUrl,
-                        LAG(q.QuestionNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber) AS PreviousQuestionNameUrl,
-                        LAG(t.TaskNameUrl) OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber) AS PreviousTaskNameUrl
+                        LEAD(q.QuestionNameUrl) OVER (ORDER BY vst.OrderNumber) AS NextQuestionNameUrl,
+                        LEAD(t.TaskNameUrl) OVER (ORDER BY vst.OrderNumber) AS NextTaskNameUrl,
+                        LAG(q.QuestionNameUrl) OVER (ORDER BY vst.OrderNumber) AS PreviousQuestionNameUrl,
+                        LAG(t.TaskNameUrl) OVER (ORDER BY vst.OrderNumber) AS PreviousTaskNameUrl
                     FROM recognitionCitizen.Question q
                     INNER JOIN recognitionCitizen.QuestionType qt ON q.QuestionTypeId = qt.QuestionTypeId
                     INNER JOIN recognitionCitizen.Task t ON q.TaskId = t.TaskId
-                    INNER JOIN recognitionCitizen.Section s ON t.SectionId = s.SectionId
-                    INNER JOIN recognitionCitizen.StageTask st ON st.TaskId = t.TaskId
-                    INNER JOIN recognitionCitizen.Ref_V_Stage rs ON rs.KeyValueId = st.StageId
-                    WHERE rs.LookUpKey = N'Pre-application Enagagement'
-                )
-                SELECT
-                    QuestionId,
-                    QuestionContent,
-                    TaskId,
-                    CurrentQuestionNameUrl,
-                    QuestionTypeName,
-                    CurrentTaskNameUrl,
-                    NextQuestionNameUrl,
-                    NextTaskNameUrl,
-                    PreviousQuestionNameUrl,
-                    PreviousTaskNameUrl
-                FROM OrderedQuestions
-                WHERE CurrentTaskNameUrl = @taskNameUrl AND CurrentQuestionNameUrl = @questionNameUrl;";
-
+                    INNER JOIN recognitionCitizen.v_StageTask vst ON vst.TaskId = t.TaskId
+                    WHERE vst.Stage = N'Pre-application Enagagement'
+                ) ordered
+                WHERE ordered.CurrentTaskNameUrl = @taskNameUrl
+                AND ordered.CurrentQuestionNameUrl = @questionNameUrl;";
+            
             return await _connection.QueryFirstOrDefaultAsync<PreEngagementQuestionDetails>(query, new
             {
                 taskNameUrl,
@@ -105,112 +101,28 @@ public class QuestionRepository : IQuestionRepository
             return null;
         }
     }
-
+    
     public async Task<PreEngagementQuestionDto?> GetFirstPreEngagementQuestion()
     {
         try
         {
             var query = @"
-                WITH OrderedQuestions AS (
-                    SELECT
-                        q.QuestionId,
-                        q.TaskId,
-                        q.QuestionNameUrl AS CurrentQuestionNameUrl,
-                        t.TaskNameUrl AS CurrentTaskNameUrl,
-                        ROW_NUMBER() OVER (ORDER BY s.OrderNumber, t.OrderNumber, q.OrderNumber) AS RowNum
-                    FROM recognitionCitizen.Question q
-                    INNER JOIN recognitionCitizen.Task t ON q.TaskId = t.TaskId
-                    INNER JOIN recognitionCitizen.Section s ON t.SectionId = s.SectionId
-                    INNER JOIN recognitionCitizen.StageTask st ON st.TaskId = t.TaskId
-                    INNER JOIN recognitionCitizen.Ref_V_Stage rs ON rs.KeyValueId = st.StageId
-                    WHERE rs.LookUpKey = N'Pre-application Enagagement'
-                )
-                SELECT
-                    QuestionId,
-                    TaskId,
-                    CurrentTaskNameUrl,
-                    CurrentQuestionNameUrl
-                FROM OrderedQuestions
-                WHERE RowNum = 1;";
+                SELECT TOP 1
+                    q.QuestionId,
+                    q.TaskId,
+                    t.TaskNameUrl AS CurrentTaskNameUrl,
+                    q.QuestionNameUrl AS CurrentQuestionNameUrl
+                FROM recognitionCitizen.Question q
+                INNER JOIN recognitionCitizen.Task t ON q.TaskId = t.TaskId
+                INNER JOIN recognitionCitizen.v_StageTask vst ON vst.TaskId = t.TaskId
+                WHERE vst.Stage = N'Pre-application Enagagement'
+                ORDER BY vst.OrderNumber;";
 
             return await _connection.QueryFirstOrDefaultAsync<PreEngagementQuestionDto>(query, transaction: _transaction);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error retrieving first pre-engagement question.");
-            return null;
-        }
-    }
-
-    public async Task<bool> InsertPreEngagementAnswers(Guid applicationId, IEnumerable<PreEngagementAnswerDto> answers)
-    {
-        try
-        {
-            const string query = @"
-                INSERT INTO [recognitionCitizen].[ApplicationAnswers] (
-                    ApplicationId,
-                    QuestionId,
-                    Answer,
-                    CreatedByUpn,
-                    ModifiedByUpn,
-                    CreatedDate,
-                    ModifiedDate
-                ) VALUES (
-                    @ApplicationId,
-                    @QuestionId,
-                    @Answer,
-                    @CreatedByUpn,
-                    @ModifiedByUpn,
-                    @CreatedDate,
-                    @ModifiedDate
-                );";
-
-            var parameters = answers.Select(answer => new
-            {
-                ApplicationId = applicationId,
-                answer.QuestionId,
-                Answer = answer.AnswerJson,
-                CreatedByUpn = "USER",         // TODO: replace once auth gets added
-                ModifiedByUpn = "USER",        // TODO: replace once auth gets added
-                CreatedDate = answer.SubmittedDate,
-                ModifiedDate = answer.SubmittedDate
-            }).ToList();
-
-            int rowsAffected = await _connection.ExecuteAsync(query, parameters, _transaction);
-            return rowsAffected == parameters.Count;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error inserting application answers for ApplicationId: {ApplicationId}", applicationId);
-            return false;
-        }
-    }
-
-    public async Task<QuestionAnswerSubmissionResponseDto?> GetNextQuestionUrl(Guid currentQuestionId)
-    {
-        try
-        {
-            const string query = @"
-                SELECT TOP 1
-                    T.TaskNameUrl AS NextTaskNameUrl,
-                    [next].QuestionNameUrl AS NextQuestionNameUrl
-                FROM [recognitionCitizen].[Question] AS [current]
-                JOIN [recognitionCitizen].[Question] AS [next]
-                    ON [current].TaskId = [next].TaskId
-                JOIN [recognitionCitizen].[Task] AS T
-                    ON [next].TaskId = T.TaskId
-                WHERE [current].QuestionId = @QuestionId
-                AND [next].OrderNumber > [current].OrderNumber
-                ORDER BY [next].OrderNumber ASC";
-
-            return await _connection.QueryFirstOrDefaultAsync<QuestionAnswerSubmissionResponseDto>(query, new
-            {
-                QuestionId = currentQuestionId
-            }, _transaction);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error retrieving next question URL for QuestionId: {QuestionId}", currentQuestionId);
             return null;
         }
     }
@@ -228,8 +140,20 @@ public class QuestionRepository : IQuestionRepository
                         Answer = @Answer,
                         ModifiedByUpn = @ModifiedByUpn
                 WHEN NOT MATCHED THEN
-                    INSERT (ApplicationId, QuestionId, Answer, CreatedByUpn, ModifiedByUpn)
-                    VALUES (@ApplicationId, @QuestionId, @Answer, @CreatedByUpn, @ModifiedByUpn);";
+                    INSERT (
+                        ApplicationId, 
+                        QuestionId,
+                        Answer, 
+                        CreatedByUpn, 
+                        ModifiedByUpn
+                    )
+                    VALUES (
+                        @ApplicationId, 
+                        @QuestionId, 
+                        @Answer, 
+                        @CreatedByUpn, 
+                        @ModifiedByUpn
+                    );";
 
             var rowsAffected = await _connection.ExecuteAsync(query, new
             {
@@ -306,6 +230,33 @@ public class QuestionRepository : IQuestionRepository
         {
             Log.Error(ex, "Failed to fetch answer for QuestionId: {QuestionId}, ApplicationId: {ApplicationId}", questionId, applicationId);
             return null;
+        }
+    }
+
+    public async Task<IEnumerable<Question>> GetAllQuestions()
+    {
+        try
+        {
+            const string query = @"
+                SELECT
+                    QuestionId,
+                    TaskId,
+                    OrderNumber,
+                    QuestionTypeId,
+                    QuestionContent,
+                    QuestionNameUrl,
+                    CreatedDate,
+                    ModifiedDate,
+                    CreatedByUpn,
+                    ModifiedByUpn
+                FROM [recognitionCitizen].[Question]";
+
+            return await _connection.QueryAsync<Question>(query, transaction: _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to fetch all questions");
+            return Enumerable.Empty<Question>();
         }
     }
 }

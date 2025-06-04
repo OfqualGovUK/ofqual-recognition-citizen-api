@@ -30,7 +30,6 @@ public class PreEngagementController : Controller
         try
         {
             PreEngagementQuestionDto? firstQuestion = await _context.QuestionRepository.GetFirstPreEngagementQuestion();
-
             if (firstQuestion == null)
             {
                 return NotFound("No Pre-Engagement question found.");
@@ -57,7 +56,6 @@ public class PreEngagementController : Controller
         try
         {
             PreEngagementQuestionDetails? question = await _context.QuestionRepository.GetPreEngagementQuestion(taskNameUrl, questionNameUrl);
-
             if (question == null)
             {
                 return BadRequest($"No pre-engagement question found for URL: {taskNameUrl}/{questionNameUrl}");
