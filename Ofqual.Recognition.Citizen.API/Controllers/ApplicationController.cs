@@ -16,17 +16,17 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 public class ApplicationController : ControllerBase
 {
     private readonly IUnitOfWork _context;
-    private readonly ICheckYourAnswersService _checkYourAnswersService;
-    private readonly IApplicationAnswerService _applicationAnswerService;
+    private readonly ITaskStatusService _taskStatusService;
+    private readonly IApplicationAnswersService _applicationAnswersService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ApplicationController"/>.
     /// </summary>
-    public ApplicationController(IUnitOfWork context, ICheckYourAnswersService checkYourAnswersService, IApplicationAnswerService applicationAnswerService)
+    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService)
     {
         _context = context;
-        _checkYourAnswersService = checkYourAnswersService;
-        _applicationAnswerService = applicationAnswerService;
+        _taskStatusService = taskStatusService;
+        _applicationAnswersService = applicationAnswersService;
     }
 
     /// <summary>
@@ -34,30 +34,29 @@ public class ApplicationController : ControllerBase
     /// </summary>
     /// <returns>The created application.</returns>
     [HttpPost]
-    public async Task<ActionResult<ApplicationDetailsDto>> CreateApplication()
+    public async Task<ActionResult<ApplicationDetailsDto>> CreateApplication([FromBody] IEnumerable<PreEngagementAnswerDto>? PreEngagementAnswers)
     {
         try
         {
             Application? application = await _context.ApplicationRepository.CreateApplication();
-
             if (application == null)
             {
                 return BadRequest("Application could not be created.");
             }
 
-            var tasks = await _context.TaskRepository.GetAllTask();
-
-            if (tasks == null || !tasks.Any())
-            {
-                return BadRequest("No tasks found to create statuses for the application.");
-            }
-
-            // Create Task Statuses for all Tasks
-            bool isTaskStatusesCreated = await _context.TaskRepository.CreateTaskStatuses(application.ApplicationId, tasks);
-
-            if (!isTaskStatusesCreated)
+            bool taskStatusesCreated = await _taskStatusService.DetermineAndCreateTaskStatuses(application.ApplicationId, PreEngagementAnswers);
+            if (!taskStatusesCreated)
             {
                 return BadRequest("Failed to create task statuses for the new application.");
+            }
+
+            if (PreEngagementAnswers != null && PreEngagementAnswers.Any())
+            {
+                bool isPreEngagementAnswersInserted = await _applicationAnswersService.SavePreEngagementAnswers(application.ApplicationId, PreEngagementAnswers);
+                if (!isPreEngagementAnswersInserted)
+                {
+                    return BadRequest("Failed to insert pre-engagement answers for the new application.");
+                }
             }
 
             ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
@@ -83,7 +82,6 @@ public class ApplicationController : ControllerBase
         try
         {
             var taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
-
             if (taskStatuses == null || !taskStatuses.Any())
             {
                 return BadRequest("No tasks found for the specified application.");
@@ -111,7 +109,6 @@ public class ApplicationController : ControllerBase
         try
         {
             bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, request.Status);
-
             if (!isStatusUpdated)
             {
                 return BadRequest("Failed to update task status. Either the task does not exist or belongs to a different application.");
@@ -135,11 +132,11 @@ public class ApplicationController : ControllerBase
     /// <param name="questionId">The ID of the question being answered.</param>
     /// <param name="request">The answer payload.</param>
     [HttpPost("{applicationId}/tasks/{taskId}/questions/{questionId}")]
-    public async Task<ActionResult<QuestionAnswerSubmissionResponseDto?>> SubmitQuestionAnswer(Guid applicationId, Guid taskId, Guid questionId, [FromBody] QuestionAnswerSubmissionDto request)
+    public async Task<IActionResult> SubmitQuestionAnswer(Guid applicationId, Guid taskId, Guid questionId, [FromBody] QuestionAnswerSubmissionDto request)
     {
         try
         {
-            var listErrors = await _applicationAnswerService.ValidateQuestionAnswers(taskId, questionId, request);
+            var listErrors = await _applicationAnswersService.ValidateQuestionAnswers(taskId, questionId, request);
 
             if (listErrors == null)
                 return BadRequest("Unable do validate, the request body is not in a correct format");
@@ -154,23 +151,19 @@ public class ApplicationController : ControllerBase
             }
 
             bool isAnswerUpserted = await _context.QuestionRepository.UpsertQuestionAnswer(applicationId, questionId, request.Answer);
-
             if (!isAnswerUpserted)
             {
                 return BadRequest("Failed to save the question answer. Please check your input and try again.");
             }
 
             bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress);
-
             if (!isStatusUpdated)
             {
                 return BadRequest("Failed to update task status. Either the task does not exist or belongs to a different application.");
             }
 
-            QuestionAnswerSubmissionResponseDto? redirectUrl = await _context.QuestionRepository.GetNextQuestionUrl(questionId);
-
             _context.Commit();
-            return Ok(redirectUrl);
+            return NoContent();
         }
         catch (Exception ex)
         {
@@ -190,13 +183,12 @@ public class ApplicationController : ControllerBase
         try
         {
             var taskQuestionAnswers = await _context.QuestionRepository.GetTaskQuestionAnswers(applicationId, taskId);
-
             if (!taskQuestionAnswers.Any())
             {
                 return NotFound("No question answers found for the specified task and application.");
             }
 
-            var reviewAnswers = _checkYourAnswersService.GetQuestionAnswers(taskQuestionAnswers);
+            var reviewAnswers = _applicationAnswersService.GetQuestionAnswers(taskQuestionAnswers);
 
             return Ok(reviewAnswers);
         }
@@ -218,7 +210,7 @@ public class ApplicationController : ControllerBase
         try
         {
             QuestionAnswerDto? answer = await _context.QuestionRepository.GetQuestionAnswer(applicationId, questionId);
-            if (answer is null)
+            if (answer == null)
             {
                 return NotFound("No answer found for the specified question and application.");
             }

@@ -19,14 +19,14 @@ public class ApplicationControllerTests
     private readonly Mock<IApplicationRepository> _mockApplicationRepository;
     private readonly Mock<IQuestionRepository> _mockQuestionRepository;
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-    private readonly Mock<ICheckYourAnswersService> _checkYourAnswersService;
-    private readonly Mock<IApplicationAnswerService> _applicationAnswerService;
+    private readonly Mock<ITaskStatusService> _mockTaskStatusService;
+    private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService;
 
     public ApplicationControllerTests()
     {
         _mockUnitOfWork = new Mock<IUnitOfWork>();
-        _checkYourAnswersService = new Mock<ICheckYourAnswersService>();
-        _applicationAnswerService = new Mock<IApplicationAnswerService>();
+        _mockTaskStatusService = new Mock<ITaskStatusService>();
+        _mockApplicationAnswersService = new Mock<IApplicationAnswersService>();
 
         _mockQuestionRepository = new Mock<IQuestionRepository>();
         _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
@@ -37,78 +37,125 @@ public class ApplicationControllerTests
         _mockApplicationRepository = new Mock<IApplicationRepository>();
         _mockUnitOfWork.Setup(u => u.ApplicationRepository).Returns(_mockApplicationRepository.Object);
 
-        _controller = new ApplicationController(_mockUnitOfWork.Object, _checkYourAnswersService.Object, _applicationAnswerService.Object);
+        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockTaskStatusService.Object, _mockApplicationAnswersService.Object);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()
         };
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "Unit")]
-    [InlineData(true, true, true)]  // Application and task statuses created successfully
-    [InlineData(true, true, false)] // Task statuses failed
-    [InlineData(true, false, false)] // No tasks found
-    [InlineData(false, false, false)] // Application creation failed
-    public async Task CreateApplication_ShouldReturnExpectedResult(bool isApplicationCreated, bool areTasksFound, bool isTaskStatusesCreated)
+    public async Task CreateApplication_ReturnsBadRequest_WhenApplicationCreationFails()
     {
         // Arrange
-        var createdByUpn = "testuser@ofqual.com";
-        var modifiedByUpn = "testuser1@ofqual.com";
-
-        var mockApplication = isApplicationCreated
-            ? new Application
-            {
-                ApplicationId = Guid.NewGuid(),
-                CreatedDate = DateTime.UtcNow,
-                CreatedByUpn = createdByUpn,
-                ModifiedByUpn = modifiedByUpn,
-                ModifiedDate = DateTime.UtcNow
-            }
-        : null;
-
-        var mockTasks = areTasksFound
-            ? new List<TaskItem>
-            {
-            new TaskItem { TaskId = Guid.NewGuid(), TaskName = "Task 1", TaskNameUrl = "testurl", SectionId = Guid.NewGuid(), TaskOrderNumber = 1, CreatedDate = DateTime.UtcNow, ModifiedDate = DateTime.UtcNow, CreatedByUpn = createdByUpn, ModifiedByUpn = modifiedByUpn },
-            new TaskItem { TaskId = Guid.NewGuid(), TaskName = "Task 2", TaskNameUrl = "testurl", SectionId = Guid.NewGuid(), TaskOrderNumber = 2, CreatedDate = DateTime.UtcNow, ModifiedDate = DateTime.UtcNow, CreatedByUpn = createdByUpn, ModifiedByUpn = modifiedByUpn }
-            }
-            : new List<TaskItem>();
-
-        _mockApplicationRepository.Setup(repo => repo.CreateApplication())
-            .ReturnsAsync(mockApplication);
-
-        _mockTaskRepository.Setup(repo => repo.GetAllTask())
-            .ReturnsAsync(mockTasks);
-
-        _mockTaskRepository.Setup(repo => repo.CreateTaskStatuses(It.IsAny<Guid>(), It.IsAny<List<TaskItem>>()))
-            .ReturnsAsync(isTaskStatusesCreated);
+        _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync((Application?)null);
 
         // Act
-        var result = await _controller.CreateApplication();
+        var result = await _controller.CreateApplication(null);
 
         // Assert
-        if (!isApplicationCreated)
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Application could not be created.", badRequest.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task CreateApplication_ReturnsBadRequest_WhenTaskStatusesCreationFails()
+    {
+        // Arrange
+        var app = new Application
         {
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("Application could not be created.", badRequestResult.Value);
-        }
-        else if (!areTasksFound)
+            ApplicationId = Guid.NewGuid(),
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "testuser@ofqual.gov.uk"
+        };
+
+        _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync(app);
+        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, null)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.CreateApplication(null);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Failed to create task statuses for the new application.", badRequest.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task CreateApplication_ReturnsBadRequest_WhenPreEngagementInsertFails()
+    {
+        // Arrange
+        var app = new Application
         {
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("No tasks found to create statuses for the application.", badRequestResult.Value);
-        }
-        else if (!isTaskStatusesCreated)
+            ApplicationId = Guid.NewGuid(),
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "testuser@ofqual.gov.uk"
+        };
+
+        var preAnswers = new List<PreEngagementAnswerDto>
         {
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("Failed to create task statuses for the new application.", badRequestResult.Value);
-        }
-        else
+            new PreEngagementAnswerDto { QuestionId = Guid.NewGuid(), AnswerJson = "{}" }
+        };
+
+        _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync(app);
+        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, preAnswers)).ReturnsAsync(true);
+        _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, preAnswers)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.CreateApplication(preAnswers);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Failed to insert pre-engagement answers for the new application.", badRequest.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task CreateApplication_ReturnsOk_WhenAllStepsSucceed()
+    {
+        // Arrange
+        var app = new Application
         {
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var application = Assert.IsType<ApplicationDetailsDto>(okResult.Value);
-            Assert.NotNull(application);
-        }
+            ApplicationId = Guid.NewGuid(),
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "testuser@ofqual.gov.uk",
+            ModifiedByUpn = "testuser1@ofqual.gov.uk"
+        };
+
+        var preAnswers = new List<PreEngagementAnswerDto>
+        {
+            new PreEngagementAnswerDto { QuestionId = Guid.NewGuid(), AnswerJson = "{}" }
+        };
+
+        _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync(app);
+        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, preAnswers)).ReturnsAsync(true);
+        _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, preAnswers)).ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.CreateApplication(preAnswers);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<ApplicationDetailsDto>(okResult.Value);
+        Assert.Equal(app.ApplicationId, dto.ApplicationId);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Once);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task CreateApplication_ThrowsException_WhenUnexpectedErrorOccurs()
+    {
+        // Arrange
+        _mockApplicationRepository.Setup(x => x.CreateApplication()).ThrowsAsync(new Exception("Database failure"));
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<Exception>(() => _controller.CreateApplication(null));
+        Assert.Equal("An error occurred while creating the application. Please try again later.", ex.Message);
     }
 
     [Fact]
@@ -195,97 +242,100 @@ public class ApplicationControllerTests
         Assert.Equal("No tasks found for the specified application.", badRequestResult.Value);
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "Unit")]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task UpdateTaskStatus_ShouldReturnExpectedResult(bool isSuccess)
+    public async Task UpdateTaskStatus_ReturnsOk_WhenUpdateSucceeds()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
+        var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
 
-        var request = new UpdateTaskStatusDto
-        {
-            Status = TaskStatusEnum.Completed
-        };
-
-        _mockTaskRepository.Setup(repo => repo.UpdateTaskStatus(applicationId, taskId, request.Status))
-            .ReturnsAsync(isSuccess);
+        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status))
+            .ReturnsAsync(true);
 
         // Act
         var result = await _controller.UpdateTaskStatus(applicationId, taskId, request);
 
         // Assert
-        if (isSuccess)
-        {
-            Assert.IsType<OkResult>(result);
-        }
-        else
-        {
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Failed to update task status. Either the task does not exist or belongs to a different application.", badRequestResult.Value);
-        }
+        Assert.IsType<OkResult>(result);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Once);
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "Unit")]
-    [InlineData("Answer 1", "criteria-a", "next-question")]
-    [InlineData("Answer 2", null, null)]
-    public async Task SubmitQuestionAnswer_ReturnsOk_WhenAnswerSaved_AndStatusUpdated(string answer, string? nextTaskQuestionNameUrl, string? nextQuestionNameUrl)
+    public async Task UpdateTaskStatus_ReturnsBadRequest_WhenUpdateFails()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
+
+        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.UpdateTaskStatus(applicationId, taskId, request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("Failed to update task status. Either the task does not exist or belongs to a different application.", badRequest.Value);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UpdateTaskStatus_ThrowsException_WhenRepositoryThrows()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
+
+        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status))
+            .ThrowsAsync(new Exception("DB error"));
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<Exception>(() =>
+            _controller.UpdateTaskStatus(applicationId, taskId, request));
+        Assert.Equal("An error occurred while updating the task status. Please try again later.", ex.Message);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task SubmitQuestionAnswer_ReturnsNoContent_WhenUpsertAndStatusUpdateSucceed()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
-        var dto = new QuestionAnswerSubmissionDto { Answer = answer };
-
-        var nextUrlDto = nextQuestionNameUrl != null && nextTaskQuestionNameUrl != null
-            ? new QuestionAnswerSubmissionResponseDto
-            {
-                NextQuestionNameUrl = nextQuestionNameUrl,
-                NextTaskNameUrl = nextTaskQuestionNameUrl
-            }
-            : null;
+        var dto = new QuestionAnswerSubmissionDto { Answer = "Answer A" };
 
         _mockQuestionRepository
-            .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, answer))
+            .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(true);
 
         _mockTaskRepository
             .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress))
             .ReturnsAsync(true);
 
-        _mockQuestionRepository
-            .Setup(r => r.GetNextQuestionUrl(questionId))
-            .ReturnsAsync(nextUrlDto);
-
         // Act
         var result = await _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto);
 
         // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        if (nextQuestionNameUrl == null && nextTaskQuestionNameUrl == null)
-        {
-            Assert.Null(okResult.Value);
-        }
-        else
-        {
-            var dtoResult = Assert.IsType<QuestionAnswerSubmissionResponseDto>(okResult.Value);
-            Assert.Equal(nextQuestionNameUrl, dtoResult.NextQuestionNameUrl);
-            Assert.Equal(nextTaskQuestionNameUrl, dtoResult.NextTaskNameUrl);
-        }
+        Assert.IsType<NoContentResult>(result);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Once);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task SubmitQuestionAnswer_ReturnsBadRequest_WhenInsertFails()
+    public async Task SubmitQuestionAnswer_ReturnsBadRequest_WhenUpsertFails()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
-        var dto = new QuestionAnswerSubmissionDto { Answer = "Invalid Answer" };
+        var dto = new QuestionAnswerSubmissionDto { Answer = "Bad Answer" };
 
         _mockQuestionRepository
             .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
@@ -295,8 +345,9 @@ public class ApplicationControllerTests
         var result = await _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto);
 
         // Assert
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal("Failed to save the question answer. Please check your input and try again.", badRequest.Value);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
     }
 
     [Fact]
@@ -321,8 +372,30 @@ public class ApplicationControllerTests
         var result = await _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto);
 
         // Assert
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal("Failed to update task status. Either the task does not exist or belongs to a different application.", badRequest.Value);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task SubmitQuestionAnswer_ThrowsException_WhenUnexpectedErrorOccurs()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var dto = new QuestionAnswerSubmissionDto { Answer = "Some Answer" };
+
+        _mockQuestionRepository
+            .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
+            .ThrowsAsync(new Exception("DB error"));
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() =>
+            _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto));
+        Assert.Equal("An error occurred while saving the answer. Please try again later.", exception.Message);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
     }
 
     [Fact]
@@ -369,7 +442,7 @@ public class ApplicationControllerTests
             .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
             .ReturnsAsync(mockAnswers);
 
-        _checkYourAnswersService
+        _mockApplicationAnswersService
             .Setup(service => service.GetQuestionAnswers(mockAnswers))
             .Returns(expectedReviewAnswers);
 
@@ -416,7 +489,7 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
-        
+
         var expectedAnswer = new QuestionAnswerDto
         {
             QuestionId = questionId,
@@ -426,7 +499,7 @@ public class ApplicationControllerTests
         _mockQuestionRepository
             .Setup(repo => repo.GetQuestionAnswer(applicationId, questionId))
             .ReturnsAsync(expectedAnswer);
-        
+
         // Act
         var result = await _controller.GetQuestionAnswer(applicationId, questionId);
 
@@ -448,7 +521,7 @@ public class ApplicationControllerTests
         _mockQuestionRepository
             .Setup(repo => repo.GetQuestionAnswer(applicationId, questionId))
             .ReturnsAsync((QuestionAnswerDto?)null);
-        
+
         // Act
         var result = await _controller.GetQuestionAnswer(applicationId, questionId);
 

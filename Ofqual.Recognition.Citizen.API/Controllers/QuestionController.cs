@@ -30,18 +30,18 @@ public class QuestionController : ControllerBase
     /// <param name="questionNameUrl">Question name from the URL.</param>
     /// <returns>The question with its content and type.</returns>
     [HttpGet("{taskNameUrl}/{questionNameUrl}")]
-    public async Task<ActionResult<QuestionDto?>> GetQuestions(string taskNameUrl, string questionNameUrl)
+    public async Task<ActionResult<QuestionDetailsDto?>> GetQuestions(string taskNameUrl, string questionNameUrl)
     {
         try
         {
-            TaskQuestion? question = await _context.QuestionRepository.GetQuestion(taskNameUrl, questionNameUrl);
+            QuestionDetails? question = await _context.QuestionRepository.GetQuestion(taskNameUrl, questionNameUrl);
 
             if (question == null)
             {
                 return BadRequest($"No question found with URL: {taskNameUrl}/{questionNameUrl}");
             }
 
-            QuestionDto questionDto = QuestionMapper.ToDto(question);
+            QuestionDetailsDto questionDto = QuestionMapper.ToDto(question);
 
             return Ok(questionDto);
         }

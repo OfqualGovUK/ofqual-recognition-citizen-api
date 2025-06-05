@@ -19,7 +19,7 @@ public class ApplicationRepository : IApplicationRepository
         _transaction = transaction;
     }
 
-    public async Task<Application> CreateApplication()
+    public async Task<Application?> CreateApplication()
     {
         try
         {
@@ -41,7 +41,7 @@ public class ApplicationRepository : IApplicationRepository
         catch (Exception ex)
         {
             Log.Error(ex, "Error creating a new application");
-            return null!;
+            return null;
         }
     }
 }

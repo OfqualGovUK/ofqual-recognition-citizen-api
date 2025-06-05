@@ -7,14 +7,14 @@ namespace Ofqual.Recognition.Citizen.Tests.Integration.Helper;
 
 public static class TaskTestDataBuilder
 {
-    public static async Task<TaskItem> CreateTestTask(UnitOfWork unitOfWork, Guid sectionId, string taskNameUrl)
+    public static async Task<TaskItem> CreateTestTask(UnitOfWork unitOfWork, Guid sectionId, string taskNameUrl, int orderNumber)
     {
         var task = new TaskItem
         {
             TaskId = Guid.NewGuid(),
             TaskName = "Test Task",
             TaskNameUrl = taskNameUrl,
-            TaskOrderNumber = 1,
+            TaskOrderNumber = orderNumber,
             SectionId = sectionId,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
