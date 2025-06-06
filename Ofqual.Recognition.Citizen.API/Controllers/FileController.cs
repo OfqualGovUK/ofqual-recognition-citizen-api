@@ -43,11 +43,6 @@ public class FileController : ControllerBase
                 return BadRequest("A file must be provided and must not be empty.");
             }
 
-            if (file.Length > 25 * 1024 * 1024)
-            {
-                return BadRequest("The file exceeds the maximum allowed size of 25MB.");
-            }
-
             if (!FileValidationHelper.IsAllowedFile(file))
             {
                 return BadRequest("Unsupported file type or content. Allowed: CSV, JPEG, PNG, Excel, Word, PDF and text formats.");
@@ -73,7 +68,11 @@ public class FileController : ControllerBase
             }
 
             await using var writeStream = file.OpenReadStream();
-            await _blobStorage.Write(applicationId, savedAttachment.BlobId, writeStream);
+            bool isBlobStored = await _blobStorage.Write(applicationId, savedAttachment.BlobId, writeStream);
+            if (!isBlobStored)
+            {
+                return BadRequest("Unable to store the file in blob storage.");
+            }
 
             AttachmentDto savedAttachmentDto = AttachmentMapper.ToDto(savedAttachment);
 
@@ -134,7 +133,7 @@ public class FileController : ControllerBase
                 return BadRequest("Attachment is not linked to the specified entity or does not exist.");
             }
 
-            Stream stream = await _blobStorage.Read(applicationId, attachment.BlobId);
+            Stream? stream = await _blobStorage.Read(applicationId, attachment.BlobId);
             if (stream == null || stream.Length == 0 || string.IsNullOrWhiteSpace(attachment.FileMIMEtype) || string.IsNullOrWhiteSpace(attachment.FileName))
             {
                 return BadRequest("Invalid or incomplete file data. Download cannot proceed.");
@@ -174,7 +173,11 @@ public class FileController : ControllerBase
                 return BadRequest("Failed to delete attachment metadata.");
             }
 
-            await _blobStorage.Delete(applicationId, attachment.BlobId);
+            bool isBlobDeleted = await _blobStorage.Delete(applicationId, attachment.BlobId);
+            if (!isBlobDeleted)
+            {
+                return BadRequest("The file could not be deleted from storage. Attachment metadata was not removed.");
+            }
 
             _context.Commit();
             return NoContent();

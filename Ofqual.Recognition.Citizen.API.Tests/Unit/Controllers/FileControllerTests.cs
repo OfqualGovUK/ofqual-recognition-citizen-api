@@ -58,8 +58,8 @@ public class FileControllerTests
             FileMIMEtype = "application/pdf",
             FileSize = fileStream.Length,
             BlobId = Guid.NewGuid(),
-            CreatedByUpn = "test@domain.com",
-            ModifiedByUpn = "test@domain.com",
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
         };
@@ -67,7 +67,7 @@ public class FileControllerTests
         _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), fileName)).ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
         _mockAttachmentRepo.Setup(r => r.CreateAttachment(fileName, formFile.ContentType, formFile.Length)).ReturnsAsync(attachment);
         _mockAttachmentRepo.Setup(r => r.CreateAttachmentLink(It.IsAny<Guid>(), attachment.AttachmentId, It.IsAny<Guid>(), It.IsAny<LinkType>())).ReturnsAsync(true);
-        _mockBlobStorage.Setup(s => s.Write(It.IsAny<Guid>(), attachment.BlobId, It.IsAny<Stream>(), false)).Returns(Task.CompletedTask);
+        _mockBlobStorage.Setup(s => s.Write(It.IsAny<Guid>(), attachment.BlobId, It.IsAny<Stream>(), false)).ReturnsAsync(true);
 
         // Act
         var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
@@ -107,23 +107,6 @@ public class FileControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task UploadFile_ReturnsBadRequest_WhenFileTooLarge()
-    {
-        // Arrange
-        var file = new Mock<IFormFile>();
-        file.Setup(f => f.Length).Returns(26 * 1024 * 1024);
-        file.Setup(f => f.FileName).Returns("large.pdf");
-
-        // Act
-        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file.Object);
-
-        // Assert
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("The file exceeds the maximum allowed size of 25MB.", badRequest.Value);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
     public async Task UploadFile_ReturnsBadRequest_WhenFileExtensionIsNotAllowed()
     {
         // Arrange
@@ -136,7 +119,7 @@ public class FileControllerTests
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.StartsWith("Unsupported file type", badRequest.Value.ToString());
+        Assert.StartsWith("Unsupported file type", badRequest.Value!.ToString());
     }
 
     [Fact]
@@ -208,8 +191,8 @@ public class FileControllerTests
             FileMIMEtype = "application/pdf",
             FileSize = stream.Length,
             BlobId = Guid.NewGuid(),
-            CreatedByUpn = "test@domain.com",
-            ModifiedByUpn = "test@domain.com",
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
         };
@@ -231,6 +214,48 @@ public class FileControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
+    public async Task UploadFile_ReturnsBadRequest_WhenBlobStorageWriteFails()
+    {
+        // Arrange
+        var stream = new MemoryStream(Encoding.UTF8.GetBytes("valid"));
+        var formFile = new FormFile(stream, 0, stream.Length, "file", "report.pdf")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "application/pdf",
+            ContentDisposition = "form-data; name=\"file\"; filename=\"report.pdf\""
+        };
+
+        var attachment = new Attachment
+        {
+            AttachmentId = Guid.NewGuid(),
+            FileName = "report.pdf",
+            FileMIMEtype = "application/pdf",
+            FileSize = stream.Length,
+            BlobId = Guid.NewGuid(),
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        };
+
+        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>()))
+                           .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
+        _mockAttachmentRepo.Setup(r => r.CreateAttachment(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<long>()))
+                           .ReturnsAsync(attachment);
+        _mockAttachmentRepo.Setup(r => r.CreateAttachmentLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+                           .ReturnsAsync(true);
+        _mockBlobStorage.Setup(s => s.Write(It.IsAny<Guid>(), attachment.BlobId, It.IsAny<Stream>(), false)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Unable to store the file in blob storage.", badRequest.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public async Task GetAllFiles_ReturnsOk_WhenAttachmentsExist()
     {
         // Arrange
@@ -243,8 +268,8 @@ public class FileControllerTests
                 FileMIMEtype = "application/pdf",
                 FileSize = 1024,
                 BlobId = Guid.NewGuid(),
-                CreatedByUpn = "test@domain.com",
-                ModifiedByUpn = "test@domain.com",
+                CreatedByUpn = "test@ofqual.gov.uk",
+                ModifiedByUpn = "test@ofqual.gov.uk",
                 CreatedDate = DateTime.UtcNow,
                 ModifiedDate = DateTime.UtcNow
             }
@@ -288,8 +313,8 @@ public class FileControllerTests
             FileName = "file.txt",
             FileMIMEtype = "text/plain",
             BlobId = Guid.NewGuid(),
-            CreatedByUpn = "test@domain.com",
-            ModifiedByUpn = "test@domain.com",
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
         };
@@ -336,8 +361,8 @@ public class FileControllerTests
             FileName = "file.txt",
             FileMIMEtype = "text/plain",
             BlobId = Guid.NewGuid(),
-            CreatedByUpn = "test@domain.com",
-            ModifiedByUpn = "test@domain.com",
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
         };
@@ -366,8 +391,8 @@ public class FileControllerTests
             FileName = "file.txt",
             FileMIMEtype = "text/plain",
             BlobId = Guid.NewGuid(),
-            CreatedByUpn = "test@domain.com",
-            ModifiedByUpn = "test@domain.com",
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
         };
@@ -398,8 +423,8 @@ public class FileControllerTests
             FileName = "",
             FileMIMEtype = "",
             BlobId = Guid.NewGuid(),
-            CreatedByUpn = "test@domain.com",
-            ModifiedByUpn = "test@domain.com",
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
         };
@@ -431,8 +456,8 @@ public class FileControllerTests
             FileName = "file.pdf",
             FileMIMEtype = "application/pdf",
             FileSize = 123456,
-            CreatedByUpn = "test@domain.com",
-            ModifiedByUpn = "test@domain.com",
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
         };
@@ -442,7 +467,7 @@ public class FileControllerTests
         _mockAttachmentRepo.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(true);
         _mockBlobStorage.Setup(s => s.Delete(It.IsAny<Guid>(), It.IsAny<Guid>()))
-                        .Returns(Task.CompletedTask);
+                        .ReturnsAsync(true);
 
         // Act
         var result = await _controller.DeleteFile(LinkType.Question, Guid.NewGuid(), attachment.AttachmentId, Guid.NewGuid());
@@ -480,8 +505,8 @@ public class FileControllerTests
             FileName = "file.pdf",
             FileMIMEtype = "application/pdf",
             FileSize = 123456,
-            CreatedByUpn = "test@domain.com",
-            ModifiedByUpn = "test@domain.com",
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
         };
@@ -497,5 +522,37 @@ public class FileControllerTests
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal("Failed to delete attachment metadata.", badRequest.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task DeleteFile_ReturnsBadRequest_WhenBlobDeletionFails()
+    {
+        // Arrange
+        var attachment = new Attachment
+        {
+            AttachmentId = Guid.NewGuid(),
+            BlobId = Guid.NewGuid(),
+            FileName = "file.pdf",
+            FileMIMEtype = "application/pdf",
+            FileSize = 123456,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        };
+
+        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+                           .ReturnsAsync(attachment);
+        _mockAttachmentRepo.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+                           .ReturnsAsync(true);
+        _mockBlobStorage.Setup(r => r.Delete(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.DeleteFile(LinkType.Question, Guid.NewGuid(), attachment.AttachmentId, Guid.NewGuid());
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("The file could not be deleted from storage. Attachment metadata was not removed.", badRequest.Value);
     }
 }

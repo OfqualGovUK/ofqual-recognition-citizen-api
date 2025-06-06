@@ -1,6 +1,7 @@
 ﻿using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs;
+using Serilog;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -13,34 +14,94 @@ public class AzureBlobStorageService : IAzureBlobStorageService
         _blobServiceClient = new BlobServiceClient(connectionString);
     }
 
-    public async Task Write(Guid applicationId, Guid blobId, Stream stream, bool isPublicAccess = false)
+    public async Task<bool> Write(Guid applicationId, Guid blobId, Stream stream, bool isPublicAccess = false)
     {
-        var containerClient = await GetContainerClient(applicationId, isPublicAccess);
-        var blobClient = containerClient.GetBlobClient(blobId.ToString());
-        await blobClient.UploadAsync(stream, overwrite: true);
+        try
+        {
+            var containerClient = await GetContainerClient(applicationId, isPublicAccess);
+            var blobClient = containerClient.GetBlobClient(blobId.ToString());
+            await blobClient.UploadAsync(stream, overwrite: true);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to upload blob. Application ID: {ApplicationId}, Blob ID: {BlobId}", applicationId, blobId);
+            return false;
+        }
     }
 
-    public async Task<Stream> Read(Guid applicationId, Guid blobId)
+    public async Task<Stream?> Read(Guid applicationId, Guid blobId)
     {
-        var blobClient = await GetBlobClient(applicationId, blobId);
-        var memoryStream = new MemoryStream();
-        await blobClient.DownloadToAsync(memoryStream);
-        memoryStream.Position = 0;
-        return memoryStream;
+        try
+        {
+            var blobClient = await GetBlobClient(applicationId, blobId);
+            var exists = await blobClient.ExistsAsync();
+
+            if (!exists.Value)
+            {
+                Log.Warning("Blob not found when attempting to read. Application ID: {ApplicationId}, Blob ID: {BlobId}", applicationId, blobId);
+                return null;
+            }
+
+            var memoryStream = new MemoryStream();
+            await blobClient.DownloadToAsync(memoryStream);
+            memoryStream.Position = 0;
+            return memoryStream;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to read blob. Application ID: {ApplicationId}, Blob ID: {BlobId}", applicationId, blobId);
+            return null;
+        }
     }
 
-    public async Task<string> GetBlobUri(Guid applicationId, Guid blobId)
+    public async Task<string?> GetBlobUri(Guid applicationId, Guid blobId)
     {
-        var blobClient = await GetBlobClient(applicationId, blobId);
-        return blobClient.Uri.AbsoluteUri;
-    }
+        try
+        {
+            var blobClient = await GetBlobClient(applicationId, blobId);
+            var exists = await blobClient.ExistsAsync();
 
-    public async Task Delete(Guid applicationId, Guid blobId)
+            if (!exists.Value)
+            {
+                Log.Warning("Blob not found when retrieving URI. Application ID: {ApplicationId}, Blob ID: {BlobId}", applicationId, blobId);
+                return null;
+            }
+
+            return blobClient.Uri.AbsoluteUri;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to retrieve blob URI. Application ID: {ApplicationId}, Blob ID: {BlobId}", applicationId, blobId);
+            return null;
+        }
+    }
+    
+    public async Task<bool> Delete(Guid applicationId, Guid blobId)
     {
-        var blobClient = await GetBlobClient(applicationId, blobId);
-        await blobClient.DeleteIfExistsAsync();
-    }
+        try
+        {
+            var blobClient = await GetBlobClient(applicationId, blobId);
+            var response = await blobClient.DeleteIfExistsAsync();
 
+            if (response.Value)
+            {
+                Log.Information("Blob deleted successfully. Application ID: {ApplicationId}, Blob ID: {BlobId}", applicationId, blobId);
+            }
+            else
+            {
+                Log.Warning("Blob not found or already deleted. Application ID: {ApplicationId}, Blob ID: {BlobId}", applicationId, blobId);
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to delete blob. Application ID: {ApplicationId}, Blob ID: {BlobId}", applicationId, blobId);
+            return false;
+        }
+    }
+    
     private async Task<BlobContainerClient> GetContainerClient(Guid applicationId, bool isPublicAccess = false)
     {
         var containerClient = _blobServiceClient.GetBlobContainerClient(applicationId.ToString());
