@@ -4,9 +4,8 @@ namespace Ofqual.Recognition.Citizen.API.Core.Mappers;
 
 public static class ApplicationMapper
 {
-
     /// <summary>
-    /// Maps a collection of <see cref="Application"/> to a list of <see cref="ApplicationDetailsDto"/>.
+    /// Maps a <see cref="Application"/> data model to a <see cref="ApplicationDetailsDto"/>.
     /// </summary>
     public static ApplicationDetailsDto ToDto(Application application)
     {
