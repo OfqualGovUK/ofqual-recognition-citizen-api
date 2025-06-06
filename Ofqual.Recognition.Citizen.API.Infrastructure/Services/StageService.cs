@@ -66,7 +66,7 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services
                 StageStartDate = DateTime.UtcNow,
                 StageCompletionDate = DateTime.UtcNow,
                 CreatedByUpn = "USER",
-                ModifiedByUpn = "USER RICH NEW"
+                ModifiedByUpn = "USER"
             };
 
             if (allTasksCompleted)
