@@ -13,6 +13,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IApplicationRepository ApplicationRepository { get; private set; }
     public IQuestionRepository QuestionRepository { get; private set; }
 
+    public IStageRepository StageRepository { get; private set; }
+
     public UnitOfWork(IDbConnection connection)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
@@ -29,6 +31,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         TaskRepository = new TaskRepository(_connection, _transaction);
         ApplicationRepository = new ApplicationRepository(_connection, _transaction);
         QuestionRepository = new QuestionRepository(_connection, _transaction);
+        StageRepository = new StageRepository(_connection, _transaction);
     }
 
     public IDbConnection Connection => _connection;

@@ -56,6 +56,7 @@ builder.Services.AddScoped<IDbConnection>(sp =>
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ITaskStatusService, TaskStatusService>();
 builder.Services.AddScoped<IApplicationAnswersService, ApplicationAnswersService>();
+builder.Services.AddScoped<IStageService, StageService>();
 
 // Add controllers
 builder.Services.AddControllers();

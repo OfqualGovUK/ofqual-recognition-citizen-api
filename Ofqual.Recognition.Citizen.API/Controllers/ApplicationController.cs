@@ -17,16 +17,18 @@ public class ApplicationController : ControllerBase
 {
     private readonly IUnitOfWork _context;
     private readonly ITaskStatusService _taskStatusService;
+    private readonly IStageService _stageService;
     private readonly IApplicationAnswersService _applicationAnswersService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ApplicationController"/>.
     /// </summary>
-    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService)
+    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService, IStageService stageService)
     {
         _context = context;
         _taskStatusService = taskStatusService;
         _applicationAnswersService = applicationAnswersService;
+        _stageService = stageService;
     }
 
     /// <summary>
@@ -56,6 +58,12 @@ public class ApplicationController : ControllerBase
                 if (!isPreEngagementAnswersInserted)
                 {
                     return BadRequest("Failed to insert pre-engagement answers for the new application.");
+                }
+
+                var task = await _stageService.UpsertStageStatuses(application.ApplicationId, StageEnum.PreEngagement);
+                if (!task)
+                {
+                    return BadRequest("Failed to update the stage for the new application.");
                 }
             }
 
@@ -113,6 +121,8 @@ public class ApplicationController : ControllerBase
             {
                 return BadRequest("Failed to update task status. Either the task does not exist or belongs to a different application.");
             }
+
+            var task = await _stageService.UpsertStageStatuses(applicationId, StageEnum.PreEngagement);
 
             _context.Commit();
             return Ok();

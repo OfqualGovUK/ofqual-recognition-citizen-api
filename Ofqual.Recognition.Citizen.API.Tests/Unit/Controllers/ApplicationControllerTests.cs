@@ -21,12 +21,14 @@ public class ApplicationControllerTests
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<ITaskStatusService> _mockTaskStatusService;
     private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService;
+    private readonly Mock<IStageService> _mockStageService;
 
     public ApplicationControllerTests()
     {
         _mockUnitOfWork = new Mock<IUnitOfWork>();
         _mockTaskStatusService = new Mock<ITaskStatusService>();
         _mockApplicationAnswersService = new Mock<IApplicationAnswersService>();
+        _mockStageService = new Mock<IStageService>();
 
         _mockQuestionRepository = new Mock<IQuestionRepository>();
         _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
@@ -37,7 +39,7 @@ public class ApplicationControllerTests
         _mockApplicationRepository = new Mock<IApplicationRepository>();
         _mockUnitOfWork.Setup(u => u.ApplicationRepository).Returns(_mockApplicationRepository.Object);
 
-        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockTaskStatusService.Object, _mockApplicationAnswersService.Object);
+        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockTaskStatusService.Object, _mockApplicationAnswersService.Object, _mockStageService.Object);
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()

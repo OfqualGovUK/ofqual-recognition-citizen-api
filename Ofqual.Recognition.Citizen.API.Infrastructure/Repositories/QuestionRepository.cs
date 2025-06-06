@@ -3,6 +3,7 @@ using Ofqual.Recognition.Citizen.API.Core.Models;
 using System.Data;
 using Serilog;
 using Dapper;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
@@ -84,15 +85,16 @@ public class QuestionRepository : IQuestionRepository
                     INNER JOIN recognitionCitizen.QuestionType qt ON q.QuestionTypeId = qt.QuestionTypeId
                     INNER JOIN recognitionCitizen.Task t ON q.TaskId = t.TaskId
                     INNER JOIN recognitionCitizen.v_StageTask vst ON vst.TaskId = t.TaskId
-                    WHERE vst.Stage = N'Pre-application Enagagement'
+                    WHERE vst.StageId = @Stage
                 ) ordered
                 WHERE ordered.CurrentTaskNameUrl = @taskNameUrl
                 AND ordered.CurrentQuestionNameUrl = @questionNameUrl;";
-            
+
             return await _connection.QueryFirstOrDefaultAsync<PreEngagementQuestionDetails>(query, new
             {
                 taskNameUrl,
-                questionNameUrl
+                questionNameUrl,
+                Stage = (int)StageEnum.PreEngagement
             }, _transaction);
         }
         catch (Exception ex)
@@ -101,7 +103,7 @@ public class QuestionRepository : IQuestionRepository
             return null;
         }
     }
-    
+
     public async Task<PreEngagementQuestionDto?> GetFirstPreEngagementQuestion()
     {
         try
@@ -115,10 +117,13 @@ public class QuestionRepository : IQuestionRepository
                 FROM recognitionCitizen.Question q
                 INNER JOIN recognitionCitizen.Task t ON q.TaskId = t.TaskId
                 INNER JOIN recognitionCitizen.v_StageTask vst ON vst.TaskId = t.TaskId
-                WHERE vst.Stage = N'Pre-application Enagagement'
+                WHERE vst.StageId = @Stage
                 ORDER BY vst.OrderNumber;";
 
-            return await _connection.QueryFirstOrDefaultAsync<PreEngagementQuestionDto>(query, transaction: _transaction);
+            return await _connection.QueryFirstOrDefaultAsync<PreEngagementQuestionDto>(query, new
+            {
+                Stage = (int)StageEnum.PreEngagement
+            }, _transaction);
         }
         catch (Exception ex)
         {
@@ -186,7 +191,8 @@ public class QuestionRepository : IQuestionRepository
                     q.QuestionId,
                     q.QuestionContent,
                     q.QuestionNameUrl,
-                    a.Answer
+                    a.Answer,
+                    a.ApplicationId
                 FROM [recognitionCitizen].[Task] t
                 INNER JOIN [recognitionCitizen].[Question] q ON q.TaskId = t.TaskId
                 LEFT JOIN [recognitionCitizen].[ApplicationAnswers] a
