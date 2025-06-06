@@ -31,21 +31,13 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories
             try
             {
                 var query = @"
-                MERGE INTO recognitionCitizen.StageStatus AS target
-                USING (SELECT @ApplicationId AS ApplicationId, @StageId AS StageId) AS Source
-                    ON Target.ApplicationId = Source.ApplicationId
-                WHEN MATCHED AND Target.StageId <> @StageId THEN
-                    UPDATE SET
-                        StageId = @StageId,
-                        StatusId = @StatusId,
-                        StageStartDate = @StageStartDate,
-                        StageCompletionDate = @StageCompletionDate,
-                        ModifiedByUpn = @ModifiedByUpn,
-                        ModifiedDate = @ModifiedDate
+                MERGE [recognitionCitizen].[StageStatus] AS target
+                USING (SELECT @applicationId AS ApplicationId, @StageId AS StageId) AS source
+                    ON target.ApplicationId = source.ApplicationId
                 WHEN MATCHED THEN
                      UPDATE SET
                         ModifiedByUpn = @ModifiedByUpn,
-                        ModifiedDate = @ModifiedDate
+                        ModifiedDate = GETDATE()
                 WHEN NOT MATCHED THEN
                     INSERT (
                         ApplicationId,
@@ -64,14 +56,25 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories
                         @StatusId,
                         @StageStartDate,
                         @StageCompletionDate,
-                        @CreatedDate,
-                        @ModifiedDate,
+                        GETDATE(),
+                        GETDATE(),
                         @CreatedByUpn,
                         @ModifiedByUpn
-                        )
-                OUTPUT CASE WHEN $action = 'INSERT' THEN 1 ELSE 0 AS inserted";
+                        );";
 
-                return await _connection.ExecuteScalarAsync<bool>(query, stageStatus, _transaction);
+                var rowsAffected = await _connection.ExecuteAsync(query, new 
+                {
+                    applicationId,
+                    stageStatus.StageId,
+                    stageStatus.StatusId,
+                    stageStatus.StageStartDate,
+                    stageStatus.StageCompletionDate,
+                    stageStatus.CreatedDate,
+                    stageStatus.ModifiedDate,
+                    stageStatus.CreatedByUpn,
+                    stageStatus.ModifiedByUpn
+                }, _transaction);
+                return rowsAffected > 0;
             }
             catch (Exception ex)
             {
