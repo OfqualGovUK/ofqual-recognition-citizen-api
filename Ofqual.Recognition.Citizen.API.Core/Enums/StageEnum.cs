@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Ofqual.Recognition.Citizen.API.Core.Enums;
 
-namespace Ofqual.Recognition.Citizen.API.Core.Enums
+public enum StageEnum
 {
-    public enum StageEnum
-    {
-        PreEngagement = 1,
-    }
+    PreEngagement = 1,
 }

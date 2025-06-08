@@ -59,12 +59,12 @@ public class ApplicationController : ControllerBase
                 {
                     return BadRequest("Failed to insert pre-engagement answers for the new application.");
                 }
+            }
 
-                var task = await _stageService.UpsertStageStatuses(application.ApplicationId, StageEnum.PreEngagement);
-                if (!task)
-                {
-                    return BadRequest("Failed to update the stage for the new application.");
-                }
+            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(application.ApplicationId, StageEnum.PreEngagement);
+            if (!stageStatusUpdated)
+            {
+                return BadRequest("Unable to determine or save the stage status for the application.");
             }
 
             ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
@@ -122,7 +122,14 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Failed to update task status. Either the task does not exist or belongs to a different application.");
             }
 
-            var task = await _stageService.UpsertStageStatuses(applicationId, StageEnum.PreEngagement);
+            if (request.Status == TaskStatusEnum.Completed)
+            {
+                bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(applicationId, StageEnum.PreEngagement);
+                if (!stageStatusUpdated)
+                {
+                    return BadRequest("Unable to determine or save the stage status for the application.");
+                }
+            }
 
             _context.Commit();
             return Ok();
@@ -146,7 +153,7 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            bool isAnswerUpserted = await _context.QuestionRepository.UpsertQuestionAnswer(applicationId, questionId, request.Answer);
+            bool isAnswerUpserted = await _context.ApplicationAnswersRepository.UpsertQuestionAnswer(applicationId, questionId, request.Answer);
             if (!isAnswerUpserted)
             {
                 return BadRequest("Failed to save the question answer. Please check your input and try again.");
@@ -178,7 +185,7 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            var taskQuestionAnswers = await _context.QuestionRepository.GetTaskQuestionAnswers(applicationId, taskId);
+            var taskQuestionAnswers = await _context.ApplicationAnswersRepository.GetTaskQuestionAnswers(applicationId, taskId);
             if (!taskQuestionAnswers.Any())
             {
                 return NotFound("No question answers found for the specified task and application.");
@@ -205,7 +212,7 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            QuestionAnswerDto? answer = await _context.QuestionRepository.GetQuestionAnswer(applicationId, questionId);
+            QuestionAnswerDto? answer = await _context.ApplicationAnswersRepository.GetQuestionAnswer(applicationId, questionId);
             if (answer == null)
             {
                 return NotFound("No answer found for the specified question and application.");

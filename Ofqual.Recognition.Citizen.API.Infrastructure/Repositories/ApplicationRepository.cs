@@ -25,7 +25,9 @@ public class ApplicationRepository : IApplicationRepository
                 INSERT INTO [recognitionCitizen].[Application] (
                     CreatedByUpn,
                     ModifiedByUpn
-                ) OUTPUT INSERTED.* VALUES (
+                ) 
+                OUTPUT INSERTED.* 
+                VALUES (
                     @CreatedByUpn,
                     @ModifiedByUpn
                 )";
@@ -39,37 +41,6 @@ public class ApplicationRepository : IApplicationRepository
         catch (Exception ex)
         {
             Log.Error(ex, "Error creating a new application");
-            return null;
-        }
-    }
-
-    public async Task<IEnumerable<TaskQuestionAnswer?>> GetAllApplicationAnswers(Guid applicationId)
-    {
-        try
-        {
-            const string query = @"
-                SELECT
-                    AA.ApplicationId,
-                    AA.QuestionId,
-                    AA.Answer,
-                    Q.TaskId,
-                    Q.QuestionContent,
-                    Q.QuestionNameUrl,
-                    T.TaskName,
-                    T.TaskNameUrl,
-                    T.OrderNumber AS TaskOrder
-                FROM [recognitionCitizen].[ApplicationAnswers] AA
-                INNER JOIN [recognitionCitizen].[Question] Q ON AA.QuestionId = Q.QuestionId
-                INNER JOIN [recognitionCitizen].[Task] T ON Q.TaskId = T.TaskId
-                WHERE ApplicationId = @applicationId";
-            return await _connection.QueryAsync<TaskQuestionAnswer>(query, new
-            {
-                applicationId
-            }, _transaction);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error retrieving application Task Question Answers for ApplicationId: {ApplicationId}", applicationId);
             return null;
         }
     }

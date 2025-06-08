@@ -14,16 +14,20 @@ public class TaskControllerTests
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<ITaskRepository> _mockTaskRepository;
     private readonly TaskController _controller;
-    
+
     public TaskControllerTests()
     {
         _mockUnitOfWork = new Mock<IUnitOfWork>();
+
         _mockTaskRepository = new Mock<ITaskRepository>();
         _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
-        _controller = new TaskController(_mockUnitOfWork.Object);
-        _controller.ControllerContext = new ControllerContext
+        
+        _controller = new TaskController(_mockUnitOfWork.Object)
         {
-            HttpContext = new DefaultHttpContext()
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
         };
     }
 
@@ -42,7 +46,7 @@ public class TaskControllerTests
             SectionId = Guid.NewGuid(),
             CreatedByUpn = "test"
         };
-        
+
         _mockTaskRepository.Setup(r => r.GetTaskByTaskNameUrl(taskNameUrl))
                            .ReturnsAsync(taskItem);
         // Act
@@ -54,7 +58,7 @@ public class TaskControllerTests
         Assert.Equal(taskItem.TaskName, dto.TaskName);
         Assert.Equal(taskItem.TaskNameUrl, dto.TaskNameUrl);
     }
-    
+
     [Fact]
     [Trait("Category", "Unit")]
     public async Task GetTaskByTaskNameUrl_ReturnsBadRequest_WhenTaskDoesNotExist()
@@ -64,7 +68,7 @@ public class TaskControllerTests
 
         _mockTaskRepository.Setup(r => r.GetTaskByTaskNameUrl(taskNameUrl))
                            .ReturnsAsync((TaskItem?)null);
-        
+
         // Act
         var result = await _controller.GetTaskByTaskNameUrl(taskNameUrl);
 

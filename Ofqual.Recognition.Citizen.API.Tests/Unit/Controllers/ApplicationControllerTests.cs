@@ -17,7 +17,7 @@ public class ApplicationControllerTests
     private readonly ApplicationController _controller;
     private readonly Mock<ITaskRepository> _mockTaskRepository;
     private readonly Mock<IApplicationRepository> _mockApplicationRepository;
-    private readonly Mock<IQuestionRepository> _mockQuestionRepository;
+    private readonly Mock<IApplicationAnswersRepository> _mockApplicationAnswersRepository;
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<ITaskStatusService> _mockTaskStatusService;
     private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService;
@@ -30,19 +30,21 @@ public class ApplicationControllerTests
         _mockApplicationAnswersService = new Mock<IApplicationAnswersService>();
         _mockStageService = new Mock<IStageService>();
 
-        _mockQuestionRepository = new Mock<IQuestionRepository>();
-        _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
-
         _mockTaskRepository = new Mock<ITaskRepository>();
         _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
 
         _mockApplicationRepository = new Mock<IApplicationRepository>();
         _mockUnitOfWork.Setup(u => u.ApplicationRepository).Returns(_mockApplicationRepository.Object);
 
-        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockTaskStatusService.Object, _mockApplicationAnswersService.Object, _mockStageService.Object);
-        _controller.ControllerContext = new ControllerContext
+        _mockApplicationAnswersRepository = new Mock<IApplicationAnswersRepository>();
+        _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository).Returns(_mockApplicationAnswersRepository.Object);
+
+        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockTaskStatusService.Object, _mockApplicationAnswersService.Object, _mockStageService.Object)
         {
-            HttpContext = new DefaultHttpContext()
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
         };
     }
 
@@ -59,6 +61,7 @@ public class ApplicationControllerTests
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Equal("Application could not be created.", badRequest.Value);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
     }
 
     [Fact]
@@ -83,6 +86,7 @@ public class ApplicationControllerTests
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Equal("Failed to create task statuses for the new application.", badRequest.Value);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
     }
 
     [Fact]
@@ -113,6 +117,39 @@ public class ApplicationControllerTests
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Equal("Failed to insert pre-engagement answers for the new application.", badRequest.Value);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task CreateApplication_ReturnsBadRequest_WhenStageStatusUpdateFails()
+    {
+        // Arrange
+        var app = new Application
+        {
+            ApplicationId = Guid.NewGuid(),
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "testuser@ofqual.gov.uk"
+        };
+
+        var preAnswers = new List<PreEngagementAnswerDto>
+        {
+            new PreEngagementAnswerDto { QuestionId = Guid.NewGuid(), AnswerJson = "{}" }
+        };
+
+        _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync(app);
+        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, preAnswers)).ReturnsAsync(true);
+        _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, preAnswers)).ReturnsAsync(true);
+        _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(app.ApplicationId, StageEnum.PreEngagement)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.CreateApplication(preAnswers);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Unable to determine or save the stage status for the application.", badRequest.Value);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
     }
 
     [Fact]
@@ -137,6 +174,7 @@ public class ApplicationControllerTests
         _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync(app);
         _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, preAnswers)).ReturnsAsync(true);
         _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, preAnswers)).ReturnsAsync(true);
+        _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(app.ApplicationId, StageEnum.PreEngagement)).ReturnsAsync(true);
 
         // Act
         var result = await _controller.CreateApplication(preAnswers);
@@ -158,6 +196,7 @@ public class ApplicationControllerTests
         // Act & Assert
         var ex = await Assert.ThrowsAsync<Exception>(() => _controller.CreateApplication(null));
         Assert.Equal("An error occurred while creating the application. Please try again later.", ex.Message);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
     }
 
     [Fact]
@@ -255,6 +294,8 @@ public class ApplicationControllerTests
 
         _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status))
             .ReturnsAsync(true);
+        _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(applicationId, StageEnum.PreEngagement))
+            .ReturnsAsync(true);
 
         // Act
         var result = await _controller.UpdateTaskStatus(applicationId, taskId, request);
@@ -301,6 +342,31 @@ public class ApplicationControllerTests
         var ex = await Assert.ThrowsAsync<Exception>(() =>
             _controller.UpdateTaskStatus(applicationId, taskId, request));
         Assert.Equal("An error occurred while updating the task status. Please try again later.", ex.Message);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UpdateTaskStatus_ReturnsBadRequest_WhenStageStatusUpdateFails()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
+
+        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status))
+            .ReturnsAsync(true);
+
+        _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(applicationId, StageEnum.PreEngagement))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.UpdateTaskStatus(applicationId, taskId, request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("Unable to determine or save the stage status for the application.", badRequest.Value);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
     }
 
     [Fact]
@@ -313,7 +379,7 @@ public class ApplicationControllerTests
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerSubmissionDto { Answer = "Answer A" };
 
-        _mockQuestionRepository
+        _mockApplicationAnswersRepository
             .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(true);
 
@@ -339,7 +405,7 @@ public class ApplicationControllerTests
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerSubmissionDto { Answer = "Bad Answer" };
 
-        _mockQuestionRepository
+        _mockApplicationAnswersRepository
             .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(false);
 
@@ -362,7 +428,7 @@ public class ApplicationControllerTests
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerSubmissionDto { Answer = "Valid Answer" };
 
-        _mockQuestionRepository
+        _mockApplicationAnswersRepository
             .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(true);
 
@@ -389,7 +455,7 @@ public class ApplicationControllerTests
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerSubmissionDto { Answer = "Some Answer" };
 
-        _mockQuestionRepository
+        _mockApplicationAnswersRepository
             .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ThrowsAsync(new Exception("DB error"));
 
@@ -440,7 +506,7 @@ public class ApplicationControllerTests
             }
         };
 
-        _mockQuestionRepository
+        _mockApplicationAnswersRepository
             .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
             .ReturnsAsync(mockAnswers);
 
@@ -472,7 +538,7 @@ public class ApplicationControllerTests
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
 
-        _mockQuestionRepository
+        _mockApplicationAnswersRepository
             .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
             .ReturnsAsync(new List<TaskQuestionAnswer>());
 
@@ -498,7 +564,7 @@ public class ApplicationControllerTests
             Answer = "Sample Answer"
         };
 
-        _mockQuestionRepository
+        _mockApplicationAnswersRepository
             .Setup(repo => repo.GetQuestionAnswer(applicationId, questionId))
             .ReturnsAsync(expectedAnswer);
 
@@ -520,7 +586,7 @@ public class ApplicationControllerTests
         var applicationId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
 
-        _mockQuestionRepository
+        _mockApplicationAnswersRepository
             .Setup(repo => repo.GetQuestionAnswer(applicationId, questionId))
             .ReturnsAsync((QuestionAnswerDto?)null);
 

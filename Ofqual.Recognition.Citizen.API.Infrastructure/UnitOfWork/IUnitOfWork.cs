@@ -9,6 +9,8 @@ public interface IUnitOfWork : IDisposable
     public IApplicationRepository ApplicationRepository { get; }
     public IQuestionRepository QuestionRepository { get; }
     public IStageRepository StageRepository { get; }
+    public IApplicationAnswersRepository ApplicationAnswersRepository { get; }
+    
     public IDbConnection Connection { get; }
     public IDbTransaction Transaction { get; }
 
