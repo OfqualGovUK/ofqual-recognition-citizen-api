@@ -5,9 +5,7 @@ using Newtonsoft.Json.Linq;
 using Ofqual.Recognition.Citizen.API.Core.Models.Applications;
 using Ofqual.Recognition.Citizen.API.Core.Models.Json.QuestionContent.Components;
 using Ofqual.Recognition.Citizen.API.Core.Models.Json.QuestionContent;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 using System.Text.RegularExpressions;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 using System.Text.Json;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
@@ -210,8 +208,23 @@ public class ApplicationAnswersService : IApplicationAnswersService
             return null;
 
         var questionContent = JsonSerializer.Deserialize<QuestionContent>(questionDetails.QuestionContent);
-        if (questionContent?.FormGroup?.Components == null)
+                
+        if (questionContent == null || questionContent.formGroup.Any())
             return null;
+
+
+        List<IFormComponent> components = new List<IFormComponent>();
+        var textItems = questionContent.formGroup["TextItems"];
+        if (textItems != null)
+        {
+            components.AddRange((textItems as TextItems));
+        }
+        else
+        {
+            components.Add(questionContent.formGroup.First().Value);
+        }
+
+
 
         var answerValue = JsonSerializer.Deserialize<Dictionary<string, string>>(answerDto.Answer);
         if (answerValue == null)
@@ -221,10 +234,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
         var errors = new List<ValidationErrorItemDto>();
         foreach (var answerItem in answerValue)
         {
-            var component = questionContent
-                ?.FormGroup
-                ?.Components
-                .First(x => x.Name != null
+            var component = components.First(x => x.Name != null
                          && x.Name.Equals(answerItem.Key,
                                           StringComparison.CurrentCultureIgnoreCase));
 
@@ -292,7 +302,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
         return errors;
     }
 
-    private static ValidationErrorItemDto? ValidateTextLength(IComponent component, KeyValuePair<string, string> answerItem)
+    private static ValidationErrorItemDto? ValidateTextLength(IFormComponent component, KeyValuePair<string, string> answerItem)
     {
         var hasMinValue = component.Validation?.MinLength.HasValue ?? false;
         var hasMaxValue = component.Validation?.MaxLength.HasValue ?? false;

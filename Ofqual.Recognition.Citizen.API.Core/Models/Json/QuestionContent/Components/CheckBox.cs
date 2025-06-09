@@ -28,8 +28,9 @@ public class CheckBoxConditionalSelectItem
     public IEnumerable<CheckBoxItem> ConditionalSelects { get; set; } = new List<CheckBoxItem>();
 }
 
-public class CheckBox : IComponent
+public class CheckBox : IFormComponent
 {
+
     public string? Heading { get; set; }
     public string? Hint { get; set; }
     public string? Name { get; set; }

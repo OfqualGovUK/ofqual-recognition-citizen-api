@@ -11,7 +11,7 @@ public class TextInputItem
     public ComponentValidation? Validation { get; set; }
 }
 
-public class TextInput : IComponent
+public class TextInput : IFormComponent
 {
     public string? Heading { get; set; }
     public string? Hint { get; set; }

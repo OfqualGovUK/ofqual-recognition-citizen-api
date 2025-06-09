@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Ofqual.Recognition.Citizen.API.Core.Models.Json.QuestionContent.Components;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models.Json.QuestionContent
 {
@@ -11,9 +7,9 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models.Json.QuestionContent
     /// </summary>
     public class QuestionContent
     {
-        public string? Heading { get; set; }
+        public string? heading { get; set; }
 
-        public string? Body { get; set; }
-        public FormGroup? FormGroup { get; set; }
+        public string? body { get; set; }
+        public Dictionary<string, IFormComponent> formGroup { get; set; } = new Dictionary<string, IFormComponent>();
     }
 }

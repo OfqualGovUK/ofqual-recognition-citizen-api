@@ -2,7 +2,7 @@
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models.Json.QuestionContent.Components;
 
-public class RadioButton : IComponent
+public class RadioButton : IFormComponent
 {
     public string? Heading { get; set; }
     public string? Hint { get; set; }
