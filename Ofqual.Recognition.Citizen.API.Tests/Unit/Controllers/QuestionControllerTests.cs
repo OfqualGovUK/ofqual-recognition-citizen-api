@@ -51,7 +51,7 @@ public class QuestionControllerTests
         _mockQuestionRepository
             .Setup(repo => repo.GetQuestion(taskName, questionName))
             .ReturnsAsync(expectedQuestion);
-        
+
         // Act
         var result = await _controller.GetQuestions(taskName, questionName);
 
@@ -65,7 +65,7 @@ public class QuestionControllerTests
         Assert.Equal(expectedQuestion.QuestionId, returnedQuestion.QuestionId);
         Assert.Equal(expectedQuestion.TaskId, returnedQuestion.TaskId);
     }
-    
+
     [Theory]
     [Trait("Category", "Unit")]
     [InlineData("nonexistent", "missingquestion")]

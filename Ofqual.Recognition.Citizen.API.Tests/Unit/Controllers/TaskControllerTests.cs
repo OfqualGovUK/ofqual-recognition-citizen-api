@@ -46,7 +46,7 @@ public class TaskControllerTests
             SectionId = Guid.NewGuid(),
             CreatedByUpn = "test"
         };
-        
+
         _mockTaskRepository.Setup(r => r.GetTaskByTaskNameUrl(taskNameUrl))
                            .ReturnsAsync(taskItem);
         // Act
@@ -58,7 +58,7 @@ public class TaskControllerTests
         Assert.Equal(taskItem.TaskName, dto.TaskName);
         Assert.Equal(taskItem.TaskNameUrl, dto.TaskNameUrl);
     }
-    
+
     [Fact]
     [Trait("Category", "Unit")]
     public async Task GetTaskByTaskNameUrl_ReturnsBadRequest_WhenTaskDoesNotExist()
@@ -68,7 +68,7 @@ public class TaskControllerTests
 
         _mockTaskRepository.Setup(r => r.GetTaskByTaskNameUrl(taskNameUrl))
                            .ReturnsAsync((TaskItem?)null);
-        
+
         // Act
         var result = await _controller.GetTaskByTaskNameUrl(taskNameUrl);
 

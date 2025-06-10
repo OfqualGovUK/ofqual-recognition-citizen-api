@@ -10,7 +10,7 @@ public class ApplicationAnswer : IApplicationAnswer, IDataMetadata
     public Guid ApplicationAnswersId  { get; set; }
     public Guid ApplicationId { get; set; }
     public Guid QuestionId { get; set; }
-    public string Answer  { get; set; }
+    public required string Answer  { get; set; }
     public required string CreatedByUpn { get; set; }
     public string? ModifiedByUpn { get; set; }
     public DateTime CreatedDate { get; set; }

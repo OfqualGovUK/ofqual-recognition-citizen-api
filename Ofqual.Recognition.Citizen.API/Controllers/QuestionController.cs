@@ -35,7 +35,6 @@ public class QuestionController : ControllerBase
         try
         {
             QuestionDetails? question = await _context.QuestionRepository.GetQuestion(taskNameUrl, questionNameUrl);
-
             if (question == null)
             {
                 return BadRequest($"No question found with URL: {taskNameUrl}/{questionNameUrl}");
