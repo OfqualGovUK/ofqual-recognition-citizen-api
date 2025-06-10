@@ -33,6 +33,9 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         TaskRepository = new TaskRepository(_connection, _transaction);
         ApplicationRepository = new ApplicationRepository(_connection, _transaction);
         QuestionRepository = new QuestionRepository(_connection, _transaction);
+        StageRepository = new StageRepository(_connection, _transaction);
+        ApplicationAnswersRepository = new ApplicationAnswersRepository(_connection, _transaction);
+        AttachmentRepository = new AttachmentRepository(_connection, _transaction);
     }
 
     public IDbConnection Connection => _connection;

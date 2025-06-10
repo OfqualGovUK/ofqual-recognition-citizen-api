@@ -53,7 +53,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.StageRepository.GetFirstQuestionByStage(StageEnum.PreEngagement);
+        var result = await unitOfWork.StageRepository.GetFirstQuestionByStage(Stage.PreEngagement);
 
         // Assert
         Assert.NotNull(result);
@@ -109,7 +109,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.StageRepository.GetStageQuestionByTaskAndQuestionUrl(StageEnum.PreEngagement, "task-url", "question-2");
+        var result = await unitOfWork.StageRepository.GetStageQuestionByTaskAndQuestionUrl(Stage.PreEngagement, "task-url", "question-2");
 
         // Assert
         Assert.NotNull(result);
@@ -137,7 +137,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
 
-        var stage = StageEnum.PreEngagement;
+        var stage = Stage.PreEngagement;
         var now = DateTime.UtcNow;
 
         var stageStatus = new StageStatus

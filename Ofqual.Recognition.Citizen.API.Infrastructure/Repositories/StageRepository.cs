@@ -18,7 +18,7 @@ public class StageRepository : IStageRepository
         _transaction = transaction;
     }
 
-    public async Task<StageQuestionDetails?> GetStageQuestionByTaskAndQuestionUrl(StageEnum stageId, string taskNameUrl, string questionNameUrl)
+    public async Task<StageQuestionDetails?> GetStageQuestionByTaskAndQuestionUrl(Stage stageId, string taskNameUrl, string questionNameUrl)
     {
         try
         {
@@ -61,7 +61,7 @@ public class StageRepository : IStageRepository
         }
     }
 
-    public async Task<StageQuestionDto?> GetFirstQuestionByStage(StageEnum stageId)
+    public async Task<StageQuestionDto?> GetFirstQuestionByStage(Stage stageId)
     {
         try
         {
@@ -89,7 +89,7 @@ public class StageRepository : IStageRepository
         }
     }
 
-    public async Task<StageStatus?> GetStageStatus(Guid applicationId, StageEnum stageId)
+    public async Task<StageStatus?> GetStageStatus(Guid applicationId, Stage stageId)
     {
         try
         {
@@ -120,7 +120,7 @@ public class StageRepository : IStageRepository
         }
     }
 
-    public async Task<IEnumerable<StageTaskView>?> GetAllStageTasksByStageId(StageEnum stageId)
+    public async Task<IEnumerable<StageTaskView>?> GetAllStageTasksByStageId(Stage stageId)
     {
         try
         {

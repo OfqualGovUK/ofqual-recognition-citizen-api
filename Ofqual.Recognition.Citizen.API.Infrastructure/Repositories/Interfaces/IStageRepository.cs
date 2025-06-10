@@ -5,9 +5,9 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 
 public interface IStageRepository
 {
-    public Task<StageQuestionDetails?> GetStageQuestionByTaskAndQuestionUrl(StageEnum stageId, string taskNameUrl, string questionNameUrl);
-    public Task<StageQuestionDto?> GetFirstQuestionByStage(StageEnum stageId);
-    public Task<StageStatus?> GetStageStatus(Guid applicationId, StageEnum stageId);
-    public Task<IEnumerable<StageTaskView>?> GetAllStageTasksByStageId(StageEnum stageId);
+    public Task<StageQuestionDetails?> GetStageQuestionByTaskAndQuestionUrl(Stage stageId, string taskNameUrl, string questionNameUrl);
+    public Task<StageQuestionDto?> GetFirstQuestionByStage(Stage stageId);
+    public Task<StageStatus?> GetStageStatus(Guid applicationId, Stage stageId);
+    public Task<IEnumerable<StageTaskView>?> GetAllStageTasksByStageId(Stage stageId);
     public Task<bool> UpsertStageStatusRecord(StageStatus stageStatus);
 }

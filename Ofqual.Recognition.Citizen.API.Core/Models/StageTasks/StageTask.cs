@@ -6,7 +6,7 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 public class StageTask
 {
     public Guid StageTaskId { get; set; }
-    public StageEnum StageId { get; set; }
+    public Stage StageId { get; set; }
     public Guid TaskId { get; set; }
     public int OrderNumber { get; set; }
     public bool Enabled { get; set; }
