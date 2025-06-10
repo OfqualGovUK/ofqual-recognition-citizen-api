@@ -7,8 +7,6 @@ public interface IQuestionRepository
 {
     public Task<QuestionDetails?> GetQuestion(string taskNameUrl, string questionNameUrl);
     public Task<QuestionDetails?> GetQuestion(Guid taskId, Guid questionId);
-    public Task<PreEngagementQuestionDetails?> GetPreEngagementQuestion(string taskNameUrl, string questionNameUrl);
-    public Task<PreEngagementQuestionDto?> GetFirstPreEngagementQuestion();
     public Task<bool> UpsertQuestionAnswer(Guid applicationId, Guid questionId, string answer);
     public Task<IEnumerable<TaskQuestionAnswer>> GetTaskQuestionAnswers(Guid applicationId, Guid taskId);
     public Task<QuestionAnswerDto?> GetQuestionAnswer(Guid applicationId, Guid questionId);

@@ -1,6 +1,6 @@
 ﻿namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
-public class PreEngagementQuestionDetails
+public class StageQuestionDetails
 {
     public Guid QuestionId { get; set; }
     public required string QuestionContent { get; set; }

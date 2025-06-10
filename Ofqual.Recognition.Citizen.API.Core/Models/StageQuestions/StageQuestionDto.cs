@@ -1,6 +1,6 @@
 ﻿namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
-public class PreEngagementQuestionDto
+public class StageQuestionDto
 {
     public Guid QuestionId { get; set; }
     public Guid TaskId { get; set; }

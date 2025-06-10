@@ -31,16 +31,21 @@ public class TaskStatusService : ITaskStatusService
         var questionsByTask = questions
             .GroupBy(q => q.TaskId)
             .ToDictionary(g => g.Key, g => g.ToList());
-
+        
         var answeredQuestionIds = answers?
             .Where(a => !string.IsNullOrWhiteSpace(a.AnswerJson) && !JsonHelper.IsEmptyJsonObject(a.AnswerJson))
             .Select(a => a.QuestionId)
             .ToHashSet() ?? new HashSet<Guid>();
+        
+        var now = DateTime.UtcNow;
+        var user = "USER";
 
-        var statuses = tasks.Select(task =>
+        var newTaskStatuses = tasks.Select(task =>
         {
-            var taskQuestions = questionsByTask.TryGetValue(task.TaskId, out var qList) ? qList : new List<Question>();
-
+            var taskQuestions = questionsByTask.TryGetValue(task.TaskId, out var qList)
+                ? qList
+                : new List<Question>();
+            
             TaskStatusEnum status;
 
             if (taskQuestions.Count == 0)
@@ -69,11 +74,11 @@ public class TaskStatusService : ITaskStatusService
                 ApplicationId = applicationId,
                 TaskId = task.TaskId,
                 Status = status,
-                CreatedByUpn = "USER",
-                ModifiedByUpn = "USER"
+                CreatedByUpn = user,
+                ModifiedByUpn = user
             };
         });
 
-        return await _context.TaskRepository.CreateTaskStatuses(statuses);
+        return await _context.TaskRepository.CreateTaskStatuses(newTaskStatuses);
     }
 }
