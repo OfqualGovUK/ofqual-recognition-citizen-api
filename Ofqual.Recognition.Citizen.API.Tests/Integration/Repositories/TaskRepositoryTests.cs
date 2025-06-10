@@ -1,5 +1,5 @@
 using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
-using Ofqual.Recognition.Citizen.Tests.Integration.Helper;
+using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;

@@ -34,7 +34,6 @@ public class TaskController : ControllerBase
         try
         {
             TaskItem? taskItem = await _context.TaskRepository.GetTaskByTaskNameUrl(taskNameUrl);
-
             if (taskItem == null)
             {
                 return BadRequest($"No task found with URL: {taskNameUrl}");

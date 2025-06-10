@@ -18,4 +18,5 @@ public class TaskQuestionAnswer
 
     // ApplicationAnswers table
     public string? Answer { get; set; }
+    public Guid ApplicationId { get; set; }
 }

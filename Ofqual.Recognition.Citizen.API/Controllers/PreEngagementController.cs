@@ -1,5 +1,6 @@
 ﻿using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -25,11 +26,11 @@ public class PreEngagementController : Controller
     /// </summary>
     /// <returns>The first Pre-Engagement question with navigation details.</returns>
     [HttpGet("first-question")]
-    public async Task<ActionResult<PreEngagementQuestionDto>> GetFirstPreEngagementQuestion()
+    public async Task<ActionResult<StageQuestionDto>> GetFirstPreEngagementQuestion()
     {
         try
         {
-            PreEngagementQuestionDto? firstQuestion = await _context.QuestionRepository.GetFirstPreEngagementQuestion();
+            StageQuestionDto? firstQuestion = await _context.StageRepository.GetFirstQuestionByStage(Stage.PreEngagement);
             if (firstQuestion == null)
             {
                 return NotFound("No Pre-Engagement question found.");
@@ -51,17 +52,17 @@ public class PreEngagementController : Controller
     /// <param name="questionNameUrl">Question name from the URL.</param>
     /// <returns>The pre-engagement question with its content and type.</returns>
     [HttpGet("{taskNameUrl}/{questionNameUrl}")]
-    public async Task<ActionResult<PreEngagementQuestionDetailsDto?>> GetPreEngagementQuestions(string taskNameUrl, string questionNameUrl)
+    public async Task<ActionResult<QuestionDetailsDto?>> GetPreEngagementQuestions(string taskNameUrl, string questionNameUrl)
     {
         try
         {
-            PreEngagementQuestionDetails? question = await _context.QuestionRepository.GetPreEngagementQuestion(taskNameUrl, questionNameUrl);
+            StageQuestionDetails? question = await _context.StageRepository.GetStageQuestionByTaskAndQuestionUrl(Stage.PreEngagement, taskNameUrl, questionNameUrl);
             if (question == null)
             {
                 return BadRequest($"No pre-engagement question found for URL: {taskNameUrl}/{questionNameUrl}");
             }
 
-            PreEngagementQuestionDetailsDto questionDto = QuestionMapper.ToDto(question);
+            QuestionDetailsDto questionDto = QuestionMapper.ToDto(question);
 
             return Ok(questionDto);
         }

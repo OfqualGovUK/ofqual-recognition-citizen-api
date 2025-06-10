@@ -27,7 +27,9 @@ public class ApplicationRepository : IApplicationRepository
                 INSERT INTO [recognitionCitizen].[Application] (
                     CreatedByUpn,
                     ModifiedByUpn
-                ) OUTPUT INSERTED.* VALUES (
+                ) 
+                OUTPUT INSERTED.* 
+                VALUES (
                     @CreatedByUpn,
                     @ModifiedByUpn
                 )";

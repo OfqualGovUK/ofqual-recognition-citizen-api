@@ -26,22 +26,22 @@ public static class QuestionMapper
     }
 
     /// <summary>
-    /// Maps a <see cref="PreEngagementQuestionDetails"/> data model to a <see cref="PreEngagementQuestionDetailsDto"/>.
+    /// Maps a <see cref="StageQuestionDetails"/> data model to a <see cref="QuestionDetailsDto"/>.
     /// </summary>
-    public static PreEngagementQuestionDetailsDto ToDto(PreEngagementQuestionDetails preEngagement)
+    public static QuestionDetailsDto ToDto(StageQuestionDetails stageQuestionDetails)
     {
-        return new PreEngagementQuestionDetailsDto
+        return new QuestionDetailsDto
         {
-            QuestionId = preEngagement.QuestionId,
-            TaskId = preEngagement.TaskId,
-            QuestionTypeName = preEngagement.QuestionTypeName,
-            QuestionContent = preEngagement.QuestionContent,
-            CurrentQuestionUrl = $"{preEngagement.CurrentTaskNameUrl}/{preEngagement.CurrentQuestionNameUrl}",
-            PreviousQuestionUrl = preEngagement.PreviousQuestionNameUrl != null
-                ? $"{preEngagement.PreviousTaskNameUrl}/{preEngagement.PreviousQuestionNameUrl}"
+            QuestionId = stageQuestionDetails.QuestionId,
+            TaskId = stageQuestionDetails.TaskId,
+            QuestionTypeName = stageQuestionDetails.QuestionTypeName,
+            QuestionContent = stageQuestionDetails.QuestionContent,
+            CurrentQuestionUrl = $"{stageQuestionDetails.CurrentTaskNameUrl}/{stageQuestionDetails.CurrentQuestionNameUrl}",
+            PreviousQuestionUrl = stageQuestionDetails.PreviousQuestionNameUrl != null
+                ? $"{stageQuestionDetails.PreviousTaskNameUrl}/{stageQuestionDetails.PreviousQuestionNameUrl}"
                 : null,
-            NextQuestionUrl = preEngagement.NextQuestionNameUrl != null
-                ? $"{preEngagement.NextTaskNameUrl}/{preEngagement.NextQuestionNameUrl}"
+            NextQuestionUrl = stageQuestionDetails.NextQuestionNameUrl != null
+                ? $"{stageQuestionDetails.NextTaskNameUrl}/{stageQuestionDetails.NextQuestionNameUrl}"
                 : null
         };
     }

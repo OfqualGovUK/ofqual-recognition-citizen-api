@@ -2,7 +2,7 @@ using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Dapper;
 
-namespace Ofqual.Recognition.Citizen.Tests.Integration.Helper;
+namespace Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 
 public static class ApplicationTestDataBuilder
 {

@@ -26,7 +26,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
     {
         foreach (var answer in answers)
         {
-            bool success = await _context.QuestionRepository.UpsertQuestionAnswer(applicationId, answer.QuestionId, answer.AnswerJson);
+            bool success = await _context.ApplicationAnswersRepository.UpsertQuestionAnswer(applicationId, answer.QuestionId, answer.AnswerJson);
             if (!success)
             {
                 return false;
