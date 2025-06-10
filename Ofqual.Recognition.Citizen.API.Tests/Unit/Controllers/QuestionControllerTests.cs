@@ -22,10 +22,12 @@ public class QuestionControllerTests
         _mockQuestionRepository = new Mock<IQuestionRepository>();
         _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
 
-        _controller = new QuestionController(_mockUnitOfWork.Object);
-        _controller.ControllerContext = new ControllerContext
+        _controller = new QuestionController(_mockUnitOfWork.Object)
         {
-            HttpContext = new DefaultHttpContext()
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
         };
     }
 
@@ -49,7 +51,7 @@ public class QuestionControllerTests
         _mockQuestionRepository
             .Setup(repo => repo.GetQuestion(taskName, questionName))
             .ReturnsAsync(expectedQuestion);
-        
+
         // Act
         var result = await _controller.GetQuestions(taskName, questionName);
 
@@ -63,7 +65,7 @@ public class QuestionControllerTests
         Assert.Equal(expectedQuestion.QuestionId, returnedQuestion.QuestionId);
         Assert.Equal(expectedQuestion.TaskId, returnedQuestion.TaskId);
     }
-    
+
     [Theory]
     [Trait("Category", "Unit")]
     [InlineData("nonexistent", "missingquestion")]
