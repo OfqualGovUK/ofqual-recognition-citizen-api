@@ -1,16 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+namespace Ofqual.Recognition.API.Models.JSON.Questions;
 
-namespace Ofqual.Recognition.Citizen.API.Core.Models.Json.QuestionContent;
-
-/// <summary>
-/// Represents a list of possible validation flags provided in database
-/// </summary>
-public class ComponentValidation
+public class ValidationRule
 {
     /// <summary>
     /// Requires that an answer is provided
@@ -60,5 +50,3 @@ public class ComponentValidation
     /// </summary>
     public string? Pattern { set; get; }
 }
-
-

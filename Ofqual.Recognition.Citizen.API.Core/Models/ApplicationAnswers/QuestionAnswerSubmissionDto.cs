@@ -7,5 +7,5 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// </summary>
 public class QuestionAnswerSubmissionDto : IApplicationAnswer
 {
-    public string Answer { get; set; }
+    public required string Answer { get; set; }
 }

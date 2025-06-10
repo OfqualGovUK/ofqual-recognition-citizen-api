@@ -3,10 +3,12 @@ using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Helpers;
 using Newtonsoft.Json.Linq;
 using Ofqual.Recognition.Citizen.API.Core.Models.Applications;
-using Ofqual.Recognition.Citizen.API.Core.Models.Json.QuestionContent.Components;
-using Ofqual.Recognition.Citizen.API.Core.Models.Json.QuestionContent;
+using Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
+
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using Ofqual.Recognition.API.Models.JSON.Questions;
+using System.Net.WebSockets;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -207,35 +209,50 @@ public class ApplicationAnswersService : IApplicationAnswersService
         if (questionDetails == null)
             return null;
 
-        var questionContent = JsonSerializer.Deserialize<QuestionContent>(questionDetails.QuestionContent);
-                
-        if (questionContent == null || questionContent.formGroup.Any())
+        var questionContent = JsonSerializer.Deserialize<QuestionContent>(questionDetails.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+
+        var formGroup = questionContent?.FormGroup;
+        if (formGroup == null)
             return null;
 
 
-        List<IFormComponent> components = new List<IFormComponent>();
-        var textItems = questionContent.formGroup["TextItems"];
-        if (textItems != null)
+        List<IValidatable> components = new List<IValidatable>();
+
+        if(formGroup.Textarea != null) 
+            components.Add(formGroup.Textarea);
+
+        if(formGroup.RadioButton != null)
+            components.Add(formGroup.RadioButton);
+
+        if (formGroup.CheckBox != null)
         {
-            components.AddRange((textItems as TextItems));
+            components.Add(formGroup.CheckBox);
+
+            var checkboxes = formGroup.CheckBox?.CheckBoxes.SelectMany(x => x.ConditionalSelects ?? new List<Select>());
+            if (checkboxes != null)
+                components.AddRange(checkboxes);
+
+            var textInputs = formGroup.CheckBox?.CheckBoxes.SelectMany(x => x.ConditionalInputs ?? new List<TextInputItem>());
+            if (textInputs != null)
+                components.AddRange(textInputs);
+
+            var textItems = formGroup.TextInput;
+            if (textItems != null && textItems.TextInputs != null)
+                components.AddRange(textItems.TextInputs);
         }
-        else
-        {
-            components.Add(questionContent.formGroup.First().Value);
-        }
 
+        if(formGroup.TextInput != null)
+            components.AddRange(formGroup.TextInput.TextInputs);
 
-
-        var answerValue = JsonSerializer.Deserialize<Dictionary<string, string>>(answerDto.Answer);
+        var answerValue = JsonSerializer.Deserialize<Dictionary<string, string>>(answerDto.Answer, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         if (answerValue == null)
             return null;
-
 
         var errors = new List<ValidationErrorItemDto>();
         foreach (var answerItem in answerValue)
         {
-            var component = components.First(x => x.Name != null
-                         && x.Name.Equals(answerItem.Key,
+            var component = components.First(x => x.Name.Equals(answerItem.Key,
                                           StringComparison.CurrentCultureIgnoreCase));
 
 
@@ -248,7 +265,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItemDto
                     {
                         Property = answerItem.Key,
-                        ErrorMessage = $"Enter {answerItem.Key}"
+                        ErrorMessage = $"Enter {component.Label}"
                     });
                 continue;
             }
@@ -260,7 +277,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItemDto
                     {
                         Property = answerItem.Key,
-                        ErrorMessage = $"The {answerItem.Key} \"{answerItem.Value}\" already exists within our records"
+                        ErrorMessage = $"The {component.Label} \"{answerItem.Value}\" already exists within our records"
                     });
                 continue;
             }
@@ -278,7 +295,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 {
                     var regex = new Regex(component.Validation.Pattern);
                     if (!regex.IsMatch(answerItem.Value))
-                        errors.Add(new ValidationErrorItemDto { Property = answerItem.Key, ErrorMessage = $"answer does not match the required format" });
+                        errors.Add(new ValidationErrorItemDto { Property = answerItem.Key, ErrorMessage = $"{component.Label} does not match the required format" });
                     continue;
                 }
             }
@@ -288,13 +305,21 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 if (component.Validation.MinSelected.HasValue)
                 {
                     if (button.Radios.Count() < component.Validation.MinSelected)
-                        errors.Add(new ValidationErrorItemDto { Property = answerItem.Key, ErrorMessage = "minimum number of items has not been selected" });
+                        errors.Add(new ValidationErrorItemDto 
+                        { 
+                            Property = answerItem.Key, 
+                            ErrorMessage = $"minimum number of items has not been selected for {component.Label}" 
+                        });
                     continue;
                 }
                 if (component.Validation.MaxSelected.HasValue)
                 {
                     if (button.Radios.Count() < component.Validation.MaxSelected)
-                        errors.Add(new ValidationErrorItemDto { Property = answerItem.Key, ErrorMessage = "too many items have been selected" });
+                        errors.Add(new ValidationErrorItemDto 
+                        { 
+                            Property = answerItem.Key, 
+                            ErrorMessage = $"too many items have been selected for {component.Label}" 
+                        });
                     continue;
                 }
             }
@@ -302,7 +327,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
         return errors;
     }
 
-    private static ValidationErrorItemDto? ValidateTextLength(IFormComponent component, KeyValuePair<string, string> answerItem)
+    private static ValidationErrorItemDto? ValidateTextLength(IValidatable component, KeyValuePair<string, string> answerItem)
     {
         var hasMinValue = component.Validation?.MinLength.HasValue ?? false;
         var hasMaxValue = component.Validation?.MaxLength.HasValue ?? false;
@@ -326,7 +351,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             var itemDto = new ValidationErrorItemDto
             {
                 Property = answerItem.Key,
-                ErrorMessage = $"{answerItem.Key} must be "
+                ErrorMessage = $"{component.Label} must be "
             };
 
             var countType = countWords ? "words" : "characters";
