@@ -61,7 +61,7 @@ public class ApplicationController : ControllerBase
                 }
             }
 
-            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(application.ApplicationId, StageEnum.PreEngagement);
+            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(application.ApplicationId, Stage.PreEngagement);
             if (!stageStatusUpdated)
             {
                 return BadRequest("Unable to determine or save the stage status for the application.");
@@ -124,7 +124,7 @@ public class ApplicationController : ControllerBase
 
             if (request.Status == TaskStatusEnum.Completed)
             {
-                bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(applicationId, StageEnum.PreEngagement);
+                bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement);
                 if (!stageStatusUpdated)
                 {
                     return BadRequest("Unable to determine or save the stage status for the application.");

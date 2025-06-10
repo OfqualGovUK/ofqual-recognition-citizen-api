@@ -5,7 +5,7 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 public class StageTaskView
 {
-    public StageEnum StageId { get; set; }
+    public Stage StageId { get; set; }
     public string Stage { get; set; } = string.Empty;
     public Guid TaskId { get; set; }
     public string Task { get; set; } = string.Empty;

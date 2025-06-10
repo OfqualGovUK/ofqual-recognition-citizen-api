@@ -14,6 +14,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IQuestionRepository QuestionRepository { get; private set; }
     public IStageRepository StageRepository { get; private set; }
     public IApplicationAnswersRepository ApplicationAnswersRepository { get; private set; }
+    public IAttachmentRepository AttachmentRepository { get; private set; }
 
     public UnitOfWork(IDbConnection connection)
     {
@@ -34,6 +35,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         QuestionRepository = new QuestionRepository(_connection, _transaction);
         StageRepository = new StageRepository(_connection, _transaction);
         ApplicationAnswersRepository = new ApplicationAnswersRepository(_connection, _transaction);
+        AttachmentRepository = new AttachmentRepository(_connection, _transaction);
     }
 
     public IDbConnection Connection => _connection;
