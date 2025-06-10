@@ -225,25 +225,24 @@ public class ApplicationAnswersService : IApplicationAnswersService
         if(formGroup.RadioButton != null)
             components.Add(formGroup.RadioButton);
 
+        if (formGroup.TextInput != null)
+            components.AddRange(formGroup.TextInput.TextInputs);
+
         if (formGroup.CheckBox != null)
         {
+            //add checkbox validation rule 
             components.Add(formGroup.CheckBox);
-
-            var checkboxes = formGroup.CheckBox?.CheckBoxes.SelectMany(x => x.ConditionalSelects ?? new List<Select>());
+            
+            //add any child combobox conditional select item validation rules
+            var checkboxes = formGroup.CheckBox.CheckBoxes.SelectMany(x => x.ConditionalSelects ?? new List<Select>());
             if (checkboxes != null)
                 components.AddRange(checkboxes);
 
-            var textInputs = formGroup.CheckBox?.CheckBoxes.SelectMany(x => x.ConditionalInputs ?? new List<TextInputItem>());
+            //add any child combobox conditional text field validation rules
+            var textInputs = formGroup.CheckBox.CheckBoxes.SelectMany(x => x.ConditionalInputs ?? new List<TextInputItem>());
             if (textInputs != null)
                 components.AddRange(textInputs);
-
-            var textItems = formGroup.TextInput;
-            if (textItems != null && textItems.TextInputs != null)
-                components.AddRange(textItems.TextInputs);
         }
-
-        if(formGroup.TextInput != null)
-            components.AddRange(formGroup.TextInput.TextInputs);
 
         var answerValue = JsonSerializer.Deserialize<Dictionary<string, string>>(answerDto.Answer, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         if (answerValue == null)
