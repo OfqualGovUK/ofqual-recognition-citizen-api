@@ -153,18 +153,11 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            var listErrors = await _applicationAnswersService.ValidateQuestionAnswers(taskId, questionId, request);
+            var errorResponse = await _applicationAnswersService.ValidateQuestionAnswers(taskId, questionId, request);
 
-            if (listErrors == null)
-                return BadRequest("Unable do validate, the request body is not in a correct format");
-
-            if(listErrors.Any())
+            if (errorResponse.Errors == null || errorResponse.Errors.Any() || !string.IsNullOrEmpty(errorResponse.Message))
             {
-                return BadRequest(new
-                {
-                    Message = "Failed to save question answer. There were validation errors within the request.",
-                    Errors = listErrors
-                });
+                return BadRequest(errorResponse);
             }
 
             bool isAnswerUpserted = await _context.QuestionRepository.UpsertQuestionAnswer(applicationId, questionId, request.Answer);

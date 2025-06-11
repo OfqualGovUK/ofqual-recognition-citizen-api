@@ -2,13 +2,11 @@ using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Helpers;
 using Newtonsoft.Json.Linq;
-using Ofqual.Recognition.Citizen.API.Core.Models.Applications;
 using Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
 
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using Ofqual.Recognition.API.Models.JSON.Questions;
-using System.Net.WebSockets;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -202,20 +200,29 @@ public class ApplicationAnswersService : IApplicationAnswersService
         return sections;
     }
 
-    public async Task<IEnumerable<ValidationErrorItemDto>?> ValidateQuestionAnswers(Guid taskId, Guid questionId, QuestionAnswerSubmissionDto answerDto)
+    public async Task<ValidationResponse> ValidateQuestionAnswers(Guid taskId, Guid questionId, QuestionAnswerSubmissionDto answerDto)
     {
 
         var questionDetails = await _context.QuestionRepository.GetQuestion(taskId, questionId);
         if (questionDetails == null)
-            return null;
+        {
+            return new ValidationResponse
+            {
+                Message = "Unable to validate user response",
+            };
+        }
 
         var questionContent = JsonSerializer.Deserialize<QuestionContent>(questionDetails.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
 
         var formGroup = questionContent?.FormGroup;
         if (formGroup == null)
-            return null;
-
+        {
+            return new ValidationResponse
+            {
+                Message = "Unable to validate user response",
+            };
+        }
 
         List<IValidatable> components = new List<IValidatable>();
 
@@ -246,7 +253,12 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
         var answerValue = JsonSerializer.Deserialize<Dictionary<string, string>>(answerDto.Answer, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         if (answerValue == null)
-            return null;
+        {
+            return new ValidationResponse
+            {
+                Message = "Unable to validate user response",
+            };
+        }
 
         var errors = new List<ValidationErrorItemDto>();
         foreach (var answerItem in answerValue)
@@ -256,14 +268,16 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
 
             if (component?.Validation == null)
+            {
                 continue;
+            }
 
             if (component.Validation.Required ?? false)
             {
                 if (string.IsNullOrWhiteSpace(answerItem.Value))
                     errors.Add(new ValidationErrorItemDto
                     {
-                        Property = answerItem.Key,
+                        PropertyName = answerItem.Key,
                         ErrorMessage = $"Enter {component.Label}"
                     });
                 continue;
@@ -275,7 +289,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 if (await _context.QuestionRepository.CheckIfQuestionAnswerExists(taskId, questionId, answerItem.Key, answerItem.Value))
                     errors.Add(new ValidationErrorItemDto
                     {
-                        Property = answerItem.Key,
+                        PropertyName = answerItem.Key,
                         ErrorMessage = $"The {component.Label} \"{answerItem.Value}\" already exists within our records"
                     });
                 continue;
@@ -294,7 +308,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 {
                     var regex = new Regex(component.Validation.Pattern);
                     if (!regex.IsMatch(answerItem.Value))
-                        errors.Add(new ValidationErrorItemDto { Property = answerItem.Key, ErrorMessage = $"{component.Label} does not match the required format" });
+                        errors.Add(new ValidationErrorItemDto { PropertyName = answerItem.Key, ErrorMessage = $"{component.Label} does not match the required format" });
                     continue;
                 }
             }
@@ -306,7 +320,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     if (button.Radios.Count() < component.Validation.MinSelected)
                         errors.Add(new ValidationErrorItemDto 
                         { 
-                            Property = answerItem.Key, 
+                            PropertyName = answerItem.Key, 
                             ErrorMessage = $"minimum number of items has not been selected for {component.Label}" 
                         });
                     continue;
@@ -316,14 +330,17 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     if (button.Radios.Count() < component.Validation.MaxSelected)
                         errors.Add(new ValidationErrorItemDto 
                         { 
-                            Property = answerItem.Key, 
+                            PropertyName = answerItem.Key, 
                             ErrorMessage = $"too many items have been selected for {component.Label}" 
                         });
                     continue;
                 }
             }
         }
-        return errors;
+        return new ValidationResponse 
+        {
+            Errors = errors,
+        };
     }
 
     private static ValidationErrorItemDto? ValidateTextLength(IValidatable component, KeyValuePair<string, string> answerItem)
@@ -349,7 +366,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
         {
             var itemDto = new ValidationErrorItemDto
             {
-                Property = answerItem.Key,
+                PropertyName = answerItem.Key,
                 ErrorMessage = $"{component.Label} must be "
             };
 
