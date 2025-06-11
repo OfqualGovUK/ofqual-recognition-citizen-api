@@ -261,20 +261,18 @@ public class ApplicationAnswersService : IApplicationAnswersService
         }
 
         var errors = new List<ValidationErrorItemDto>();
-        foreach (var answerItem in answerValue)
+        foreach (var component in components)
         {
-            var component = components.First(x => x.Name.Equals(answerItem.Key,
-                                          StringComparison.CurrentCultureIgnoreCase));
-
-
-            if (component?.Validation == null)
-            {
+            if (component.Validation == null)
                 continue;
-            }
 
-            if (component.Validation.Required ?? false)
+            var answerItem = answerValue
+                .DefaultIfEmpty(new KeyValuePair<string, string>(component.Name, string.Empty))
+                .FirstOrDefault(x => x.Key.Equals(component.Name, StringComparison.InvariantCultureIgnoreCase));
+
+            if (string.IsNullOrWhiteSpace(answerItem.Value))                
             {
-                if (string.IsNullOrWhiteSpace(answerItem.Value))
+                if (component.Validation.Required ?? false)
                     errors.Add(new ValidationErrorItemDto
                     {
                         PropertyName = answerItem.Key,
@@ -282,7 +280,6 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     });
                 continue;
             }
-
 
             if (component.Validation.Unique ?? false)
             {
@@ -317,7 +314,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             {
                 if (component.Validation.MinSelected.HasValue)
                 {
-                    if (button.Radios.Count() < component.Validation.MinSelected)
+                    if (button.Radios.Count < component.Validation.MinSelected)
                         errors.Add(new ValidationErrorItemDto 
                         { 
                             PropertyName = answerItem.Key, 
@@ -327,7 +324,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 }
                 if (component.Validation.MaxSelected.HasValue)
                 {
-                    if (button.Radios.Count() < component.Validation.MaxSelected)
+                    if (button.Radios.Count < component.Validation.MaxSelected)
                         errors.Add(new ValidationErrorItemDto 
                         { 
                             PropertyName = answerItem.Key, 
