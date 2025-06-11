@@ -5,6 +5,8 @@ using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web.Resource;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -13,6 +15,8 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("applications")]
+[Authorize]
+[RequiredScope("Application.ReadWrite")]
 public class ApplicationController : ControllerBase
 {
     private readonly IUnitOfWork _context;

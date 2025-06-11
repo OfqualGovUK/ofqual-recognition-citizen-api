@@ -41,6 +41,37 @@ builder.Host.UseSerilog((ctx, svc, cfg) => cfg
     )
 );
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(options =>
+    {
+        builder.Configuration.Bind("AzureAdB2C", options);
+        // Refer to https://learn.microsoft.com/en-us/entra/identity-platform/claims-validation for validation parameters
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            SaveSigninToken = true,
+            NameClaimType = "name" // This is the object id of the user
+        };
+        options.Events = new JwtBearerEvents()
+        {
+            OnTokenValidated = (context) =>
+            {
+                IEnumerable<Claim> oid = context.Principal.Claims.Where(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+                if (oid.Count() != 1)
+                {
+                    context.Fail("Invalid Token: No name identifier present");
+                }
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = (context) =>
+            {
+
+                Log.Error(context.Exception, $"Exception raised when trying to validate a JWT token for B2C Authentication, in Program.cs::AddMicrosoftIdentityWebApi. Exception message: {context.Exception.Message}");
+                return Task.CompletedTask;
+            }
+        };
+    },
+    options => { builder.Configuration.Bind("AzureAdB2C", options); });
+
 // Add Correlation ID service for tracking requests across logs
 builder.Services.AddCorrelationId(opt =>
     {
@@ -115,6 +146,7 @@ app.UseSerilogRequestLogging(opt =>
 app.UseCors("CORS_POLICY");
 app.UseHttpsRedirection();
 app.UseAuthorization();
+app.UseAuthentication();
 app.MapControllers();
 
 #endregion
