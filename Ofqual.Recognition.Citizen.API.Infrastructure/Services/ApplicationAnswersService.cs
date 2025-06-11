@@ -7,6 +7,7 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using Ofqual.Recognition.API.Models.JSON.Questions;
+using Ofqual.Recognition.Citizen.API.Core.Converter;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -249,9 +250,10 @@ public class ApplicationAnswersService : IApplicationAnswersService
             var textInputs = formGroup.CheckBox.CheckBoxes.SelectMany(x => x.ConditionalInputs ?? new List<TextInputItem>());
             if (textInputs != null)
                 components.AddRange(textInputs);
-        }
+        }               
+        
 
-        var answerValue = JsonSerializer.Deserialize<Dictionary<string, string>>(answerDto.Answer, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var answerValue = JsonSerializer.Deserialize<Dictionary<string, object>>(answerDto.Answer, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         if (answerValue == null)
         {
             return new ValidationResponse
@@ -267,10 +269,10 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 continue;
 
             var answerItem = answerValue
-                .DefaultIfEmpty(new KeyValuePair<string, string>(component.Name, string.Empty))
+                .DefaultIfEmpty(new KeyValuePair<string, object>(component.Name, string.Empty))
                 .FirstOrDefault(x => x.Key.Equals(component.Name, StringComparison.InvariantCultureIgnoreCase));
 
-            if (string.IsNullOrWhiteSpace(answerItem.Value))                
+            if (string.IsNullOrWhiteSpace(answerItem.Value.ToString()))                
             {
                 if (component.Validation.Required ?? false)
                     errors.Add(new ValidationErrorItemDto
@@ -283,7 +285,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
             if (component.Validation.Unique ?? false)
             {
-                if (await _context.QuestionRepository.CheckIfQuestionAnswerExists(taskId, questionId, answerItem.Key, answerItem.Value))
+                if (await _context.QuestionRepository.CheckIfQuestionAnswerExists(taskId, questionId, answerItem.Key, answerItem.Value?.ToString() ?? string.Empty ))
                     errors.Add(new ValidationErrorItemDto
                     {
                         PropertyName = answerItem.Key,
@@ -304,7 +306,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 if (!string.IsNullOrWhiteSpace(component.Validation.Pattern))
                 {
                     var regex = new Regex(component.Validation.Pattern);
-                    if (!regex.IsMatch(answerItem.Value))
+                    if (!regex.IsMatch(answerItem.Value.ToString()!))
                         errors.Add(new ValidationErrorItemDto { PropertyName = answerItem.Key, ErrorMessage = $"{component.Label} does not match the required format" });
                     continue;
                 }
@@ -333,6 +335,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     continue;
                 }
             }
+
+            
         }
         return new ValidationResponse 
         {
@@ -340,8 +344,11 @@ public class ApplicationAnswersService : IApplicationAnswersService
         };
     }
 
-    private static ValidationErrorItemDto? ValidateTextLength(IValidatable component, KeyValuePair<string, string> answerItem)
+    private static ValidationErrorItemDto? ValidateTextLength(IValidatable component, KeyValuePair<string, object> answerItem)
     {
+        if(string.IsNullOrWhiteSpace(answerItem.Value.ToString())) 
+            return null;
+
         var hasMinValue = component.Validation?.MinLength.HasValue ?? false;
         var hasMaxValue = component.Validation?.MaxLength.HasValue ?? false;
 
@@ -352,8 +359,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
         //are we counting characters or words?
         var countWords = component.Validation?.CountWords ?? false;
         var answerLength = countWords
-            ? answerItem.Value.Split(['\t', '\r', '\n', ' '], StringSplitOptions.RemoveEmptyEntries).Length
-            : answerItem.Value.Length;
+            ? answerItem.Value.ToString()!.Split(['\t', '\r', '\n', ' '], StringSplitOptions.RemoveEmptyEntries).Length
+            : answerItem.Value.ToString()!.Length;
 
         //WHERE minimum value is set AND size is smaller than minimum value
         //OR maximum value is set AND size is bigger than maxiimum value
