@@ -7,14 +7,13 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using Ofqual.Recognition.API.Models.JSON.Questions;
-using Ofqual.Recognition.Citizen.API.Core.Converter;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
 public class ApplicationAnswersService : IApplicationAnswersService
 {
     private readonly IUnitOfWork _context;
-    
+
 
     public ApplicationAnswersService(IUnitOfWork context)
     {
@@ -165,7 +164,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                             {
                                 var conditionalFields = JsonHelper.GetArray(checkboxOption, "conditionalInputs")
                                     ?? JsonHelper.GetArray(checkboxOption, "conditionalSelects");
-                                
+
                                 if (conditionalFields != null)
                                 {
                                     foreach (var conditionalField in conditionalFields)
@@ -176,7 +175,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                                         if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
                                         {
                                             var conditionalAnswer = JsonHelper.GetFlattenedStringValuesByKey(parsedAnswer?.AnswerData, fieldName);
-                                            
+
                                             section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                                             {
                                                 QuestionText = label,
@@ -201,191 +200,283 @@ public class ApplicationAnswersService : IApplicationAnswersService
         return sections;
     }
 
-    public async Task<ValidationResponse> ValidateQuestionAnswers(Guid taskId, Guid questionId, QuestionAnswerSubmissionDto answerDto)
+    public async Task<ValidationResponse> ValidateQuestionAnswers(Guid taskId, Guid questionId, string answerJson)
     {
-
         var questionDetails = await _context.QuestionRepository.GetQuestion(taskId, questionId);
         if (questionDetails == null)
         {
-            return new ValidationResponse
-            {
-                Message = "Unable to validate user response",
-            };
+            return new ValidationResponse { Message = "We could not check your answer. Please try again." };
         }
 
-        var questionContent = JsonSerializer.Deserialize<QuestionContent>(questionDetails.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var questionContent = JsonSerializer.Deserialize<QuestionContent>(
+            questionDetails.QuestionContent,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-
-        var formGroup = questionContent?.FormGroup;
-        if (formGroup == null)
+        if (questionContent?.FormGroup == null)
         {
-            return new ValidationResponse
-            {
-                Message = "Unable to validate user response",
-            };
+            return new ValidationResponse { Message = "We could not check your answer. Please try again." };
         }
 
-        List<IValidatable> components = new List<IValidatable>();
+        var answerValue = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(answerJson,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        if(formGroup.Textarea != null) 
-            components.Add(formGroup.Textarea);
-
-        if(formGroup.RadioButton != null)
-            components.Add(formGroup.RadioButton);
-
-        if (formGroup.TextInput != null)
-            components.AddRange(formGroup.TextInput.TextInputs);
-
-        if (formGroup.CheckBox != null)
-        {
-            //add checkbox validation rule 
-            components.Add(formGroup.CheckBox);
-            
-            //add any child combobox conditional select item validation rules
-            var checkboxes = formGroup.CheckBox.CheckBoxes.SelectMany(x => x.ConditionalSelects ?? new List<Select>());
-            if (checkboxes != null)
-                components.AddRange(checkboxes);
-
-            //add any child combobox conditional text field validation rules
-            var textInputs = formGroup.CheckBox.CheckBoxes.SelectMany(x => x.ConditionalInputs ?? new List<TextInputItem>());
-            if (textInputs != null)
-                components.AddRange(textInputs);
-        }               
-        
-
-        var answerValue = JsonSerializer.Deserialize<Dictionary<string, object>>(answerDto.Answer, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         if (answerValue == null)
         {
-            return new ValidationResponse
-            {
-                Message = "Unable to validate user response",
-            };
+            return new ValidationResponse { Message = "We could not check your answer. Please try again." };
         }
 
-        var errors = new List<ValidationErrorItemDto>();
+        var errors = new List<ValidationErrorItem>();
+        var components = new List<IValidatable>();
+        var formGroup = questionContent.FormGroup;
+
+        if (formGroup.Textarea != null) components.Add(formGroup.Textarea);
+        if (formGroup.RadioButton != null) components.Add(formGroup.RadioButton);
+        if (formGroup.TextInput != null) components.AddRange(formGroup.TextInput.TextInputs);
+        if (formGroup.CheckBox != null)
+        {
+            components.Add(formGroup.CheckBox);
+            if (formGroup.CheckBox.CheckBoxes != null)
+            {
+                components.AddRange(formGroup.CheckBox.CheckBoxes
+                    .SelectMany(x => x.ConditionalInputs ?? new List<TextInputItem>()));
+
+                components.AddRange(formGroup.CheckBox.CheckBoxes
+                    .SelectMany(x => x.ConditionalSelects ?? new List<Select>()));
+            }
+        }
+
+        var selectedCheckboxValues = new List<string>();
+        if (formGroup.CheckBox?.Name != null &&
+            answerValue.TryGetValue(formGroup.CheckBox.Name, out var checkboxAnswerElement) &&
+            checkboxAnswerElement.ValueKind == JsonValueKind.Array)
+        {
+            selectedCheckboxValues = checkboxAnswerElement.EnumerateArray()
+                .Select(e => e.GetString())
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Select(v => v!)
+                .ToList();
+        }
+
         foreach (var component in components)
         {
-            if (component.Validation == null)
-                continue;
-
-            var answerItem = answerValue
-                .DefaultIfEmpty(new KeyValuePair<string, object>(component.Name, string.Empty))
-                .FirstOrDefault(x => x.Key.Equals(component.Name, StringComparison.InvariantCultureIgnoreCase));
-
-            if (string.IsNullOrWhiteSpace(answerItem.Value.ToString()))                
+            var validation = component.Validation;
+            if (validation == null)
             {
-                if (component.Validation.Required ?? false)
-                    errors.Add(new ValidationErrorItemDto
+                continue;
+            }
+
+            if (formGroup.CheckBox?.CheckBoxes != null)
+            {
+                bool isConditional = formGroup.CheckBox.CheckBoxes.Any(cb =>
+                    (cb.ConditionalInputs?.Any(i => i.Name == component.Name) ?? false)
+                    || (cb.ConditionalSelects?.Any(s => s.Name == component.Name) ?? false));
+
+                if (isConditional)
+                {
+                    var parent = formGroup.CheckBox.CheckBoxes.FirstOrDefault(cb =>
+                        (cb.ConditionalInputs?.Any(i => i.Name == component.Name) ?? false)
+                        || (cb.ConditionalSelects?.Any(s => s.Name == component.Name) ?? false));
+
+                    if (parent != null && parent.Value != null && !selectedCheckboxValues.Contains(parent.Value))
                     {
-                        PropertyName = answerItem.Key,
-                        ErrorMessage = $"Enter {component.Label}"
-                    });
-                continue;
+                        continue;
+                    }
+                }
             }
 
-            if (component.Validation.Unique ?? false)
+            if (!answerValue.TryGetValue(component.Name, out var answerElement))
             {
-                if (await _context.QuestionRepository.CheckIfQuestionAnswerExists(taskId, questionId, answerItem.Key, answerItem.Value?.ToString() ?? string.Empty ))
-                    errors.Add(new ValidationErrorItemDto
+                if (validation.Required == true)
+                {
+                    errors.Add(new ValidationErrorItem
                     {
-                        PropertyName = answerItem.Key,
-                        ErrorMessage = $"The {component.Label} \"{answerItem.Value}\" already exists within our records"
+                        PropertyName = component.Name,
+                        ErrorMessage = component is CheckBox
+                            ? $"Select at least one option for {ToSentenceCase(component.Label)}"
+                            : $"Enter {ToSentenceCase(component.Label)}"
                     });
+                }
                 continue;
             }
 
-            if (component is TextInput)
-            {
-                var textLengthError = ValidateTextLength(component, answerItem);
-                if (textLengthError != null)
-                {
-                    errors.Add(textLengthError);
-                    continue;
-                }
+            string? answerString = null;
+            List<string>? answerArray = null;
 
-                if (!string.IsNullOrWhiteSpace(component.Validation.Pattern))
+            if (answerElement.ValueKind == JsonValueKind.String)
+            {
+                answerString = answerElement.GetString();
+            }
+            else if (answerElement.ValueKind == JsonValueKind.Array)
+            {
+                answerArray = answerElement.EnumerateArray()
+                    .Select(x => x.GetString())
+                    .Where(x => x != null && !string.IsNullOrWhiteSpace(x))
+                    .ToList()!;
+                answerString = string.Join(", ", answerArray);
+            }
+
+            bool isEmpty = string.IsNullOrWhiteSpace(answerString) && (answerArray == null || !answerArray.Any());
+
+            if (isEmpty)
+            {
+                if (validation.Required == true)
                 {
-                    var regex = new Regex(component.Validation.Pattern);
-                    if (!regex.IsMatch(answerItem.Value.ToString()!))
-                        errors.Add(new ValidationErrorItemDto { PropertyName = answerItem.Key, ErrorMessage = $"{component.Label} does not match the required format" });
+                    errors.Add(new ValidationErrorItem
+                    {
+                        PropertyName = component.Name,
+                        ErrorMessage = component is CheckBox
+                            ? $"Select at least one option for {ToSentenceCase(component.Label)}"
+                            : $"Enter {ToSentenceCase(component.Label)}"
+                    });
+                }
+                continue;
+            }
+
+            if (validation.Unique == true && !string.IsNullOrWhiteSpace(answerString))
+            {
+                if (await _context.QuestionRepository.CheckIfQuestionAnswerExists(taskId, questionId, component.Name, answerString))
+                {
+                    errors.Add(new ValidationErrorItem
+                    {
+                        PropertyName = component.Name,
+                        ErrorMessage = $"The {ToSentenceCase(component.Label)} \"{answerString}\" already exists in our records"
+                    });
+                }
+                continue;
+            }
+
+            var lengthError = ValidateTextLength(component.Name, ToSentenceCase(component.Label), answerString!, validation);
+            if (lengthError != null)
+            {
+                errors.Add(lengthError);
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(validation.Pattern))
+            {
+                var regex = new Regex(validation.Pattern);
+                if (!regex.IsMatch(answerString ?? ""))
+                {
+                    errors.Add(new ValidationErrorItem
+                    {
+                        PropertyName = component.Name,
+                        ErrorMessage = $"Enter a valid {ToSentenceCase(component.Label)}"
+                    });
                     continue;
                 }
             }
 
-            if (component is RadioButton button)
+            if (component is CheckBox && answerArray != null)
             {
-                if (component.Validation.MinSelected.HasValue)
+                int selectedCount = answerArray.Count;
+                if (validation.MinSelected.HasValue && selectedCount < validation.MinSelected.Value)
                 {
-                    if (button.Radios.Count < component.Validation.MinSelected)
-                        errors.Add(new ValidationErrorItemDto 
-                        { 
-                            PropertyName = answerItem.Key, 
-                            ErrorMessage = $"minimum number of items has not been selected for {component.Label}" 
-                        });
+                    errors.Add(new ValidationErrorItem
+                    {
+                        PropertyName = component.Name,
+                        ErrorMessage = $"Select at least {validation.MinSelected.Value} option{(validation.MinSelected.Value > 1 ? "s" : "")} for {ToSentenceCase(component.Label)}"
+                    });
                     continue;
                 }
-                if (component.Validation.MaxSelected.HasValue)
+
+                if (validation.MaxSelected.HasValue && selectedCount > validation.MaxSelected.Value)
                 {
-                    if (button.Radios.Count < component.Validation.MaxSelected)
-                        errors.Add(new ValidationErrorItemDto 
-                        { 
-                            PropertyName = answerItem.Key, 
-                            ErrorMessage = $"too many items have been selected for {component.Label}" 
-                        });
+                    errors.Add(new ValidationErrorItem
+                    {
+                        PropertyName = component.Name,
+                        ErrorMessage = $"You can only select up to {validation.MaxSelected.Value} option{(validation.MaxSelected.Value > 1 ? "s" : "")} for {ToSentenceCase(component.Label)}"
+                    });
                     continue;
                 }
             }
 
-            
+            if (component is Select selectComponent && answerString != null)
+            {
+                var validValues = selectComponent.Options?
+                    .Where(o => !string.IsNullOrEmpty(o.Value))
+                    .Select(o => o.Value)
+                    .ToHashSet(StringComparer.InvariantCultureIgnoreCase);
+
+                if (validValues != null && !validValues.Contains(answerString))
+                {
+                    errors.Add(new ValidationErrorItem
+                    {
+                        PropertyName = component.Name,
+                        ErrorMessage = $"Select a valid option for {ToSentenceCase(component.Label)}"
+                    });
+                    continue;
+                }
+            }
         }
-        return new ValidationResponse 
+
+        return new ValidationResponse { Errors = errors };
+    }
+
+    private static ValidationErrorItem? ValidateTextLength(string name, string label, string value, ValidationRule validation)
+    {
+        if (validation == null)
         {
-            Errors = errors,
+            return null;
+        }
+
+        var min = validation.MinLength;
+        var max = validation.MaxLength;
+
+        if (!min.HasValue && !max.HasValue)
+        {
+            return null;
+        }
+
+        bool countWords = validation.CountWords == true;
+        bool countChars = validation.CountCharacters == true;
+
+        if (!countWords && !countChars)
+        {
+            return null;
+        }
+
+        int length = countWords
+            ? value.Split(['\t', '\r', '\n', ' '], StringSplitOptions.RemoveEmptyEntries).Length
+            : value.Length;
+        
+        bool tooShort = min.HasValue && length < min.Value;
+        bool tooLong = max.HasValue && length > max.Value;
+
+        if (!tooShort && !tooLong)
+        {
+            return null;
+        }
+
+        string unit = countWords ? "words" : "characters";
+        string message;
+
+        if (tooShort && !max.HasValue)
+        {
+            int actualMin = min!.Value;
+            message = $"{label} must be {actualMin} {unit} or more";
+        }
+        else if (tooLong && !min.HasValue)
+        {
+            int actualMax = max!.Value;
+            message = $"{label} must be {actualMax} {unit} or fewer";
+        }
+        else
+        {
+            int actualMin = min!.Value;
+            int actualMax = max!.Value;
+            message = $"{label} must be between {actualMin} and {actualMax} {unit}";
+        }
+
+        return new ValidationErrorItem
+        {
+            PropertyName = name,
+            ErrorMessage = message
         };
     }
 
-    private static ValidationErrorItemDto? ValidateTextLength(IValidatable component, KeyValuePair<string, object> answerItem)
+    private string ToSentenceCase(string input)
     {
-        if(string.IsNullOrWhiteSpace(answerItem.Value.ToString())) 
-            return null;
-
-        var hasMinValue = component.Validation?.MinLength.HasValue ?? false;
-        var hasMaxValue = component.Validation?.MaxLength.HasValue ?? false;
-
-        //Skip if we dont have min or max values set
-        if (!hasMinValue && !hasMaxValue)
-            return null;
-
-        //are we counting characters or words?
-        var countWords = component.Validation?.CountWords ?? false;
-        var answerLength = countWords
-            ? answerItem.Value.ToString()!.Split(['\t', '\r', '\n', ' '], StringSplitOptions.RemoveEmptyEntries).Length
-            : answerItem.Value.ToString()!.Length;
-
-        //WHERE minimum value is set AND size is smaller than minimum value
-        //OR maximum value is set AND size is bigger than maxiimum value
-        //THEN return an error
-        if ((hasMinValue && answerLength < component.Validation!.MinLength)
-        || (hasMaxValue && answerLength > component.Validation!.MaxLength))
-        {
-            var itemDto = new ValidationErrorItemDto
-            {
-                PropertyName = answerItem.Key,
-                ErrorMessage = $"{component.Label} must be "
-            };
-
-            var countType = countWords ? "words" : "characters";
-
-            if (!hasMinValue)
-                itemDto.ErrorMessage += $"{component.Validation!.MaxLength} {countType} or more";
-            else if (!hasMaxValue)
-                itemDto.ErrorMessage += $"{component.Validation!.MinLength} {countType} or less";
-            else
-                itemDto.ErrorMessage += $"between {component.Validation!.MinLength} "
-                    + $"and {component.Validation!.MaxLength} {countType}";
-            return itemDto;
-        }
-        return null;
+        if (string.IsNullOrWhiteSpace(input)) return input;
+        return char.ToUpperInvariant(input[0]) + input.Substring(1).ToLowerInvariant();
     }
-
 }
