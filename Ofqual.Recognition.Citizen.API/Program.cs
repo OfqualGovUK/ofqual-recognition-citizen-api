@@ -12,6 +12,9 @@ using Serilog.Events;
 using CorrelationId;
 using System.Data;
 using Serilog;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Identity.Web;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
