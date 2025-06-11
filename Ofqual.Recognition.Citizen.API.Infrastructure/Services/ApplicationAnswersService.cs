@@ -261,16 +261,14 @@ public class ApplicationAnswersService : IApplicationAnswersService
         }
 
         var errors = new List<ValidationErrorItemDto>();
-        foreach (var answerItem in answerValue)
+        foreach (var component in components)
         {
-            var component = components.First(x => x.Name.Equals(answerItem.Key,
-                                          StringComparison.CurrentCultureIgnoreCase));
-
-
-            if (component?.Validation == null)
-            {
+            if (component.Validation == null)
                 continue;
-            }
+
+            var answerItem = answerValue
+                .DefaultIfEmpty(new KeyValuePair<string, string>(component.Name, string.Empty))
+                .FirstOrDefault(x => x.Key.Equals(component.Name));
 
             if (component.Validation.Required ?? false)
             {
