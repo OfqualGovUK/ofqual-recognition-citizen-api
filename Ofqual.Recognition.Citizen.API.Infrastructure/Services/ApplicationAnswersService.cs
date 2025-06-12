@@ -208,18 +208,13 @@ public class ApplicationAnswersService : IApplicationAnswersService
             return new ValidationResponse { Message = "We could not check your answer. Please try again." };
         }
 
-        var questionContent = JsonSerializer.Deserialize<QuestionContent>(
-            questionDetails.QuestionContent,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
+        var questionContent = JsonSerializer.Deserialize<QuestionContent>(questionDetails.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         if (questionContent?.FormGroup == null)
         {
             return new ValidationResponse { Message = "We could not check your answer. Please try again." };
         }
 
-        var answerValue = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(answerJson,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
+        var answerValue = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(answerJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         if (answerValue == null)
         {
             return new ValidationResponse { Message = "We could not check your answer. Please try again." };
@@ -441,6 +436,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
         bool tooShort = min.HasValue && length < min.Value;
         bool tooLong = max.HasValue && length > max.Value;
 
+
         if (!tooShort && !tooLong)
         {
             return null;
@@ -449,21 +445,17 @@ public class ApplicationAnswersService : IApplicationAnswersService
         string unit = countWords ? "words" : "characters";
         string message;
 
-        if (tooShort && !max.HasValue)
+        if (tooShort && (!max.HasValue || max == 0))
         {
-            int actualMin = min!.Value;
-            message = $"{label} must be {actualMin} {unit} or more";
+            message = $"{label} must be {min!.Value} {unit} or more";
         }
-        else if (tooLong && !min.HasValue)
+        else if (tooLong && (!min.HasValue || min == 0))
         {
-            int actualMax = max!.Value;
-            message = $"{label} must be {actualMax} {unit} or fewer";
+            message = $"{label} must be {max!.Value} {unit} or fewer";
         }
         else
         {
-            int actualMin = min!.Value;
-            int actualMax = max!.Value;
-            message = $"{label} must be between {actualMin} and {actualMax} {unit}";
+            message = $"{label} must be between {min!.Value} and {max!.Value} {unit}";
         }
 
         return new ValidationErrorItem
