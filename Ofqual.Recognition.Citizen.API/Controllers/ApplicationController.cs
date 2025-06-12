@@ -16,7 +16,7 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 [ApiController]
 [Route("applications")]
 [Authorize]
-[RequiredScope("Application.ReadWrite")]
+[RequiredScope("Applications.ReadWrite")]
 public class ApplicationController : ControllerBase
 {
     private readonly IUnitOfWork _context;
