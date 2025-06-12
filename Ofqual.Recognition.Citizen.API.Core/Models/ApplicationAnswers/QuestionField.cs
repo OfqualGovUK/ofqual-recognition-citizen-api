@@ -5,6 +5,6 @@
 /// </summary>
 public class QuestionField
 {
-    public string Name { get; set; }
-    public string QuestionText { get; set; }
+    public string? Name { get; set; }
+    public string? QuestionText { get; set; }
 }

@@ -4,6 +4,7 @@ using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -15,10 +16,12 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 public class PreEngagementController : Controller
 {
     private readonly IUnitOfWork _context;
+    public readonly IApplicationAnswersService _applicationAnswersService;
 
-    public PreEngagementController(IUnitOfWork context)
+    public PreEngagementController(IUnitOfWork context, IApplicationAnswersService applicationAnswersService)
     {
         _context = context;
+        _applicationAnswersService = applicationAnswersService;
     }
 
     /// <summary>
@@ -71,5 +74,22 @@ public class PreEngagementController : Controller
             Log.Error(ex, "An error occurred whilst retrieving pre-engagement question for URL: {TaskNameUrl}/{QuestionNameUrl}", taskNameUrl, questionNameUrl);
             throw new Exception("An error occurred while fetching the pre-engagement question. Please try again later.");
         }
+    }
+
+    /// <summary>
+    /// Validates pre-engagment task without submitting data to the database.
+    /// </summary>
+    /// <param name="taskId">The ID of the task.</param>
+    /// <param name="questionId">The ID of the question being answered.</param>
+    /// <param name="request">The answer payload.</param>
+    [HttpPost("/tasks/{taskId}/questions/{questionId}/validate")]
+    public async Task<IActionResult> ValidateAnswer(Guid taskId, Guid questionId, [FromBody] string answer)
+    {
+        ValidationResponse validationResult = await _applicationAnswersService.ValidateQuestionAnswers(taskId, questionId, answer);
+
+        if (!string.IsNullOrEmpty(validationResult.Message)
+        || (validationResult.Errors != null && validationResult.Errors.Any()))
+            return BadRequest(validationResult);
+        return Ok();
     }
 }

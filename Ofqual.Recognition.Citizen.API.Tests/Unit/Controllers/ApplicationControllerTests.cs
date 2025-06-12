@@ -526,8 +526,8 @@ public class ApplicationControllerTests
         Assert.Equal("Test Section", returnedSection.SectionHeading);
         Assert.Single(returnedSection.QuestionAnswers);
         Assert.Equal("Sample Question", returnedSection.QuestionAnswers[0].QuestionText);
-        Assert.Equal("Sample Answer", returnedSection.QuestionAnswers[0].AnswerValue[0]);
-        Assert.Equal("task-url/question-url", returnedSection.QuestionAnswers[0].QuestionUrl);
+        Assert.Equal("Sample Answer", returnedSection?.QuestionAnswers[0]?.AnswerValue?.FirstOrDefault());
+        Assert.Equal("task-url/question-url", returnedSection?.QuestionAnswers[0].QuestionUrl);
     }
 
     [Fact]

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 using Moq;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 
@@ -14,6 +15,7 @@ public class PreEngagementControllerTests
 {
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<IStageRepository> _mockStageRepository;
+    private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService;
     private readonly PreEngagementController _controller;
 
     public PreEngagementControllerTests()
@@ -23,7 +25,9 @@ public class PreEngagementControllerTests
         _mockStageRepository = new Mock<IStageRepository>();
         _mockUnitOfWork.Setup(u => u.StageRepository).Returns(_mockStageRepository.Object);
 
-        _controller = new PreEngagementController(_mockUnitOfWork.Object)
+        _mockApplicationAnswersService = new Mock<IApplicationAnswersService>();
+
+        _controller = new PreEngagementController(_mockUnitOfWork.Object, _mockApplicationAnswersService.Object)
         {
             ControllerContext = new ControllerContext
             {

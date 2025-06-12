@@ -428,9 +428,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
         }
 
         bool countWords = validation.CountWords == true;
-        bool countChars = validation.CountCharacters == true;
 
-        if (!countWords && !countChars)
+        if (!countWords)
         {
             return null;
         }

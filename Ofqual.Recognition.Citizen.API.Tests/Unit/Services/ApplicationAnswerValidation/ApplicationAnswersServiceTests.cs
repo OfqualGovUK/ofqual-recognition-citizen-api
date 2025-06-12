@@ -20,10 +20,14 @@ public partial class ApplicationAnswersServiceTests
     public async Task ValidateQuestionAnswers_AddressForm_ReturnsOK()
     {
         //Arrange
-        var answerDto = new QuestionAnswerSubmissionDto()
-        {
-            Answer = @"{ ""fullName"": ""TEST FRIDAY"", ""email"": ""TEST FRIDAY"", ""phoneNumber"": ""TEST FRIDAY"", ""jobRole"": ""TEST FRIDAY"" }"
-        };
+        var answer = @"
+        { 
+            ""fullName"": ""TEST FRIDAY"",
+            ""email"": ""TEST FRIDAY"", 
+            ""phoneNumber"": ""TEST FRIDAY"", 
+            ""jobRole"": ""TEST FRIDAY"" 
+        }";
+        
 
         var questionDetails = new QuestionDetails
         {
@@ -79,7 +83,7 @@ public partial class ApplicationAnswersServiceTests
         var applicationAnswersService = new ApplicationAnswersService(new ApplicationServiceTestIOW(mockQuestion));
 
         //Act
-        var result = await applicationAnswersService.ValidateQuestionAnswers(Guid.NewGuid(), Guid.NewGuid(), answerDto);
+        var result = await applicationAnswersService.ValidateQuestionAnswers(Guid.NewGuid(), Guid.NewGuid(), answer);
 
         //Assert
         Assert.NotNull(result.Errors);
@@ -90,10 +94,13 @@ public partial class ApplicationAnswersServiceTests
     public async Task ValidateQuestionAnswers_AddressForm_ReturnsEmptyEmailError()
     {
         //Arrange
-        var answerDto = new QuestionAnswerSubmissionDto()
+        var answer = @"
         {
-            Answer = @"{ ""fullName"": ""TEST FRIDAY"", ""email"": """", ""phoneNumber"": ""TEST FRIDAY"", ""jobRole"": ""TEST FRIDAY"" }"
-        };
+            ""fullName"": ""TEST FRIDAY"", 
+            ""email"": """", 
+            ""phoneNumber"": ""TEST FRIDAY"", 
+            ""jobRole"": ""TEST FRIDAY"" 
+        }";       
 
         var questionDetails = new QuestionDetails
         {
@@ -150,7 +157,7 @@ public partial class ApplicationAnswersServiceTests
         var applicationAnswersService = new ApplicationAnswersService(new ApplicationServiceTestIOW(mockQuestion));
 
         //Act
-        var result = await applicationAnswersService.ValidateQuestionAnswers(Guid.NewGuid(), Guid.NewGuid(), answerDto);
+        var result = await applicationAnswersService.ValidateQuestionAnswers(Guid.NewGuid(), Guid.NewGuid(), answer);
 
         //Assert        
         Assert.NotNull(result.Errors);
@@ -161,9 +168,7 @@ public partial class ApplicationAnswersServiceTests
     public async Task ValidateQuestionAnswers_Identity_ReturnsOK()
     {
         //Arrange
-        var answerDto = new QuestionAnswerSubmissionDto()
-        {
-            Answer = @"{
+        var answer = @"{
                 ""typeOfOrganisation"": [
                     ""Registered with Companies House"",
                     ""Registered with the Charities Commission in England and Wales"",
@@ -176,8 +181,8 @@ public partial class ApplicationAnswersServiceTests
                 ""otherOrganisation"": ""Public body"",
                 ""registeredCountry"": ""United Kingdom"",
                 ""otherCountryNumber"": ""999""
-            }"
-        };
+            }";
+        
 
         var questionDetails = new QuestionDetails
         {
@@ -304,7 +309,7 @@ public partial class ApplicationAnswersServiceTests
         var applicationAnswersService = new ApplicationAnswersService(new ApplicationServiceTestIOW(mockQuestion));
 
         //Act
-        var result = await applicationAnswersService.ValidateQuestionAnswers(Guid.NewGuid(), Guid.NewGuid(), answerDto);
+        var result = await applicationAnswersService.ValidateQuestionAnswers(Guid.NewGuid(), Guid.NewGuid(), answer);
 
         //Assert
         Assert.NotNull(result.Errors);
