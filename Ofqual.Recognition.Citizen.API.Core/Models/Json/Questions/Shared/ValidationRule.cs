@@ -21,20 +21,12 @@ public class ValidationRule
     public bool? CountWords { get; set; }
 
     /// <summary>
-    /// Validates MinLength and MaxLength by counting the number of characters.
-    /// Ignored for non-text input components.
-    /// </summary>
-    public bool? CountCharacters { get; set; }
-
-    /// <summary>
-    /// Requires a minimum number of characters or words (depending on CountWords / CountCharacters).
-    /// Ignored for non-text input components.
+    /// Requires a minimum number of characters or words (words only if CountWords is true).
     /// </summary>
     public int? MinLength { get; set; }
 
     /// <summary>
-    /// Requires a maximum number of characters or words (depending on CountWords / CountCharacters).
-    /// Ignored for non-text input components.
+    /// Requires a maximum number of characters or words (words only if CountWords is true).
     /// </summary>
     public int? MaxLength { get; set; }
 
