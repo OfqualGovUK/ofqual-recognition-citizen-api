@@ -156,4 +156,35 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
             return null;
         }
     }
+
+    public async Task<bool> CheckIfQuestionAnswerExists(Guid questionId, string questionItemName, string questionItemAnswer)
+    {
+        try
+        {
+            const string query = @"
+                SELECT ISNULL((
+                    SELECT TOP(1) 1
+                    FROM recognitionCitizen.ApplicationAnswers AS A
+                    JOIN recognitionCitizen.Question AS Q ON Q.QuestionId = A.QuestionId
+                    WHERE Q.QuestionId = @questionId
+                    AND JSON_VALUE(A.Answer, CONCAT('$.', @questionItemName)) = @questionItemAnswer
+                ), 0);";
+
+            return await _connection.QuerySingleAsync<bool>(
+                query,
+                new
+                {
+                    questionId,
+                    questionItemName,
+                    questionItemAnswer
+                },
+                _transaction
+            );
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error checking if answer exists for QuestionId: {QuestionId} and Key: {Key}", questionId, questionItemName);
+            return false;
+        }
+    }
 }

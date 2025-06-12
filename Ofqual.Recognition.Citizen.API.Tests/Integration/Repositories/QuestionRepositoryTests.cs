@@ -37,7 +37,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.QuestionRepository.GetQuestion(task.TaskNameUrl, "q2");
+        var result = await unitOfWork.QuestionRepository.GetQuestionByTaskAndQuestionUrl(task.TaskNameUrl, "q2");
 
         // Assert
         Assert.NotNull(result);
@@ -74,7 +74,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.QuestionRepository.GetQuestion(task.TaskNameUrl, "last");
+        var result = await unitOfWork.QuestionRepository.GetQuestionByTaskAndQuestionUrl(task.TaskNameUrl, "last");
 
         // Assert
         Assert.NotNull(result);
@@ -97,7 +97,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Act
-        var result = await unitOfWork.QuestionRepository.GetQuestion("non-task", "non-question");
+        var result = await unitOfWork.QuestionRepository.GetQuestionByTaskAndQuestionUrl("non-task", "non-question");
 
         // Assert
         Assert.Null(result);
@@ -127,7 +127,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.QuestionRepository.GetQuestion(task.TaskNameUrl, "first");
+        var result = await unitOfWork.QuestionRepository.GetQuestionByTaskAndQuestionUrl(task.TaskNameUrl, "first");
 
         // Assert
         Assert.NotNull(result);

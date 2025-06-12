@@ -153,6 +153,12 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            ValidationResponse validationResult = await _applicationAnswersService.ValidateQuestionAnswers(questionId, request.Answer);
+            if (!string.IsNullOrEmpty(validationResult.Message) || (validationResult.Errors != null && validationResult.Errors.Any()))
+            {
+                return BadRequest(validationResult);
+            }
+
             bool isAnswerUpserted = await _context.ApplicationAnswersRepository.UpsertQuestionAnswer(applicationId, questionId, request.Answer);
             if (!isAnswerUpserted)
             {

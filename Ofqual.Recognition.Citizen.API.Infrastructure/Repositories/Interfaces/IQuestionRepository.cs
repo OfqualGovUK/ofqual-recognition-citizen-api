@@ -5,6 +5,7 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 
 public interface IQuestionRepository
 {
-    public Task<QuestionDetails?> GetQuestion(string taskNameUrl, string questionNameUrl);
+    public Task<QuestionDetails?> GetQuestionByTaskAndQuestionUrl(string taskNameUrl, string questionNameUrl);
+    public Task<QuestionDetails?> GetQuestionByQuestionId(Guid questionId);
     public Task<IEnumerable<Question>> GetAllQuestions();
 }

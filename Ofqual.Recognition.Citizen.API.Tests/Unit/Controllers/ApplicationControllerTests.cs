@@ -371,7 +371,38 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task SubmitQuestionAnswer_ReturnsNoContent_WhenUpsertAndStatusUpdateSucceed()
+    public async Task SubmitQuestionAnswer_ReturnsBadRequest_WhenValidationFails()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var dto = new QuestionAnswerSubmissionDto { Answer = "invalid" };
+
+        var validationResponse = new ValidationResponse
+        {
+            Message = "Validation failed.",
+            Errors = new List<ValidationErrorItem>
+            {
+                new ValidationErrorItem { PropertyName = "Answer", ErrorMessage = "This field is required." }
+            }
+        };
+
+        _mockApplicationAnswersService
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ReturnsAsync(validationResponse);
+        
+        // Act
+        var result = await _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(validationResponse, badRequest.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task SubmitQuestionAnswer_ReturnsNoContent_WhenValidAndSaveSucceeds()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -379,14 +410,18 @@ public class ApplicationControllerTests
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerSubmissionDto { Answer = "Answer A" };
 
+        _mockApplicationAnswersService
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ReturnsAsync(new ValidationResponse());
+        
         _mockApplicationAnswersRepository
             .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(true);
-
+        
         _mockTaskRepository
             .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress))
             .ReturnsAsync(true);
-
+        
         // Act
         var result = await _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto);
 
@@ -405,10 +440,14 @@ public class ApplicationControllerTests
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerSubmissionDto { Answer = "Bad Answer" };
 
+        _mockApplicationAnswersService
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ReturnsAsync(new ValidationResponse());
+        
         _mockApplicationAnswersRepository
             .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(false);
-
+        
         // Act
         var result = await _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto);
 
@@ -428,17 +467,21 @@ public class ApplicationControllerTests
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerSubmissionDto { Answer = "Valid Answer" };
 
+        _mockApplicationAnswersService
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ReturnsAsync(new ValidationResponse());
+        
         _mockApplicationAnswersRepository
             .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(true);
-
+        
         _mockTaskRepository
             .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress))
             .ReturnsAsync(false);
-
+        
         // Act
         var result = await _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto);
-
+        
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Equal("Failed to update task status. Either the task does not exist or belongs to a different application.", badRequest.Value);
@@ -447,23 +490,21 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task SubmitQuestionAnswer_ThrowsException_WhenUnexpectedErrorOccurs()
+    public async Task SubmitQuestionAnswer_ThrowsException_WhenUnhandledErrorOccurs()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
-        var dto = new QuestionAnswerSubmissionDto { Answer = "Some Answer" };
+        var dto = new QuestionAnswerSubmissionDto { Answer = "Any" };
 
-        _mockApplicationAnswersRepository
-            .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
-            .ThrowsAsync(new Exception("DB error"));
-
+        _mockApplicationAnswersService
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ThrowsAsync(new Exception("Unexpected failure"));
+        
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(() =>
-            _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto));
-        Assert.Equal("An error occurred while saving the answer. Please try again later.", exception.Message);
-        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
+        var ex = await Assert.ThrowsAsync<Exception>(() => _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto));
+        Assert.Equal("An error occurred while saving the answer. Please try again later.", ex.Message);
     }
 
     [Fact]

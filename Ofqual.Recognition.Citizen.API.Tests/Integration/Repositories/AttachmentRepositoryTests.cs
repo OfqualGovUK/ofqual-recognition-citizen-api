@@ -51,7 +51,7 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
         
         // Act
-        var linked = await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, attachment.AttachmentId, linkId, LinkType.Question);
+        var linked = await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, attachment!.AttachmentId, linkId, LinkType.Question);
         unitOfWork.Commit();
 
         // Assert
@@ -74,7 +74,7 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         var linkId = Guid.NewGuid();
 
         var attachment = await unitOfWork.AttachmentRepository.CreateAttachment("doc.txt", "text/plain", 7890);
-        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, attachment.AttachmentId, linkId, LinkType.Question);
+        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, attachment!.AttachmentId, linkId, LinkType.Question);
         unitOfWork.Commit();
 
         // Act
@@ -103,8 +103,8 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         var att1 = await unitOfWork.AttachmentRepository.CreateAttachment("one.pdf", "application/pdf", 111);
         var att2 = await unitOfWork.AttachmentRepository.CreateAttachment("two.docx", "application/vnd.openxmlformats", 222);
 
-        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, att1.AttachmentId, linkId, LinkType.Question);
-        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, att2.AttachmentId, linkId, LinkType.Question);
+        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, att1!.AttachmentId, linkId, LinkType.Question);
+        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, att2!.AttachmentId, linkId, LinkType.Question);
         unitOfWork.Commit();
 
         // Act
@@ -132,7 +132,7 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         var linkId = Guid.NewGuid();
 
         var attachment = await unitOfWork.AttachmentRepository.CreateAttachment("delete-me.txt", "text/plain", 100);
-        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, attachment.AttachmentId, linkId, LinkType.Question);
+        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, attachment!.AttachmentId, linkId, LinkType.Question);
         unitOfWork.Commit();
 
         // Act

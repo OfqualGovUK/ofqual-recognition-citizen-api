@@ -49,7 +49,7 @@ public class QuestionControllerTests
         };
 
         _mockQuestionRepository
-            .Setup(repo => repo.GetQuestion(taskName, questionName))
+            .Setup(repo => repo.GetQuestionByTaskAndQuestionUrl(taskName, questionName))
             .ReturnsAsync(expectedQuestion);
 
         // Act
@@ -73,7 +73,7 @@ public class QuestionControllerTests
     {
         // Arrange
         _mockQuestionRepository
-            .Setup(repo => repo.GetQuestion(taskName, questionName))
+            .Setup(repo => repo.GetQuestionByTaskAndQuestionUrl(taskName, questionName))
             .ReturnsAsync((QuestionDetails?)null);
 
         // Act

@@ -5,7 +5,7 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// </summary>
 public class QuestionAnswerReviewDto
 {
-    public string QuestionText { get; set; }
-    public List<string> AnswerValue { get; set; }
-    public string QuestionUrl { get; set; }
+    public string? QuestionText { get; set; }
+    public List<string>? AnswerValue { get; set; }
+    public string? QuestionUrl { get; set; }
 }
