@@ -84,7 +84,7 @@ public class FileControllerTests
     public async Task UploadFile_ReturnsBadRequest_WhenFileIsNull()
     {
         // Act
-        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), null);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), null!);
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);

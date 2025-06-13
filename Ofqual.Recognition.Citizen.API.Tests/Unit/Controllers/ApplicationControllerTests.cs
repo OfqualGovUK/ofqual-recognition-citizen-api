@@ -371,13 +371,48 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task SubmitQuestionAnswer_ReturnsNoContent_WhenUpsertAndStatusUpdateSucceed()
+    public async Task SubmitQuestionAnswer_ReturnsBadRequest_WhenValidationFails()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var dto = new QuestionAnswerSubmissionDto { Answer = "invalid" };
+
+        var validationResponse = new ValidationResponse
+        {
+            Message = "Validation failed.",
+            Errors = new List<ValidationErrorItem>
+            {
+                new ValidationErrorItem { PropertyName = "Answer", ErrorMessage = "This field is required." }
+            }
+        };
+
+        _mockApplicationAnswersService
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ReturnsAsync(validationResponse);
+
+        // Act
+        var result = await _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(validationResponse, badRequest.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task SubmitQuestionAnswer_ReturnsNoContent_WhenValidAndSaveSucceeds()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerSubmissionDto { Answer = "Answer A" };
+
+        _mockApplicationAnswersService
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ReturnsAsync(new ValidationResponse());
 
         _mockApplicationAnswersRepository
             .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
@@ -405,6 +440,10 @@ public class ApplicationControllerTests
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerSubmissionDto { Answer = "Bad Answer" };
 
+        _mockApplicationAnswersService
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ReturnsAsync(new ValidationResponse());
+
         _mockApplicationAnswersRepository
             .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(false);
@@ -428,6 +467,10 @@ public class ApplicationControllerTests
         var questionId = Guid.NewGuid();
         var dto = new QuestionAnswerSubmissionDto { Answer = "Valid Answer" };
 
+        _mockApplicationAnswersService
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ReturnsAsync(new ValidationResponse());
+
         _mockApplicationAnswersRepository
             .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
             .ReturnsAsync(true);
@@ -447,48 +490,31 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task SubmitQuestionAnswer_ThrowsException_WhenUnexpectedErrorOccurs()
+    public async Task SubmitQuestionAnswer_ThrowsException_WhenUnhandledErrorOccurs()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
-        var dto = new QuestionAnswerSubmissionDto { Answer = "Some Answer" };
+        var dto = new QuestionAnswerSubmissionDto { Answer = "Any" };
 
-        _mockApplicationAnswersRepository
-            .Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, dto.Answer))
-            .ThrowsAsync(new Exception("DB error"));
+        _mockApplicationAnswersService
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ThrowsAsync(new Exception("Unexpected failure"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(() =>
-            _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto));
-        Assert.Equal("An error occurred while saving the answer. Please try again later.", exception.Message);
-        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
+        var ex = await Assert.ThrowsAsync<Exception>(() => _controller.SubmitQuestionAnswer(applicationId, taskId, questionId, dto));
+        Assert.Equal("An error occurred while saving the answer. Please try again later.", ex.Message);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetTaskQuestionAnswers_ShouldReturnSectionedReviewAnswers_WhenDataExists()
+    public async Task GetTaskAnswerReview_ShouldReturnSectionedReviewAnswers_WhenDataExists()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
-
-        var mockAnswers = new List<TaskQuestionAnswer>
-        {
-            new TaskQuestionAnswer
-            {
-                TaskId = taskId,
-                TaskName = "Task 1",
-                TaskNameUrl = "task-url",
-                TaskOrder = 1,
-                QuestionId = Guid.NewGuid(),
-                QuestionContent = "{\"formGroup\": { \"TextInput\": { \"SectionName\": \"Test Section\", \"TextInputs\": [ { \"name\": \"field\", \"label\": \"Sample Question\" } ] } } }",
-                QuestionNameUrl = "question-url",
-                Answer = "{\"field\":\"Sample Answer\"}"
-            }
-        };
-
+        
         var expectedReviewAnswers = new List<QuestionAnswerSectionDto>
         {
             new QuestionAnswerSectionDto
@@ -505,45 +531,41 @@ public class ApplicationControllerTests
                 }
             }
         };
-
-        _mockApplicationAnswersRepository
-            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
-            .ReturnsAsync(mockAnswers);
-
         _mockApplicationAnswersService
-            .Setup(service => service.GetQuestionAnswers(mockAnswers))
-            .Returns(expectedReviewAnswers);
-
+            .Setup(service => service.GetTaskAnswerReview(applicationId, taskId))
+            .ReturnsAsync(expectedReviewAnswers);
+        
         // Act
-        var result = await _controller.GetTaskQuestionAnswers(applicationId, taskId);
+        var result = await _controller.GetTaskAnswerReview(applicationId, taskId);
+
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedSections = Assert.IsType<List<QuestionAnswerSectionDto>>(okResult.Value);
 
         Assert.Single(returnedSections);
-        var returnedSection = returnedSections[0];
+        var section = returnedSections[0];
 
-        Assert.Equal("Test Section", returnedSection.SectionHeading);
-        Assert.Single(returnedSection.QuestionAnswers);
-        Assert.Equal("Sample Question", returnedSection.QuestionAnswers[0].QuestionText);
-        Assert.Equal("Sample Answer", returnedSection.QuestionAnswers[0].AnswerValue[0]);
-        Assert.Equal("task-url/question-url", returnedSection.QuestionAnswers[0].QuestionUrl);
+        Assert.Equal("Test Section", section.SectionHeading);
+        Assert.Single(section.QuestionAnswers);
+        Assert.Equal("Sample Question", section.QuestionAnswers[0].QuestionText);
+        Assert.Equal("Sample Answer", section.QuestionAnswers[0].AnswerValue![0]);
+        Assert.Equal("task-url/question-url", section.QuestionAnswers[0].QuestionUrl);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetTaskQuestionAnswers_ShouldReturnNotFound_WhenNoAnswersExist()
+    public async Task GetTaskAnswerReview_ShouldReturnNotFound_WhenNoAnswersExist()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
 
-        _mockApplicationAnswersRepository
-            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
-            .ReturnsAsync(new List<TaskQuestionAnswer>());
-
+        _mockApplicationAnswersService
+            .Setup(service => service.GetTaskAnswerReview(applicationId, taskId))
+            .ReturnsAsync(new List<QuestionAnswerSectionDto>());
+        
         // Act
-        var result = await _controller.GetTaskQuestionAnswers(applicationId, taskId);
+        var result = await _controller.GetTaskAnswerReview(applicationId, taskId);
 
         // Assert
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);

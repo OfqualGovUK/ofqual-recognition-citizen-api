@@ -1,4 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Controllers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
@@ -14,6 +15,7 @@ public class PreEngagementControllerTests
 {
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<IStageRepository> _mockStageRepository;
+    private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService;
     private readonly PreEngagementController _controller;
 
     public PreEngagementControllerTests()
@@ -23,7 +25,9 @@ public class PreEngagementControllerTests
         _mockStageRepository = new Mock<IStageRepository>();
         _mockUnitOfWork.Setup(u => u.StageRepository).Returns(_mockStageRepository.Object);
 
-        _controller = new PreEngagementController(_mockUnitOfWork.Object)
+        _mockApplicationAnswersService = new Mock<IApplicationAnswersService>();
+
+        _controller = new PreEngagementController(_mockUnitOfWork.Object, _mockApplicationAnswersService.Object)
         {
             ControllerContext = new ControllerContext
             {
@@ -118,5 +122,75 @@ public class PreEngagementControllerTests
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Equal("No pre-engagement question found for URL: missing-task/missing-question", badRequest.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task ValidateAnswer_Should_ReturnBadRequest_WhenValidationFails()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var dto = new QuestionAnswerSubmissionDto { Answer = "{\"key\":\"value\"}" };
+
+        var validationResponse = new ValidationResponse
+        {
+            Message = "Please correct the highlighted errors.",
+            Errors = new List<ValidationErrorItem>
+            {
+                new ValidationErrorItem { PropertyName = "key", ErrorMessage = "This field is required." }
+            }
+        };
+
+        _mockApplicationAnswersService
+            .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ReturnsAsync(validationResponse);
+        
+        // Act
+        var result = await _controller.ValidateAnswer(questionId, dto);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(validationResponse, badRequest.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task ValidateAnswer_Should_ReturnNoContent_WhenValidationPasses()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var dto = new QuestionAnswerSubmissionDto { Answer = "{\"key\":\"value\"}" };
+
+        var validationResponse = new ValidationResponse();
+
+        _mockApplicationAnswersService
+            .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ReturnsAsync(validationResponse);
+        
+        // Act
+        var result = await _controller.ValidateAnswer(questionId, dto);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task ValidateAnswer_Should_ThrowException_WhenServiceThrows()
+    {
+        // Arrange
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var dto = new QuestionAnswerSubmissionDto { Answer = "{}" };
+
+        _mockApplicationAnswersService
+            .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
+            .ThrowsAsync(new Exception("Database error"));
+        
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<Exception>(() => _controller.ValidateAnswer(questionId, dto));
+        Assert.Equal("An unexpected error occurred while validating the answer. Please try again shortly.", ex.Message);
     }
 }

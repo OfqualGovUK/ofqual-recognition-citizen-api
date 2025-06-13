@@ -17,7 +17,7 @@ public class QuestionRepository : IQuestionRepository
         _transaction = transaction;
     }
 
-    public async Task<QuestionDetails?> GetQuestion(string taskNameUrl, string questionNameUrl)
+    public async Task<QuestionDetails?> GetQuestionByTaskAndQuestionUrl(string taskNameUrl, string questionNameUrl)
     {
         try
         {
@@ -61,7 +61,50 @@ public class QuestionRepository : IQuestionRepository
             return null;
         }
     }
-    
+
+    public async Task<QuestionDetails?> GetQuestionByQuestionId(Guid questionId)
+    {
+        try
+        {
+            var query = @"
+                SELECT
+                    Q.QuestionId,
+                    Q.QuestionContent,
+                    Q.TaskId,
+                    Q.QuestionNameUrl AS CurrentQuestionNameUrl,
+                    QT.QuestionTypeName,
+                    (
+                        SELECT TOP 1 prev.QuestionNameUrl
+                        FROM recognitionCitizen.Question prev
+                        WHERE prev.TaskId = Q.TaskId
+                        AND prev.OrderNumber < Q.OrderNumber
+                        ORDER BY prev.OrderNumber DESC
+                    ) AS PreviousQuestionNameUrl,
+                    (
+                        SELECT TOP 1 next.QuestionNameUrl
+                        FROM recognitionCitizen.Question next
+                        WHERE next.TaskId = Q.TaskId
+                        AND next.OrderNumber > Q.OrderNumber
+                        ORDER BY next.OrderNumber ASC
+                    ) AS NextQuestionNameUrl,
+                    T.TaskNameUrl
+                FROM recognitionCitizen.Question Q
+                JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
+                JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
+                WHERE Q.QuestionId = @questionId";
+            
+            return await _connection.QueryFirstOrDefaultAsync<QuestionDetails>(query, new
+            {
+                questionId
+            }, _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error retrieving question by QuestionId: {QuestionId}", questionId);
+            return null;
+        }
+    }
+
     public async Task<IEnumerable<Question>> GetAllQuestions()
     {
         try

@@ -6,25 +6,30 @@ namespace Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 
 public static class StageTestDataBuilder
 {
-    public static async Task CreateStageTask(UnitOfWork unitOfWork, int stageId, Guid taskId, int order)
+    public static async Task<StageTask> CreateStageTask(UnitOfWork unitOfWork, StageTask stageTask)
     {
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO recognitionCitizen.StageTask
-                (StageId, TaskId, OrderNumber, Enabled, CreatedDate, ModifiedDate, CreatedByUpn)
+                (StageId, TaskId, OrderNumber, Enabled, CreatedDate, ModifiedDate, CreatedByUpn, ModifiedByUpn)
             VALUES
-                (@StageId, @TaskId, @OrderNumber, 1, @Now, @Now, @Upn);",
+                (@StageId, @TaskId, @OrderNumber, @Enabled, @CreatedDate, @ModifiedDate, @CreatedByUpn, @ModifiedByUpn);",
             new
             {
-                StageId = stageId,
-                TaskId = taskId,
-                OrderNumber = order,
-                Now = DateTime.UtcNow,
-                Upn = "test@ofqual.gov.uk"
+                StageId = (int)stageTask.StageId,
+                stageTask.TaskId,
+                stageTask.OrderNumber,
+                stageTask.Enabled,
+                stageTask.CreatedDate,
+                stageTask.ModifiedDate,
+                stageTask.CreatedByUpn,
+                stageTask.ModifiedByUpn
             },
             unitOfWork.Transaction);
+
+        return stageTask;
     }
-    
-    public static async Task CreateStageStatus(UnitOfWork unitOfWork, StageStatus stageStatus)
+
+    public static async Task<StageStatus> CreateStageStatus(UnitOfWork unitOfWork, StageStatus stageStatus)
     {
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO recognitionCitizen.StageStatus
@@ -46,5 +51,7 @@ public static class StageTestDataBuilder
                 stageStatus.ModifiedDate
             },
             unitOfWork.Transaction);
+
+        return stageStatus;
     }
 }
