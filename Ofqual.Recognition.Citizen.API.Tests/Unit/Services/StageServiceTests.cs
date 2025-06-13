@@ -41,14 +41,15 @@ public class StageServiceTests
         var stageTasks = new List<StageTaskView>(); // No tasks for the stage
         var questions = new List<Question>(); // No questions available
         var answers = new List<TaskQuestionAnswer>(); // No answers available
-        var stageStatus = new StageStatus
+        var stageStatus = new StageStatusView
         {
             ApplicationId = applicationId,
             StageId = Stage.PreEngagement,
             StatusId = TaskStatusEnum.InProgress,
             StageStartDate = DateTime.UtcNow.AddDays(-1),
             StageCompletionDate = DateTime.UtcNow,
-            CreatedByUpn = "USER"
+            StageName = "Stage Name",
+            Status = "In Progress"
         };
 
         _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(Stage.PreEngagement))
@@ -175,14 +176,15 @@ public class StageServiceTests
                 }
             };
 
-        var stageStatus = new StageStatus
+        var stageStatus = new StageStatusView
         {
             ApplicationId = applicationId,
             StageId = Stage.PreEngagement,
             StatusId = TaskStatusEnum.Completed,
             StageStartDate = DateTime.UtcNow.AddDays(-1),
             StageCompletionDate = DateTime.UtcNow,
-            CreatedByUpn = "USER"
+            StageName = "Stage name",
+            Status = "Completed"
         };
 
         _mockStageRepository
@@ -294,7 +296,7 @@ public class StageServiceTests
             .ReturnsAsync(answers);
 
         _mockStageRepository.Setup(r => r.GetStageStatus(applicationId, It.IsAny<Stage>()))
-            .ReturnsAsync((StageStatus?)null);
+            .ReturnsAsync((StageStatusView?)null);
 
         StageStatus stageStatus = null!
         ;

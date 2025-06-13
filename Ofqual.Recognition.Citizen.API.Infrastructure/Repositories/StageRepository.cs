@@ -89,7 +89,7 @@ public class StageRepository : IStageRepository
         }
     }
 
-    public async Task<StageStatus?> GetStageStatus(Guid applicationId, Stage stageId)
+    public async Task<StageStatusView?> GetStageStatus(Guid applicationId, Stage stageId)
     {
         try
         {
@@ -97,17 +97,15 @@ public class StageRepository : IStageRepository
                 SELECT
                     ApplicationId,
                     StageId,
+                    StageName,
                     StatusId,
+                    Status,
                     StageStartDate,
-                    StageCompletionDate,
-                    CreatedByUpn,
-                    ModifiedByUpn,
-                    CreatedDate,
-                    ModifiedDate
-                FROM [recognitionCitizen].[StageStatus]
+                    StageCompletionDate
+                FROM [recognitionCitizen].[v_StageStatus]
                 WHERE ApplicationId = @ApplicationId AND StageId = @StageId;";
-
-            return await _connection.QueryFirstOrDefaultAsync<StageStatus>(query, new
+            
+            return await _connection.QueryFirstOrDefaultAsync<StageStatusView>(query, new
             {
                 ApplicationId = applicationId,
                 StageId = (int)stageId
@@ -115,7 +113,7 @@ public class StageRepository : IStageRepository
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to retrieve stage status for ApplicationId: {ApplicationId}, StageId: {StageId}", applicationId, stageId);
+            Log.Error(ex, "Failed to retrieve stage status view for ApplicationId: {ApplicationId}, StageId: {StageId}", applicationId, stageId);
             return null;
         }
     }

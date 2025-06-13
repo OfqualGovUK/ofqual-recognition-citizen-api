@@ -187,17 +187,15 @@ public class ApplicationController : ControllerBase
     /// <param name="applicationId">The ID of the application.</param>
     /// <param name="taskId">The ID of the task.</param>
     [HttpGet("{applicationId}/tasks/{taskId}/questions/answers")]
-    public async Task<ActionResult<List<QuestionAnswerSectionDto>>> GetTaskQuestionAnswers(Guid applicationId, Guid taskId)
+    public async Task<ActionResult<List<QuestionAnswerSectionDto>>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
         try
         {
-            var taskQuestionAnswers = await _context.ApplicationAnswersRepository.GetTaskQuestionAnswers(applicationId, taskId);
-            if (!taskQuestionAnswers.Any())
+            var reviewAnswers = await _applicationAnswersService.GetTaskAnswerReview(applicationId, taskId);
+            if (reviewAnswers != null && !reviewAnswers.Any())
             {
                 return NotFound("No question answers found for the specified task and application.");
             }
-
-            var reviewAnswers = _applicationAnswersService.GetQuestionAnswers(taskQuestionAnswers);
 
             return Ok(reviewAnswers);
         }

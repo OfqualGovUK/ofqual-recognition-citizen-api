@@ -26,29 +26,93 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
-        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
-        var task1 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, sectionId: section.SectionId, taskNameUrl: "test", orderNumber: 2);
-        var task2 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, sectionId: section.SectionId, taskNameUrl: "test", orderNumber: 1);
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
+        {
+            SectionId = Guid.NewGuid(),
+            SectionName = "Test Section",
+            SectionOrderNumber = 1,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
 
-        var q1 = await QuestionTestDataBuilder.CreateTestQuestion(
-            unitOfWork,
-            task1.TaskId,
-            questionType.QuestionTypeId,
-            order: 1,
-            url: "q-task1",
-            content: "{\"title\":\"second question\"}");
+        var task1 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, new TaskItem
+        {
+            TaskId = Guid.NewGuid(),
+            TaskName = "Test Task",
+            TaskNameUrl = "task-a",
+            TaskOrderNumber = 1,
+            SectionId = section.SectionId,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+        var task2 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, new TaskItem
+        {
+            TaskId = Guid.NewGuid(),
+            TaskName = "Test Task",
+            TaskNameUrl = "task-b",
+            TaskOrderNumber = 2,
+            SectionId = section.SectionId,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
 
-        var q2 = await QuestionTestDataBuilder.CreateTestQuestion(
-            unitOfWork,
-            task2.TaskId,
-            questionType.QuestionTypeId,
-            order: 1,
-            url: "q-task2",
-            content: "{\"title\":\"first question\"}");
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        {
+            QuestionTypeId = Guid.NewGuid(),
+            QuestionTypeName = "TextBox",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
 
-        await StageTestDataBuilder.CreateStageTask(unitOfWork, stageId: 1, taskId: task1.TaskId, order: 2);
-        await StageTestDataBuilder.CreateStageTask(unitOfWork, stageId: 1, taskId: task2.TaskId, order: 1);
+        var question1 = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
+        {
+            QuestionId = Guid.NewGuid(),
+            TaskId = task1.TaskId,
+            QuestionOrderNumber = 1,
+            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionContent = "{\"title\":\"second question\"}",
+            QuestionNameUrl = "q-task1",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+        var question2 = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
+        {
+            QuestionId = Guid.NewGuid(),
+            TaskId = task2.TaskId,
+            QuestionOrderNumber = 1,
+            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionContent = "{\"title\":\"first question\"}",
+            QuestionNameUrl = "q-task2",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
+        {
+            StageId = Stage.PreEngagement,
+            TaskId = task1.TaskId,
+            OrderNumber = 2,
+            Enabled = true,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+        await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
+        {
+            StageId = Stage.PreEngagement,
+            TaskId = task2.TaskId,
+            OrderNumber = 1,
+            Enabled = true,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
 
         unitOfWork.Commit();
 
@@ -57,10 +121,10 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(q2.QuestionId, result.QuestionId);
+        Assert.Equal(question2.QuestionId, result.QuestionId);
         Assert.Equal(task2.TaskId, result.TaskId);
         Assert.Equal(task2.TaskNameUrl, result.CurrentTaskNameUrl);
-        Assert.Equal(q2.QuestionNameUrl, result.CurrentQuestionNameUrl);
+        Assert.Equal(question2.QuestionNameUrl, result.CurrentQuestionNameUrl);
 
         // Clean up test container
         await _fixture.DisposeAsync();
@@ -75,36 +139,84 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
-        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork);
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
+        {
+            SectionId = Guid.NewGuid(),
+            SectionName = "Test Section",
+            SectionOrderNumber = 1,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
 
-        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, sectionId: section.SectionId, taskNameUrl: "task-url", orderNumber: 1);
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork);
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, new TaskItem
+        {
+            TaskId = Guid.NewGuid(),
+            TaskName = "Test Task",
+            TaskNameUrl = "task-name-url",
+            TaskOrderNumber = 1,
+            SectionId = section.SectionId,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
 
-        var question1 = await QuestionTestDataBuilder.CreateTestQuestion(
-            unitOfWork,
-            task.TaskId,
-            questionType.QuestionTypeId,
-            order: 1,
-            url: "question-1",
-            content: "{\"label\":\"First\"}");
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        {
+            QuestionTypeId = Guid.NewGuid(),
+            QuestionTypeName = "TextBox",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
 
-        var question2 = await QuestionTestDataBuilder.CreateTestQuestion(
-            unitOfWork,
-            task.TaskId,
-            questionType.QuestionTypeId,
-            order: 2,
-            url: "question-2",
-            content: "{\"label\":\"Middle\"}");
+        var question1 = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
+        {
+            QuestionId = Guid.NewGuid(),
+            TaskId = task.TaskId,
+            QuestionOrderNumber = 1,
+            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionContent = "{\"label\":\"First\"}",
+            QuestionNameUrl = "question-1",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+        var question2 = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
+        {
+            QuestionId = Guid.NewGuid(),
+            TaskId = task.TaskId,
+            QuestionOrderNumber = 2,
+            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionContent = "{\"label\":\"Middle\"}",
+            QuestionNameUrl = "question-2",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+        var question3 = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
+        {
+            QuestionId = Guid.NewGuid(),
+            TaskId = task.TaskId,
+            QuestionOrderNumber = 3,
+            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionContent = "{\"label\":\"Last\"}",
+            QuestionNameUrl = "question-3",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
 
-        var question3 = await QuestionTestDataBuilder.CreateTestQuestion(
-            unitOfWork,
-            task.TaskId,
-            questionType.QuestionTypeId,
-            order: 3,
-            url: "question-3",
-            content: "{\"label\":\"Last\"}");
-
-        await StageTestDataBuilder.CreateStageTask(unitOfWork, stageId: 1, taskId: task.TaskId, order: 1);
+        await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
+        {
+            StageId = Stage.PreEngagement,
+            TaskId = task.TaskId,
+            OrderNumber = 1,
+            Enabled = true,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
 
         unitOfWork.Commit();
 
@@ -117,10 +229,10 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.Equal(task.TaskId, result.TaskId);
         Assert.Equal(task.TaskNameUrl, result.CurrentTaskNameUrl);
         Assert.Equal(question2.QuestionNameUrl, result.CurrentQuestionNameUrl);
-        Assert.Equal("question-1", result.PreviousQuestionNameUrl);
-        Assert.Equal("question-3", result.NextQuestionNameUrl);
-        Assert.Equal("task-url", result.PreviousTaskNameUrl);
-        Assert.Equal("task-url", result.NextTaskNameUrl);
+        Assert.Equal(question1.QuestionNameUrl, result.PreviousQuestionNameUrl);
+        Assert.Equal(question3.QuestionNameUrl, result.NextQuestionNameUrl);
+        Assert.Equal(task.TaskNameUrl, result.PreviousTaskNameUrl);
+        Assert.Equal(task.TaskNameUrl, result.NextTaskNameUrl);
 
         // Clean up test container
         await _fixture.DisposeAsync();
@@ -128,47 +240,217 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task GetStageStatus_Should_Return_Expected_StageStatus()
+    public async Task GetStageStatus_Should_Return_Expected_StageStatusView()
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
-        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork);
+        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
+        {
+            ApplicationId = Guid.NewGuid(),
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
 
-        var stage = Stage.PreEngagement;
+        var stageId = Stage.PreEngagement;
         var now = DateTime.UtcNow;
 
-        var stageStatus = new StageStatus
+        var stageStatus = await StageTestDataBuilder.CreateStageStatus(unitOfWork, new StageStatus
         {
             ApplicationId = application.ApplicationId,
-            StageId = stage,
-            StatusId = TaskStatusEnum.Completed,
-            StageStartDate = now.AddDays(-1),
-            StageCompletionDate = now,
-            CreatedByUpn = "creator@ofqual.gov.uk",
-            ModifiedByUpn = "modifier@ofqual.gov.uk",
-            CreatedDate = now.AddDays(-1),
+            StageId = stageId,
+            StatusId = TaskStatusEnum.InProgress,
+            StageStartDate = now,
+            StageCompletionDate = now.AddDays(2),
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
+            CreatedDate = now,
             ModifiedDate = now
-        };
-
-        await StageTestDataBuilder.CreateStageStatus(unitOfWork, stageStatus);
+        });
 
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.StageRepository.GetStageStatus(application.ApplicationId, stage);
+        var result = await unitOfWork.StageRepository.GetStageStatus(application.ApplicationId, stageId);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(stageStatus.ApplicationId, result.ApplicationId);
-        Assert.Equal(stageStatus.StageId, result.StageId);
-        Assert.Equal(stageStatus.StatusId, result.StatusId);
+        Assert.Equal(application.ApplicationId, result.ApplicationId);
+        Assert.Equal(stageId, result.StageId);
+        Assert.Equal(TaskStatusEnum.InProgress, result.StatusId);
         TestAssertHelpers.AssertDateTimeAlmostEqual(stageStatus.StageStartDate, result.StageStartDate);
         TestAssertHelpers.AssertDateTimeAlmostEqual(stageStatus.StageCompletionDate!.Value, result.StageCompletionDate!.Value);
-        Assert.Equal(stageStatus.CreatedByUpn, result.CreatedByUpn);
-        Assert.Equal(stageStatus.ModifiedByUpn, result.ModifiedByUpn);
+        Assert.False(string.IsNullOrWhiteSpace(result.Status));
+        Assert.False(string.IsNullOrWhiteSpace(result.StageName));
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetAllStageTasksByStageId_Should_Return_All_Tasks_For_Stage()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
+        {
+            SectionId = Guid.NewGuid(),
+            SectionName = "Test Section",
+            SectionOrderNumber = 1,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var task1 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, new TaskItem
+        {
+            TaskId = Guid.NewGuid(),
+            TaskName = "Test Task",
+            TaskNameUrl = "task-a",
+            TaskOrderNumber = 1,
+            SectionId = section.SectionId,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+        var task2 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, new TaskItem
+        {
+            TaskId = Guid.NewGuid(),
+            TaskName = "Test Task",
+            TaskNameUrl = "task-b",
+            TaskOrderNumber = 2,
+            SectionId = section.SectionId,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var stageId = Stage.PreEngagement;
+        var now = DateTime.UtcNow;
+
+        await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
+        {
+            StageId = stageId,
+            TaskId = task1.TaskId,
+            OrderNumber = 1,
+            Enabled = true,
+            CreatedDate = now,
+            ModifiedDate = now,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+        await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
+        {
+            StageId = stageId,
+            TaskId = task2.TaskId,
+            OrderNumber = 2,
+            Enabled = true,
+            CreatedDate = now,
+            ModifiedDate = now,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
+        unitOfWork.Commit();
+
+        // Act
+        var results = (await unitOfWork.StageRepository.GetAllStageTasksByStageId(stageId))?.ToList();
+
+        // Assert
+        Assert.NotNull(results);
+        Assert.Equal(2, results.Count);
+        Assert.Contains(results, r => r.TaskId == task1.TaskId && r.OrderNumber == 1);
+        Assert.Contains(results, r => r.TaskId == task2.TaskId && r.OrderNumber == 2);
+        Assert.All(results, r =>
+        {
+            Assert.Equal(stageId, r.StageId);
+            Assert.False(string.IsNullOrWhiteSpace(r.StageName));
+            Assert.False(string.IsNullOrWhiteSpace(r.Task));
+        });
+
+        // Clean up
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task UpsertStageStatusRecord_Should_Insert_And_Update_StageStatus()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var repository = unitOfWork.StageRepository;
+        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
+        {
+            ApplicationId = Guid.NewGuid(),
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var stageId = Stage.PreEngagement;
+        var now = DateTime.UtcNow;
+
+        var initialStatus = new StageStatus
+        {
+            ApplicationId = application.ApplicationId,
+            StageId = stageId,
+            StatusId = TaskStatusEnum.NotStarted,
+            StageStartDate = now,
+            StageCompletionDate = null,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
+            CreatedDate = now,
+            ModifiedDate = now
+        };
+
+        // Act: Insert
+        var inserted = await repository.UpsertStageStatusRecord(initialStatus);
+        unitOfWork.Commit();
+
+        // Assert: Insert successful
+        Assert.True(inserted);
+
+        var insertedResult = await repository.GetStageStatus(application.ApplicationId, stageId);
+        Assert.NotNull(insertedResult);
+        Assert.Equal(TaskStatusEnum.NotStarted, insertedResult!.StatusId);
+        Assert.Null(insertedResult.StageCompletionDate);
+        TestAssertHelpers.AssertDateTimeAlmostEqual(now, insertedResult.StageStartDate);
+
+        // Act: Update existing
+        var updatedStatus = new StageStatus
+        {
+            ApplicationId = application.ApplicationId,
+            StageId = stageId,
+            StatusId = TaskStatusEnum.Completed,
+            StageStartDate = now,
+            StageCompletionDate = now.AddDays(1),
+            CreatedByUpn = "ignored@ofqual.gov.uk",
+            ModifiedByUpn = "updated@ofqual.gov.uk",
+            CreatedDate = now,
+            ModifiedDate = now
+        };
+
+        var updated = await repository.UpsertStageStatusRecord(updatedStatus);
+        unitOfWork.Commit();
+
+        // Assert: Update successful
+        Assert.True(updated);
+
+        var updatedResult = await repository.GetStageStatus(application.ApplicationId, stageId);
+        Assert.NotNull(updatedResult);
+        Assert.Equal(TaskStatusEnum.Completed, updatedResult!.StatusId);
+        Assert.Equal(now.AddDays(1).Date, updatedResult.StageCompletionDate?.Date);
+        TestAssertHelpers.AssertDateTimeAlmostEqual(now, updatedResult.StageStartDate);
 
         // Clean up test container
         await _fixture.DisposeAsync();

@@ -1,87 +1,52 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
-using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Dapper;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 
 public static class TaskTestDataBuilder
 {
-    public static async Task<TaskItem> CreateTestTask(UnitOfWork unitOfWork, Guid sectionId, string taskNameUrl, int orderNumber)
+    public static async Task<TaskItem> CreateTestTask(UnitOfWork unitOfWork, TaskItem task)
     {
-        var task = new TaskItem
-        {
-            TaskId = Guid.NewGuid(),
-            TaskName = "Test Task",
-            TaskNameUrl = taskNameUrl,
-            TaskOrderNumber = orderNumber,
-            SectionId = sectionId,
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow,
-            CreatedByUpn = "test@ofqual.gov.uk"
-        };
-
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO [recognitionCitizen].[Task]
             (TaskId, TaskName, TaskNameUrl, OrderNumber, SectionId, CreatedDate, ModifiedDate, CreatedByUpn)
             VALUES (@TaskId, @TaskName, @TaskNameUrl, @TaskOrderNumber, @SectionId, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
             task,
             unitOfWork.Transaction);
-
+        
         return task;
     }
 
-    public static async Task<Section> CreateTestSection(UnitOfWork unitOfWork)
+    public static async Task<Section> CreateTestSection(UnitOfWork unitOfWork, Section section)
     {
-        var section = new Section
-        {
-            SectionId = Guid.NewGuid(),
-            SectionName = "Test Section",
-            SectionOrderNumber = 1,
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow,
-            CreatedByUpn = "test@ofqual.gov.uk"
-        };
-
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO [recognitionCitizen].[Section]
             (SectionId, SectionName, OrderNumber, CreatedDate, ModifiedDate, CreatedByUpn)
             VALUES (@SectionId, @SectionName, @SectionOrderNumber, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
             section,
             unitOfWork.Transaction);
-
         return section;
     }
 
-    public static async Task<TaskItemStatus> CreateTestTaskStatus(UnitOfWork unitOfWork, Guid applicationId, TaskItem task)
+    public static async Task<TaskItemStatus> CreateTestTaskStatus(UnitOfWork unitOfWork, TaskItemStatus taskStatus)
     {
-        var status = new TaskItemStatus
-        {
-            TaskStatusId = Guid.NewGuid(),
-            ApplicationId = applicationId,
-            TaskId = task.TaskId,
-            Status = TaskStatusEnum.NotStarted,
-            CreatedByUpn = "test@ofqual.gov.uk",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow
-        };
-
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO [recognitionCitizen].[TaskStatus]
             (TaskStatusId, ApplicationId, TaskId, Status, CreatedByUpn, CreatedDate, ModifiedDate)
             VALUES (@TaskStatusId, @ApplicationId, @TaskId, @Status, @CreatedByUpn, @CreatedDate, @ModifiedDate);",
             new
             {
-                status.TaskStatusId,
-                status.ApplicationId,
-                status.TaskId,
-                Status = (int)status.Status,
-                status.CreatedByUpn,
-                status.CreatedDate,
-                status.ModifiedDate
+                taskStatus.TaskStatusId,
+                taskStatus.ApplicationId,
+                taskStatus.TaskId,
+                Status = (int)taskStatus.Status,
+                taskStatus.CreatedByUpn,
+                taskStatus.CreatedDate,
+                taskStatus.ModifiedDate
             },
             unitOfWork.Transaction);
-        
-        return status;
+
+        return taskStatus;
     }
 }

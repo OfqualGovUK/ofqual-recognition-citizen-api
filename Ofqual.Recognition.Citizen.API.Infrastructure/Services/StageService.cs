@@ -72,7 +72,7 @@ public class StageService : IStageService
         }
 
         // Check the existing stage status for the application
-        StageStatus? existingStatus = await _context.StageRepository.GetStageStatus(applicationId, stage);
+        StageStatusView? existingStatus = await _context.StageRepository.GetStageStatus(applicationId, stage);
 
         // If the status hasn't changed it skips the update
         if (existingStatus != null && existingStatus.StatusId == newStatus)

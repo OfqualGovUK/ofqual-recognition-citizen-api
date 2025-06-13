@@ -3,7 +3,6 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
 using Ofqual.Recognition.API.Models.JSON.Questions;
 using Ofqual.Recognition.Citizen.API.Core.Helpers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
-using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 
@@ -38,158 +37,155 @@ public class ApplicationAnswersService : IApplicationAnswersService
         return true;
     }
 
-    public List<QuestionAnswerSectionDto> GetQuestionAnswers(IEnumerable<TaskQuestionAnswer> questions)
+    public async Task<List<QuestionAnswerSectionDto>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
-        var answerLookup = questions
-            .Where(q => !string.IsNullOrWhiteSpace(q.Answer))
-            .ToDictionary(
-                q => q.QuestionId,
-                q => new ParsedQuestionAnswer
-                {
-                    AnswerData = JObject.Parse(q.Answer!),
-                    QuestionUrl = $"{q.TaskNameUrl}/{q.QuestionNameUrl}"
-                });
+        var taskQuestionAnswers = await _context.ApplicationAnswersRepository.GetTaskQuestionAnswers(applicationId, taskId);
+        if (!taskQuestionAnswers.Any())
+        {
+            return new List<QuestionAnswerSectionDto>();
+        }
 
         var sections = new List<QuestionAnswerSectionDto>();
 
-        foreach (var question in questions)
+        foreach (var question in taskQuestionAnswers)
         {
-            answerLookup.TryGetValue(question.QuestionId, out var parsedAnswer);
-
-            if (string.IsNullOrWhiteSpace(question.QuestionContent))
+            if (string.IsNullOrWhiteSpace(question.Answer) || string.IsNullOrWhiteSpace(question.QuestionContent))
             {
                 continue;
             }
 
-            var questionJson = JObject.Parse(question.QuestionContent);
-            var formGroup = JsonHelper.GetObject(questionJson, "formGroup");
-
-            if (formGroup == null)
+            var content = JsonSerializer.Deserialize<QuestionContent>(question.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (content?.FormGroup == null)
             {
                 continue;
             }
 
-            foreach (var groupProperty in formGroup.Properties())
+            var answerValues = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(question.Answer, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (answerValues == null)
             {
-                var groupValue = groupProperty.Value;
-                var sectionHeading = JsonHelper.GetString(groupValue, "sectionName");
+                continue;
+            }
 
+            var formGroup = content.FormGroup;
+
+            // Text inputs
+            if (formGroup.TextInput?.TextInputs != null)
+            {
                 var section = new QuestionAnswerSectionDto
                 {
-                    SectionHeading = sectionHeading
+                    SectionHeading = formGroup.TextInput.SectionName
                 };
 
-                var textInputs = JsonHelper.GetArray(groupValue, "textInputs");
-                if (textInputs != null)
+                foreach (var input in formGroup.TextInput.TextInputs)
                 {
-                    foreach (var input in textInputs)
+                    var values = ExtractAnswer(answerValues, input.Name);
+                    section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                     {
-                        var fieldName = JsonHelper.GetString(input, "name");
-                        var label = JsonHelper.GetString(input, "label");
-
-                        if (string.IsNullOrWhiteSpace(fieldName) || string.IsNullOrWhiteSpace(label))
-                        {
-                            continue;
-                        }
-
-                        var answerValue = JsonHelper.GetFlattenedStringValuesByKey(parsedAnswer?.AnswerData, fieldName);
-
-                        section.QuestionAnswers.Add(new QuestionAnswerReviewDto
-                        {
-                            QuestionText = label,
-                            AnswerValue = answerValue,
-                            QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                        });
-                    }
+                        QuestionText = input.Label,
+                        AnswerValue = values,
+                        QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
+                    });
                 }
 
-                if (groupProperty.Name.Equals("textarea", StringComparison.OrdinalIgnoreCase))
+                if (section.QuestionAnswers.Any())
                 {
-                    var fieldName = JsonHelper.GetString(groupValue, "name");
-                    var label = JsonHelper.GetNestedString(groupValue, "label", "text");
-
-                    if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
-                    {
-                        var answerValue = JsonHelper.GetFlattenedStringValuesByKey(parsedAnswer?.AnswerData, fieldName);
-
-                        section.QuestionAnswers.Add(new QuestionAnswerReviewDto
-                        {
-                            QuestionText = label,
-                            AnswerValue = answerValue,
-                            QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                        });
-                    }
+                    sections.Add(section);
                 }
+            }
 
-                if (groupProperty.Name.Equals("radioButton", StringComparison.OrdinalIgnoreCase))
+            // Textarea
+            if (formGroup.Textarea != null)
+            {
+                var section = new QuestionAnswerSectionDto
                 {
-                    var fieldName = JsonHelper.GetString(groupValue, "name");
-                    var label = JsonHelper.GetNestedString(groupValue, "heading", "text");
+                    SectionHeading = formGroup.Textarea.SectionName
+                };
 
-                    if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
-                    {
-                        var answerValue = JsonHelper.GetFlattenedStringValuesByKey(parsedAnswer?.AnswerData, fieldName);
+                var values = ExtractAnswer(answerValues, formGroup.Textarea.Name);
 
-                        section.QuestionAnswers.Add(new QuestionAnswerReviewDto
-                        {
-                            QuestionText = label,
-                            AnswerValue = answerValue,
-                            QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                        });
-                    }
-                }
-
-                if (groupProperty.Name.Equals("checkbox", StringComparison.OrdinalIgnoreCase))
+                section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                 {
-                    var checkboxName = JsonHelper.GetString(groupValue, "name");
-                    var checkboxHeading = JsonHelper.GetNestedString(groupValue, "heading", "text");
+                    QuestionText = formGroup.Textarea.Label?.Text,
+                    AnswerValue = values,
+                    QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
+                });
 
-                    if (!string.IsNullOrWhiteSpace(checkboxName) && !string.IsNullOrWhiteSpace(checkboxHeading))
+                sections.Add(section);
+            }
+
+            // Radio button
+            if (formGroup.RadioButton != null)
+            {
+                var section = new QuestionAnswerSectionDto
+                {
+                    SectionHeading = formGroup.RadioButton.SectionName
+                };
+
+                var values = ExtractAnswer(answerValues, formGroup.RadioButton.Name);
+
+                section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                {
+                    QuestionText = formGroup.RadioButton.Heading?.Text,
+                    AnswerValue = values,
+                    QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
+                });
+
+                sections.Add(section);
+            }
+
+            // Checkbox and conditionals
+            if (formGroup.CheckBox != null)
+            {
+                var section = new QuestionAnswerSectionDto
+                {
+                    SectionHeading = formGroup.CheckBox.SectionName
+                };
+
+                var checkbox = formGroup.CheckBox;
+                var values = ExtractAnswer(answerValues, checkbox.Name);
+                var selected = values.Select(v => v.ToLowerInvariant()).ToHashSet();
+
+                section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                {
+                    QuestionText = checkbox.Heading?.Text,
+                    AnswerValue = values,
+                    QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
+                });
+
+                foreach (var option in checkbox.CheckBoxes)
+                {
+                    if (string.IsNullOrWhiteSpace(option.Value) || !selected.Contains(option.Value.ToLowerInvariant()))
                     {
-                        var answerValue = JsonHelper.GetFlattenedStringValuesByKey(parsedAnswer?.AnswerData, checkboxName);
-
-                        section.QuestionAnswers.Add(new QuestionAnswerReviewDto
-                        {
-                            QuestionText = checkboxHeading,
-                            AnswerValue = answerValue,
-                            QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                        });
+                        continue;
                     }
 
-                    if (!string.IsNullOrWhiteSpace(checkboxName))
+                    if (option.ConditionalInputs != null)
                     {
-                        var selectedValues = JsonHelper.GetStringSetFromToken(parsedAnswer?.AnswerData?[checkboxName]);
-
-                        foreach (var checkboxOption in JsonHelper.GetArray(groupValue, "checkBoxes") ?? Enumerable.Empty<JToken>())
+                        foreach (var input in option.ConditionalInputs)
                         {
-                            var checkboxValue = JsonHelper.GetString(checkboxOption, "value");
+                            var conditionalValues = ExtractAnswer(answerValues, input.Name);
 
-                            if (!string.IsNullOrWhiteSpace(checkboxValue) && selectedValues.Contains(checkboxValue))
+                            section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                             {
-                                var conditionalFields = JsonHelper.GetArray(checkboxOption, "conditionalInputs")
-                                    ?? JsonHelper.GetArray(checkboxOption, "conditionalSelects");
+                                QuestionText = input.Label,
+                                AnswerValue = conditionalValues,
+                                QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
+                            });
+                        }
+                    }
 
-                                if (conditionalFields != null)
-                                {
-                                    foreach (var conditionalField in conditionalFields)
-                                    {
-                                        var fieldName = JsonHelper.GetString(conditionalField, "name");
-                                        var label = JsonHelper.GetString(conditionalField, "label");
+                    if (option.ConditionalSelects != null)
+                    {
+                        foreach (var select in option.ConditionalSelects)
+                        {
+                            var conditionalValues = ExtractAnswer(answerValues, select.Name);
 
-                                        if (!string.IsNullOrWhiteSpace(fieldName) && !string.IsNullOrWhiteSpace(label))
-                                        {
-                                            var conditionalAnswer = JsonHelper.GetFlattenedStringValuesByKey(parsedAnswer?.AnswerData, fieldName);
-
-                                            section.QuestionAnswers.Add(new QuestionAnswerReviewDto
-                                            {
-                                                QuestionText = label,
-                                                AnswerValue = conditionalAnswer,
-                                                QuestionUrl = parsedAnswer?.QuestionUrl ?? $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                                            });
-                                        }
-                                    }
-                                }
-                            }
+                            section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                            {
+                                QuestionText = select.Label,
+                                AnswerValue = conditionalValues,
+                                QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
+                            });
                         }
                     }
                 }
@@ -202,6 +198,31 @@ public class ApplicationAnswersService : IApplicationAnswersService
         }
 
         return sections;
+    }
+    
+    private static List<string> ExtractAnswer(Dictionary<string, JsonElement> answers, string key)
+    {
+        if (!answers.TryGetValue(key, out var token))
+        {
+            return new List<string> { "Not provided" };
+        }
+
+        if (token.ValueKind == JsonValueKind.Array)
+        {
+            return token.EnumerateArray()
+                .Select(x => x.GetString())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!.Trim())
+                .ToList();
+        }
+
+        if (token.ValueKind == JsonValueKind.String)
+        {
+            var str = token.GetString();
+            return string.IsNullOrWhiteSpace(str) ? new List<string> { "Not provided" } : new List<string> { str };
+        }
+
+        return new List<string> { token.ToString() };
     }
 
     public async Task<ValidationResponse> ValidateQuestionAnswers(Guid questionId, string answerJson)
