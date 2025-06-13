@@ -221,7 +221,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.StageRepository.GetStageQuestionByTaskAndQuestionUrl(Stage.PreEngagement, "task-url", "question-2");
+        var result = await unitOfWork.StageRepository.GetStageQuestionByTaskAndQuestionUrl(Stage.PreEngagement, task.TaskNameUrl, question2.QuestionNameUrl);
 
         // Assert
         Assert.NotNull(result);
@@ -388,7 +388,6 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
-        var repository = unitOfWork.StageRepository;
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
@@ -414,13 +413,13 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         };
 
         // Act: Insert
-        var inserted = await repository.UpsertStageStatusRecord(initialStatus);
+        var inserted = await unitOfWork.StageRepository.UpsertStageStatusRecord(initialStatus);
         unitOfWork.Commit();
 
         // Assert: Insert successful
         Assert.True(inserted);
 
-        var insertedResult = await repository.GetStageStatus(application.ApplicationId, stageId);
+        var insertedResult = await unitOfWork.StageRepository.GetStageStatus(application.ApplicationId, stageId);
         Assert.NotNull(insertedResult);
         Assert.Equal(TaskStatusEnum.NotStarted, insertedResult!.StatusId);
         Assert.Null(insertedResult.StageCompletionDate);
@@ -440,13 +439,13 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = now
         };
 
-        var updated = await repository.UpsertStageStatusRecord(updatedStatus);
+        var updated = await unitOfWork.StageRepository.UpsertStageStatusRecord(updatedStatus);
         unitOfWork.Commit();
 
         // Assert: Update successful
         Assert.True(updated);
 
-        var updatedResult = await repository.GetStageStatus(application.ApplicationId, stageId);
+        var updatedResult = await unitOfWork.StageRepository.GetStageStatus(application.ApplicationId, stageId);
         Assert.NotNull(updatedResult);
         Assert.Equal(TaskStatusEnum.Completed, updatedResult!.StatusId);
         Assert.Equal(now.AddDays(1).Date, updatedResult.StageCompletionDate?.Date);
