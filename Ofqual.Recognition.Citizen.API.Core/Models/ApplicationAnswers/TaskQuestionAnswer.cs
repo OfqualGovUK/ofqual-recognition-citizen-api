@@ -17,6 +17,6 @@ public class TaskQuestionAnswer
     public required string QuestionNameUrl { get; set; }
 
     // ApplicationAnswers table
-    public string Answer { get; set; } = string.Empty;
+    public string Answer { get; set; } = "{}";
     public Guid ApplicationId { get; set; }
 }
