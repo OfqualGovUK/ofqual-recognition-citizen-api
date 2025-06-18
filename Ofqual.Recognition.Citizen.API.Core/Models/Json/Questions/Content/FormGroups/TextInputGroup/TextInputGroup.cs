@@ -1,19 +1,19 @@
 namespace Ofqual.Recognition.API.Models.JSON.Questions;
 
-public class TextInput
+public class TextInputGroup
 {
     /// <summary>
-    /// The heading shown above the text inputs.
+    /// The heading displayed above the group of text inputs.
     /// </summary>
     public TextWithSize? Heading { get; set; }
 
     /// <summary>
-    /// The collection of text input fields in the group.
+    /// A list of text input fields to render.
     /// </summary>
-    public required List<TextInputItem> TextInputs { get; set; }
+    public required List<TextInputItem> Fields { get; set; }
 
     /// <summary>
-    /// The display name for the section shown on the review page.
+    /// The section name shown on the review page.
     /// </summary>
     public string? SectionName { get; set; }
 }

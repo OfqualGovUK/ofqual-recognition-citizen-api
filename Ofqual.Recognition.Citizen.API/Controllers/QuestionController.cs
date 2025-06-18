@@ -1,6 +1,8 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
@@ -11,6 +13,8 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("questions")]
+[Authorize]
+[RequiredScope("Applications.ReadWrite")]
 public class QuestionController : ControllerBase
 {
     private readonly IUnitOfWork _context;

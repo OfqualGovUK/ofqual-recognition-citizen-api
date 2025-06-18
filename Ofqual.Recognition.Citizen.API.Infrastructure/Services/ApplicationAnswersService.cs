@@ -3,6 +3,8 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
 using Ofqual.Recognition.API.Models.JSON.Questions;
 using Ofqual.Recognition.Citizen.API.Core.Helpers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 
@@ -21,8 +23,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
     {
         foreach (var answer in answers)
         {
-            ValidationResponse validationResult = await ValidateQuestionAnswers(answer.QuestionId, answer.AnswerJson);
-            if (!string.IsNullOrEmpty(validationResult.Message) || (validationResult.Errors != null && validationResult.Errors.Any()))
+            ValidationResponse? validationResult = await ValidateQuestionAnswers(answer.QuestionId, answer.AnswerJson);
+            if (validationResult == null || (validationResult.Errors != null && validationResult.Errors.Any()))
             {
                 return false;
             }
@@ -54,8 +56,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 continue;
             }
 
-            var content = JsonSerializer.Deserialize<QuestionContent>(question.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            if (content?.FormGroup == null)
+            var questionContent = JsonSerializer.Deserialize<QuestionContent>(question.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } });
+            if (questionContent?.FormGroup == null)
             {
                 continue;
             }
@@ -66,17 +68,17 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 continue;
             }
 
-            var formGroup = content.FormGroup;
+            var formGroup = questionContent.FormGroup;
 
             // Text inputs
-            if (formGroup.TextInput?.TextInputs != null)
+            if (formGroup.TextInputGroup?.Fields != null)
             {
                 var section = new QuestionAnswerSectionDto
                 {
-                    SectionHeading = formGroup.TextInput.SectionName
+                    SectionHeading = formGroup.TextInputGroup.SectionName
                 };
 
-                foreach (var input in formGroup.TextInput.TextInputs)
+                foreach (var input in formGroup.TextInputGroup.Fields)
                 {
                     var values = ExtractAnswer(answerValues, input.Name);
                     section.QuestionAnswers.Add(new QuestionAnswerReviewDto
@@ -102,7 +104,6 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 };
 
                 var values = ExtractAnswer(answerValues, formGroup.Textarea.Name);
-
                 section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                 {
                     QuestionText = formGroup.Textarea.Label?.Text,
@@ -113,58 +114,31 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 sections.Add(section);
             }
 
-            // Radio button
-            if (formGroup.RadioButton != null)
+            // Radio button group
+            if (formGroup.RadioButtonGroup != null)
             {
                 var section = new QuestionAnswerSectionDto
                 {
-                    SectionHeading = formGroup.RadioButton.SectionName
+                    SectionHeading = formGroup.RadioButtonGroup.SectionName
                 };
 
-                var values = ExtractAnswer(answerValues, formGroup.RadioButton.Name);
-
+                var values = ExtractAnswer(answerValues, formGroup.RadioButtonGroup.Name);
                 section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                 {
-                    QuestionText = formGroup.RadioButton.Heading?.Text,
+                    QuestionText = formGroup.RadioButtonGroup.Heading?.Text,
                     AnswerValue = values,
                     QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
                 });
 
-                sections.Add(section);
-            }
-
-            // Checkbox and conditionals
-            if (formGroup.CheckBox != null)
-            {
-                var section = new QuestionAnswerSectionDto
+                var selected = values.FirstOrDefault()?.ToLowerInvariant();
+                var selectedOption = formGroup.RadioButtonGroup.Options.FirstOrDefault(o => o.Value.ToLowerInvariant() == selected);
+                if (selectedOption != null)
                 {
-                    SectionHeading = formGroup.CheckBox.SectionName
-                };
-
-                var checkbox = formGroup.CheckBox;
-                var values = ExtractAnswer(answerValues, checkbox.Name);
-                var selected = values.Select(v => v.ToLowerInvariant()).ToHashSet();
-
-                section.QuestionAnswers.Add(new QuestionAnswerReviewDto
-                {
-                    QuestionText = checkbox.Heading?.Text,
-                    AnswerValue = values,
-                    QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                });
-
-                foreach (var option in checkbox.CheckBoxes)
-                {
-                    if (string.IsNullOrWhiteSpace(option.Value) || !selected.Contains(option.Value.ToLowerInvariant()))
+                    if (selectedOption.ConditionalInputs != null)
                     {
-                        continue;
-                    }
-
-                    if (option.ConditionalInputs != null)
-                    {
-                        foreach (var input in option.ConditionalInputs)
+                        foreach (var input in selectedOption.ConditionalInputs)
                         {
                             var conditionalValues = ExtractAnswer(answerValues, input.Name);
-
                             section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                             {
                                 QuestionText = input.Label,
@@ -174,12 +148,11 @@ public class ApplicationAnswersService : IApplicationAnswersService
                         }
                     }
 
-                    if (option.ConditionalSelects != null)
+                    if (selectedOption.ConditionalSelects != null)
                     {
-                        foreach (var select in option.ConditionalSelects)
+                        foreach (var select in selectedOption.ConditionalSelects)
                         {
                             var conditionalValues = ExtractAnswer(answerValues, select.Name);
-
                             section.QuestionAnswers.Add(new QuestionAnswerReviewDto
                             {
                                 QuestionText = select.Label,
@@ -195,11 +168,97 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     sections.Add(section);
                 }
             }
+
+            // Checkbox group
+            if (formGroup.CheckboxGroup != null)
+            {
+                var section = new QuestionAnswerSectionDto
+                {
+                    SectionHeading = formGroup.CheckboxGroup.SectionName
+                };
+
+                var checkbox = formGroup.CheckboxGroup;
+                var values = ExtractAnswer(answerValues, checkbox.Name);
+                var selected = values.Select(v => v.ToLowerInvariant()).ToHashSet();
+
+                section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                {
+                    QuestionText = checkbox.Heading?.Text,
+                    AnswerValue = values,
+                    QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
+                });
+
+                foreach (var option in checkbox.Options)
+                {
+                    if (string.IsNullOrWhiteSpace(option.Value) || !selected.Contains(option.Value.ToLowerInvariant()))
+                    {
+                        continue;
+                    }
+
+                    if (option.ConditionalInputs != null)
+                    {
+                        foreach (var input in option.ConditionalInputs)
+                        {
+                            var conditionalValues = ExtractAnswer(answerValues, input.Name);
+                            section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                            {
+                                QuestionText = input.Label,
+                                AnswerValue = conditionalValues,
+                                QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
+                            });
+                        }
+                    }
+
+                    if (option.ConditionalSelects != null)
+                    {
+                        foreach (var select in option.ConditionalSelects)
+                        {
+                            var conditionalValues = ExtractAnswer(answerValues, select.Name);
+                            section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                            {
+                                QuestionText = select.Label,
+                                AnswerValue = conditionalValues,
+                                QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
+                            });
+                        }
+                    }
+                }
+
+                if (section.QuestionAnswers.Any())
+                {
+                    sections.Add(section);
+                }
+            }
+
+            // File Upload
+            if (formGroup.FileUpload != null)
+            {
+                var allAttachments = await _context.AttachmentRepository.GetAllAttachmentsForLink(applicationId, question.QuestionId, LinkType.Question);
+
+                var sortedFileNames = allAttachments
+                    .Select(a => a.FileName)
+                    .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var section = new QuestionAnswerSectionDto
+                {
+                    SectionHeading = formGroup.FileUpload.SectionName
+                };
+
+                section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                {
+                    QuestionText = "Files you uploaded",
+                    AnswerValue = sortedFileNames,
+                    QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
+                });
+
+                sections.Add(section);
+            }
         }
 
         return sections;
     }
-    
+
     private static List<string> ExtractAnswer(Dictionary<string, JsonElement> answers, string key)
     {
         if (!answers.TryGetValue(key, out var token))
@@ -225,58 +284,68 @@ public class ApplicationAnswersService : IApplicationAnswersService
         return new List<string> { token.ToString() };
     }
 
-    public async Task<ValidationResponse> ValidateQuestionAnswers(Guid questionId, string answerJson)
+    public async Task<ValidationResponse?> ValidateQuestionAnswers(Guid questionId, string answerJson)
     {
-        QuestionDetails? questionDetails = await _context.QuestionRepository.GetQuestionByQuestionId(questionId);
+        var questionDetails = await _context.QuestionRepository.GetQuestionByQuestionId(questionId);
         if (questionDetails == null)
         {
-            return new ValidationResponse { Message = "We could not check your answer. Please try again." };
+            return null;
         }
 
-        var questionContent = JsonSerializer.Deserialize<QuestionContent>(questionDetails.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var questionContent = JsonSerializer.Deserialize<QuestionContent>(questionDetails.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } });
         if (questionContent?.FormGroup == null)
         {
-            return new ValidationResponse { Message = "We could not check your answer. Please try again." };
+            return null;
         }
 
         var answerValue = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(answerJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         if (answerValue == null)
         {
-            return new ValidationResponse { Message = "We could not check your answer. Please try again." };
+            return null;
         }
 
         var errors = new List<ValidationErrorItem>();
         var components = new List<IValidatable>();
-        var formGroup = questionContent.FormGroup;
         var selectedCheckboxValues = new List<string>();
+        var selectedRadioValue = string.Empty;
+        var formGroup = questionContent.FormGroup;
 
-        if (formGroup.Textarea != null) components.Add(formGroup.Textarea);
-        if (formGroup.RadioButton != null) components.Add(formGroup.RadioButton);
-        if (formGroup.TextInput != null) components.AddRange(formGroup.TextInput.TextInputs);
-        if (formGroup.CheckBox != null)
+        if (formGroup.Textarea != null)
         {
-            components.Add(formGroup.CheckBox);
-            if (formGroup.CheckBox.CheckBoxes != null)
-            {
-                components.AddRange(formGroup.CheckBox.CheckBoxes
-                    .SelectMany(x => x.ConditionalInputs ?? new List<TextInputItem>()));
+            components.Add(formGroup.Textarea);
+        }
 
-                components.AddRange(formGroup.CheckBox.CheckBoxes
-                    .SelectMany(x => x.ConditionalSelects ?? new List<Select>()));
+        if (formGroup.TextInputGroup?.Fields != null)
+        {
+            components.AddRange(formGroup.TextInputGroup.Fields);
+        }
+
+        if (formGroup.CheckboxGroup != null)
+        {
+            components.Add(formGroup.CheckboxGroup);
+
+            foreach (var option in formGroup.CheckboxGroup.Options)
+            {
+                if (option.ConditionalInputs != null)
+                {
+                    components.AddRange(option.ConditionalInputs);
+                }
+
+                if (option.ConditionalSelects != null)
+                {
+                    components.AddRange(option.ConditionalSelects);
+                }
             }
 
-            if (formGroup.CheckBox?.Name != null && answerValue.TryGetValue(formGroup.CheckBox.Name, out var checkboxAnswerElement))
+            if (formGroup.CheckboxGroup.Name != null &&
+                answerValue.TryGetValue(formGroup.CheckboxGroup.Name, out var checkboxAnswerElement))
             {
                 if (checkboxAnswerElement.ValueKind == JsonValueKind.Array)
                 {
-                    foreach (var item in checkboxAnswerElement.EnumerateArray())
-                    {
-                        var val = item.GetString();
-                        if (!string.IsNullOrWhiteSpace(val))
-                        {
-                            selectedCheckboxValues.Add(val.Trim().ToLowerInvariant());
-                        }
-                    }
+                    selectedCheckboxValues = checkboxAnswerElement.EnumerateArray()
+                        .Select(x => x.GetString()?.Trim().ToLowerInvariant())
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .ToList()!;
                 }
                 else if (checkboxAnswerElement.ValueKind == JsonValueKind.String)
                 {
@@ -284,6 +353,33 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     if (!string.IsNullOrWhiteSpace(val))
                     {
                         selectedCheckboxValues.Add(val.Trim().ToLowerInvariant());
+                    }
+                }
+            }
+        }
+
+        if (formGroup.RadioButtonGroup != null)
+        {
+            components.Add(formGroup.RadioButtonGroup);
+
+            if (answerValue.TryGetValue(formGroup.RadioButtonGroup.Name, out var radioAnswerElement) &&
+                radioAnswerElement.ValueKind == JsonValueKind.String)
+            {
+                selectedRadioValue = radioAnswerElement.GetString()?.Trim().ToLowerInvariant() ?? string.Empty;
+
+                var selectedOption = formGroup.RadioButtonGroup.Options
+                    .FirstOrDefault(opt => opt.Value.Trim().ToLowerInvariant() == selectedRadioValue);
+
+                if (selectedOption != null)
+                {
+                    if (selectedOption.ConditionalInputs != null)
+                    {
+                        components.AddRange(selectedOption.ConditionalInputs);
+                    }
+
+                    if (selectedOption.ConditionalSelects != null)
+                    {
+                        components.AddRange(selectedOption.ConditionalSelects);
                     }
                 }
             }
@@ -297,16 +393,30 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 continue;
             }
 
-            if (formGroup.CheckBox?.CheckBoxes != null)
+            if (formGroup.CheckboxGroup?.Options != null)
             {
-                var parent = formGroup.CheckBox.CheckBoxes.FirstOrDefault(cb =>
+                var parent = formGroup.CheckboxGroup.Options.FirstOrDefault(cb =>
                     (cb.ConditionalInputs?.Any(i => i.Name == component.Name) ?? false) ||
                     (cb.ConditionalSelects?.Any(s => s.Name == component.Name) ?? false));
 
                 if (parent != null && !string.IsNullOrWhiteSpace(parent.Value))
                 {
-                    var parentValue = parent.Value.Trim().ToLowerInvariant();
-                    if (!selectedCheckboxValues.Contains(parentValue))
+                    if (!selectedCheckboxValues.Contains(parent.Value.Trim().ToLowerInvariant()))
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            if (formGroup.RadioButtonGroup?.Options != null)
+            {
+                var parent = formGroup.RadioButtonGroup.Options.FirstOrDefault(rb =>
+                    (rb.ConditionalInputs?.Any(i => i.Name == component.Name) ?? false) ||
+                    (rb.ConditionalSelects?.Any(s => s.Name == component.Name) ?? false));
+
+                if (parent != null && !string.IsNullOrWhiteSpace(parent.Value))
+                {
+                    if (!string.Equals(parent.Value.Trim().ToLowerInvariant(), selectedRadioValue))
                     {
                         continue;
                     }
@@ -317,14 +427,22 @@ public class ApplicationAnswersService : IApplicationAnswersService
             {
                 if (validation.Required == true)
                 {
+                    var label = StringHelper.CapitaliseFirstLetter(component.ValidationLabel);
+
+                    string message = component switch
+                    {
+                        CheckBoxGroup => $"Select at least one option for {label}",
+                        RadioButtonGroup => $"Select an option for {label}",
+                        _ => $"Enter {label}"
+                    };
+
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
-                        ErrorMessage = component is CheckBox
-                            ? $"Select at least one option for {StringHelper.CapitaliseFirstLetter(component.Label)}"
-                            : $"Enter {StringHelper.CapitaliseFirstLetter(component.Label)}"
+                        ErrorMessage = message
                     });
                 }
+
                 continue;
             }
 
@@ -339,7 +457,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             {
                 answerArray = answerElement.EnumerateArray()
                     .Select(x => x.GetString())
-                    .Where(x => x != null && !string.IsNullOrWhiteSpace(x))
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
                     .ToList()!;
                 answerString = string.Join(", ", answerArray);
             }
@@ -348,21 +466,14 @@ public class ApplicationAnswersService : IApplicationAnswersService
             {
                 if (validation.Required == true)
                 {
-                    var label = StringHelper.CapitaliseFirstLetter(component.Label);
-                    string message;
+                    var label = StringHelper.CapitaliseFirstLetter(component.ValidationLabel);
 
-                    if (component is CheckBox)
+                    string message = component switch
                     {
-                        message = $"Select at least one option for {label}";
-                    }
-                    else if (component is RadioButton)
-                    {
-                        message = $"Select an option for {label}";
-                    }
-                    else
-                    {
-                        message = $"Enter {label}";
-                    }
+                        CheckBoxGroup => $"Select at least one option for {label}",
+                        RadioButtonGroup => $"Select an option for {label}",
+                        _ => $"Enter {label}"
+                    };
 
                     errors.Add(new ValidationErrorItem
                     {
@@ -382,7 +493,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
-                        ErrorMessage = $"The {StringHelper.CapitaliseFirstLetter(component.Label)} \"{answerString}\" already exists in our records"
+                        ErrorMessage = $"The {StringHelper.CapitaliseFirstLetter(component.ValidationLabel)} \"{answerString}\" already exists in our records"
                     });
                 }
 
@@ -397,31 +508,23 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 {
                     int length = answerString.Split(['\t', '\r', '\n', ' '], StringSplitOptions.RemoveEmptyEntries).Length;
 
-                    bool tooShort = validation.MinLength.HasValue && length < validation.MinLength.Value;
-                    bool tooLong = validation.MaxLength.HasValue && length > validation.MaxLength.Value;
-
-                    if (tooShort || tooLong)
+                    if (validation.MinLength.HasValue && length < validation.MinLength.Value)
                     {
-                        string unit = "words";
-                        string message;
-
-                        if (tooShort && (!validation.MaxLength.HasValue || validation.MaxLength == 0))
-                        {
-                            message = $"{StringHelper.CapitaliseFirstLetter(component.Label)} must be {validation.MinLength!.Value} {unit} or more";
-                        }
-                        else if (tooLong && (!validation.MinLength.HasValue || validation.MinLength == 0))
-                        {
-                            message = $"{StringHelper.CapitaliseFirstLetter(component.Label)} must be {validation.MaxLength!.Value} {unit} or fewer";
-                        }
-                        else
-                        {
-                            message = $"{StringHelper.CapitaliseFirstLetter(component.Label)} must be between {validation.MinLength!.Value} and {validation.MaxLength!.Value} {unit}";
-                        }
-
                         errors.Add(new ValidationErrorItem
                         {
                             PropertyName = component.Name,
-                            ErrorMessage = message
+                            ErrorMessage = $"{StringHelper.CapitaliseFirstLetter(component.ValidationLabel)} must be {validation.MinLength.Value} words or more"
+                        });
+
+                        continue;
+                    }
+
+                    if (validation.MaxLength.HasValue && length > validation.MaxLength.Value)
+                    {
+                        errors.Add(new ValidationErrorItem
+                        {
+                            PropertyName = component.Name,
+                            ErrorMessage = $"{StringHelper.CapitaliseFirstLetter(component.ValidationLabel)} must be {validation.MaxLength.Value} words or fewer"
                         });
 
                         continue;
@@ -437,8 +540,9 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
-                        ErrorMessage = $"Enter a valid {StringHelper.CapitaliseFirstLetter(component.Label)}"
+                        ErrorMessage = $"Enter a valid {StringHelper.CapitaliseFirstLetter(component.ValidationLabel)}"
                     });
+
                     continue;
                 }
             }
@@ -466,8 +570,9 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
-                        ErrorMessage = $"Select at least {validation.MinSelected.Value} option{(validation.MinSelected.Value > 1 ? "s" : "")} for {StringHelper.CapitaliseFirstLetter(component.Label)}"
+                        ErrorMessage = $"Select at least {validation.MinSelected.Value} option{(validation.MinSelected.Value > 1 ? "s" : "")} for {StringHelper.CapitaliseFirstLetter(component.ValidationLabel)}"
                     });
+
                     continue;
                 }
 
@@ -476,8 +581,9 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
-                        ErrorMessage = $"You can only select up to {validation.MaxSelected.Value} option{(validation.MaxSelected.Value > 1 ? "s" : "")} for {StringHelper.CapitaliseFirstLetter(component.Label)}"
+                        ErrorMessage = $"You can only select up to {validation.MaxSelected.Value} option{(validation.MaxSelected.Value > 1 ? "s" : "")} for {StringHelper.CapitaliseFirstLetter(component.ValidationLabel)}"
                     });
+
                     continue;
                 }
             }

@@ -135,7 +135,6 @@ public class PreEngagementControllerTests
 
         var validationResponse = new ValidationResponse
         {
-            Message = "Please correct the highlighted errors.",
             Errors = new List<ValidationErrorItem>
             {
                 new ValidationErrorItem { PropertyName = "key", ErrorMessage = "This field is required." }
