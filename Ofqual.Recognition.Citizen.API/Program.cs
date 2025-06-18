@@ -12,6 +12,10 @@ using Serilog.Events;
 using CorrelationId;
 using System.Data;
 using Serilog;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Identity.Web;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,6 +89,44 @@ builder.Services.AddCors(o => o.AddPolicy("CORS_POLICY", builder =>
         .AllowAnyHeader();
 }));
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(options =>
+    {
+        builder.Configuration.Bind("AzureAdB2C", options);
+        // Refer to https://learn.microsoft.com/en-us/entra/identity-platform/claims-validation for validation parameters
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            SaveSigninToken = true,
+            NameClaimType = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier" // This is the object id of the user
+        };
+        options.Events = new JwtBearerEvents()
+        {
+            OnTokenValidated = (context) =>
+            {
+                IEnumerable<Claim> oid = context.Principal.Claims.Where(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+                if (oid.Count() != 1)
+                {
+                    context.Fail("Invalid Token: No name identifier present");
+                }
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = (context) =>
+            {
+                Console.WriteLine($"[AUTH FAILED] {context.Exception.Message}");
+                if (context.Exception is SecurityTokenInvalidAudienceException)
+                    Console.WriteLine("[AUDIENCE ERROR] Check if the audience is correct.");
+                else if (context.Exception is SecurityTokenInvalidIssuerException)
+                    Console.WriteLine("[ISSUER ERROR] Check the token issuer.");
+                else if (context.Exception is SecurityTokenInvalidSignatureException)
+                    Console.WriteLine("[SIGNATURE ERROR] Token signature could not be validated.");
+                else if (context.Exception is SecurityTokenExpiredException)
+                    Console.WriteLine("[EXPIRED] The token is expired.");
+                return Task.CompletedTask;
+            }
+        };
+    },
+    options => { builder.Configuration.Bind("AzureAdB2C", options); });
+
 #endregion
 
 var app = builder.Build();
@@ -114,6 +156,7 @@ app.UseSerilogRequestLogging(opt =>
 });
 app.UseCors("CORS_POLICY");
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
