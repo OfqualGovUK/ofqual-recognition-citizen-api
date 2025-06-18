@@ -8,6 +8,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
 {
     private readonly IDbConnection _connection;
     private IDbTransaction _transaction;
+    public IUserInformationService _userInformationService;
 
     public ITaskRepository TaskRepository { get; private set; }
     public IApplicationRepository ApplicationRepository { get; private set; }
@@ -16,7 +17,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IApplicationAnswersRepository ApplicationAnswersRepository { get; private set; }
     public IAttachmentRepository AttachmentRepository { get; private set; }
 
-    public UnitOfWork(IDbConnection connection)
+    public UnitOfWork(IDbConnection connection, IUserInformationService userInformationService)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         if (_connection.State != ConnectionState.Open)
@@ -25,13 +26,15 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         }
 
         _transaction = _connection.BeginTransaction();
+        _userInformationService = userInformationService;
         InitialiseRepositories();
+        
     }
 
     private void InitialiseRepositories()
     {
         TaskRepository = new TaskRepository(_connection, _transaction);
-        ApplicationRepository = new ApplicationRepository(_connection, _transaction);
+        ApplicationRepository = new ApplicationRepository(_connection, _transaction, _userInformationService);
         QuestionRepository = new QuestionRepository(_connection, _transaction);
         StageRepository = new StageRepository(_connection, _transaction);
         ApplicationAnswersRepository = new ApplicationAnswersRepository(_connection, _transaction);

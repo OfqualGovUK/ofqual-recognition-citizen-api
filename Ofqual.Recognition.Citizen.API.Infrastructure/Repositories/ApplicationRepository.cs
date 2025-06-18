@@ -10,15 +10,21 @@ public class ApplicationRepository : IApplicationRepository
 {
     private readonly IDbConnection _connection;
     private readonly IDbTransaction _transaction;
+    public IUserInformationService _userInformationService;
 
-    public ApplicationRepository(IDbConnection connection, IDbTransaction transaction)
+    public ApplicationRepository(IDbConnection connection, IDbTransaction transaction, IUserInformationService userInformationService)
     {
         _connection = connection;
         _transaction = transaction;
+        _userInformationService = userInformationService;
     }
 
     public async Task<Application?> CreateApplication()
     {
+        string oid = _userInformationService.GetCurrentUserObjectId();
+        string displayName = _userInformationService.GetCurrentUserDisplayName();
+        string upn = _userInformationService.GetCurrentUserUpn();
+
         try
         {
             const string query = @"
@@ -34,8 +40,8 @@ public class ApplicationRepository : IApplicationRepository
 
             return await _connection.QuerySingleAsync<Application>(query, new
             {
-                CreatedByUpn = "USER", // TODO: replace once auth gets added
-                ModifiedByUpn = "USER" // TODO: replace once auth gets added
+                CreatedByUpn = upn, // TODO: replace once auth gets added
+                ModifiedByUpn = upn // TODO: replace once auth gets added
             }, _transaction);
         }
         catch (Exception ex)
