@@ -51,7 +51,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
         foreach (var question in taskQuestionAnswers)
         {
-            if (string.IsNullOrWhiteSpace(question.Answer) || string.IsNullOrWhiteSpace(question.QuestionContent))
+            if (string.IsNullOrWhiteSpace(question.QuestionContent))
             {
                 continue;
             }
@@ -63,11 +63,6 @@ public class ApplicationAnswersService : IApplicationAnswersService
             }
 
             var answerValues = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(question.Answer, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            if (answerValues == null)
-            {
-                continue;
-            }
-
             var formGroup = questionContent.FormGroup;
 
             // Text inputs
@@ -240,6 +235,11 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
+                if (!sortedFileNames.Any())
+                {
+                    sortedFileNames.Add("Not provided");
+                }
+
                 var section = new QuestionAnswerSectionDto
                 {
                     SectionHeading = formGroup.FileUpload.SectionName
@@ -259,9 +259,9 @@ public class ApplicationAnswersService : IApplicationAnswersService
         return sections;
     }
 
-    private static List<string> ExtractAnswer(Dictionary<string, JsonElement> answers, string key)
+    private static List<string> ExtractAnswer(Dictionary<string, JsonElement>? answers, string key)
     {
-        if (!answers.TryGetValue(key, out var token))
+        if (answers == null || !answers.TryGetValue(key, out var token))
         {
             return new List<string> { "Not provided" };
         }
