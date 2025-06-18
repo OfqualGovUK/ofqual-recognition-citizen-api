@@ -4,8 +4,8 @@
 trigger:
   branches:
    include:
-     - refs/heads/main
-     - refs/heads/releases/*
+     - main
+     - releases/*
 
 resources:
 - repo: self
