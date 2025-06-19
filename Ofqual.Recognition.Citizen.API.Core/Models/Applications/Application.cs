@@ -8,6 +8,8 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 public class Application : IApplication, IDataMetadata
 {
     public Guid ApplicationId { get; set; }
+
+    public Guid OwnerUserId { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime ModifiedDate { get; set; }
     public required string CreatedByUpn  { get; set; }

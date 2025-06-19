@@ -25,7 +25,7 @@ public class ApplicationRepository : IApplicationRepository
         string displayName = _userInformationService.GetCurrentUserDisplayName();
         string upn = _userInformationService.GetCurrentUserUpn();
 
-        User? user = await CreateUser(oid, displayName, upn);
+        User user = await CreateUser(oid, displayName, upn);
 
         try
         {
@@ -51,18 +51,17 @@ public class ApplicationRepository : IApplicationRepository
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error creating a new application");
+            Log.Error(ex, "Exception raised when trying to create an application in ApplicationRepository::CreateApplication");
             return null;
         }
     }
 
-    private async Task<User?> CreateUser(string oid, string displayName, string emailAddress)
+    private async Task<User> CreateUser(string oid, string displayName, string emailAddress)
     {
         try
         {
             const string query = @"
                 INSERT INTO [recognitionCitizen].[RecognitionCitizenUser] (
-                    UserId,
                     B2CId,
                     EmailAddress,
                     DisplayName,
@@ -71,7 +70,6 @@ public class ApplicationRepository : IApplicationRepository
                 ) 
                 OUTPUT INSERTED.* 
                 VALUES (
-                    @UserId,
                     @B2CId,
                     @EmailAddress,
                     @DisplayName,
@@ -81,7 +79,6 @@ public class ApplicationRepository : IApplicationRepository
 
             return await _connection.QuerySingleAsync<User>(query, new
             {
-                UserId = Guid.NewGuid(), // TEMPORARY: IF IN REVIEW DO NOT ACCEPT
                 B2CId = oid,
                 EmailAddress = emailAddress,
                 DisplayName = displayName,
@@ -91,8 +88,8 @@ public class ApplicationRepository : IApplicationRepository
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error creating a new user");
-            return null;
+            Log.Error(ex, "Exception raised when trying to create a user in ApplicationRepository::CreateUser");
+            throw;
         }
     }
 }
