@@ -2,16 +2,19 @@ using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Xunit;
+using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 
 public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
 {
     private readonly SqlTestFixture _fixture;
+    private readonly Mock<IUserInformationService> _mockUserInformationService;
 
     public AttachmentRepositoryTests(SqlTestFixture fixture)
     {
         _fixture = fixture;
+        _mockUserInformationService = new Mock<IUserInformationService>();
     }
 
     [Fact]
@@ -20,7 +23,7 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Act
         var attachment = await unitOfWork.AttachmentRepository.CreateAttachment("file.pdf", "application/pdf", 12345);
@@ -41,7 +44,7 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -67,7 +70,7 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -94,7 +97,7 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -125,7 +128,7 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -154,7 +157,7 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -177,7 +180,7 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Arrange
         var applicationId = Guid.NewGuid();

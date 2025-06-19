@@ -4,16 +4,19 @@ using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Xunit;
+using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 
 public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
 {
     private readonly SqlTestFixture _fixture;
+    private readonly Mock<IUserInformationService> _mockUserInformationService;
 
     public TaskRepositoryTests(SqlTestFixture fixture)
     {
         _fixture = fixture;
+        _mockUserInformationService = new Mock<IUserInformationService>();
     }
 
     [Fact]
@@ -22,7 +25,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
@@ -71,7 +74,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
@@ -164,7 +167,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
@@ -295,7 +298,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
@@ -385,7 +388,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
