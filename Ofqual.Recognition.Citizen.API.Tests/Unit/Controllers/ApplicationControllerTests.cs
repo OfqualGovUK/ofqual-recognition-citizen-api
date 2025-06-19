@@ -371,7 +371,7 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task SubmitQuestionAnswer_ReturnsBadRequest_WhenValidationFails()
+    public async Task SubmitQuestionAnswer_ReturnsBadRequest_WhenValidationErrorsExist()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -381,7 +381,6 @@ public class ApplicationControllerTests
 
         var validationResponse = new ValidationResponse
         {
-            Message = "Validation failed.",
             Errors = new List<ValidationErrorItem>
             {
                 new ValidationErrorItem { PropertyName = "Answer", ErrorMessage = "This field is required." }
@@ -514,7 +513,7 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
-        
+
         var expectedReviewAnswers = new List<QuestionAnswerSectionDto>
         {
             new QuestionAnswerSectionDto
@@ -534,7 +533,7 @@ public class ApplicationControllerTests
         _mockApplicationAnswersService
             .Setup(service => service.GetTaskAnswerReview(applicationId, taskId))
             .ReturnsAsync(expectedReviewAnswers);
-        
+
         // Act
         var result = await _controller.GetTaskAnswerReview(applicationId, taskId);
 
@@ -563,7 +562,7 @@ public class ApplicationControllerTests
         _mockApplicationAnswersService
             .Setup(service => service.GetTaskAnswerReview(applicationId, taskId))
             .ReturnsAsync(new List<QuestionAnswerSectionDto>());
-        
+
         // Act
         var result = await _controller.GetTaskAnswerReview(applicationId, taskId);
 

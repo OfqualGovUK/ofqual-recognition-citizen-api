@@ -5,19 +5,24 @@ namespace Ofqual.Recognition.API.Models.JSON.Questions;
 public class TextInputItem : IValidatable
 {
     /// <summary>
-    /// The label shown above the input field.
+    /// The label displayed above the input field.
     /// </summary>
-    public string? Label { get; set; }
+    public required string Label { get; set; }
+
+    /// <summary>
+    /// The label used in validation messages.
+    /// </summary>
+    public string ValidationLabel => Label;
     
     /// <summary>
-    /// Hint text shown below the label to guide the user.
+    /// Hint text displayed below the label.
     /// </summary>
     public string? Hint { get; set; }
 
     /// <summary>
-    /// The name and id attribute for the input field.
+    /// The name of the field.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
     /// <summary>
     /// Whether the input is disabled.
@@ -25,12 +30,12 @@ public class TextInputItem : IValidatable
     public bool Disabled { get; set; } = false;
 
     /// <summary>
-    /// The input type, such as text, number or email.
+    /// The input type, e.g. text, number, or email.
     /// </summary>
     public string InputType { get; set; } = "text";
 
     /// <summary>
-    /// Validation rules applied to the text input.
+    /// Validation rules applied to the input field.
     /// </summary>
     public ValidationRule? Validation { get; set; }
 }

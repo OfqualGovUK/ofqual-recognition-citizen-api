@@ -2,6 +2,8 @@ using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web.Resource;
 using Serilog;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
@@ -11,6 +13,9 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("tasks")]
+[Route("questions")]
+[Authorize]
+[RequiredScope("Applications.ReadWrite")]
 public class TaskController : ControllerBase
 {
     private readonly IUnitOfWork _context;

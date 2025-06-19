@@ -2,13 +2,17 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
 
 namespace Ofqual.Recognition.API.Models.JSON.Questions;
 
-public class CheckBox : IValidatable
+public class CheckBoxGroup : IValidatable
 {
     /// <summary>
     /// The heading shown above the checkboxes.
     /// </summary>
-    public TextWithSize? Heading { get; set; }
-    public string Label => Heading?.Text ?? "CheckBox";
+    public required TextWithSize Heading { get; set; }
+
+    /// <summary>
+    /// The label used in validation messages.
+    /// </summary>
+    public string ValidationLabel => Heading.Text;
 
     /// <summary>
     /// Hint text shown below the heading.
@@ -21,6 +25,11 @@ public class CheckBox : IValidatable
     public required string Name { get; set; }
 
     /// <summary>
+    /// A list of selectable checkbox options.
+    /// </summary>
+    public required List<CheckBoxItem> Options { get; set; }
+
+    /// <summary>
     /// The display name for the section shown on the review page.
     /// </summary>
     public string? SectionName { get; set; }
@@ -29,9 +38,4 @@ public class CheckBox : IValidatable
     /// Validation rules applied to the checkbox group.
     /// </summary>
     public ValidationRule? Validation { get; set; }
-
-    /// <summary>
-    /// A list of individual checkbox items to render.
-    /// </summary>
-    public required List<CheckBoxItem> CheckBoxes { get; set; }
 }

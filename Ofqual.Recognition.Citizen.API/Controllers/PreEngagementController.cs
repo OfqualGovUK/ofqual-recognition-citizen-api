@@ -86,8 +86,13 @@ public class PreEngagementController : Controller
     {
         try
         {
-            ValidationResponse validationResult = await _applicationAnswersService.ValidateQuestionAnswers(questionId, request.Answer);
-            if (!string.IsNullOrEmpty(validationResult.Message) || (validationResult.Errors != null && validationResult.Errors.Any()))
+            ValidationResponse? validationResult = await _applicationAnswersService.ValidateQuestionAnswers(questionId, request.Answer);
+            if (validationResult == null)
+            {
+                return BadRequest("We could not check your answer. Please try again.");
+            }
+
+            if (validationResult.Errors != null && validationResult.Errors.Any())
             {
                 return BadRequest(validationResult);
             }
