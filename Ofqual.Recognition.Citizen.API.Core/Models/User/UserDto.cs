@@ -8,7 +8,7 @@ public class UserDto
 {
     public Guid UserId { get; set; }
     public Guid B2CId { get; set; }
-    public Guid EmailAddress { get; set; }
+    public string EmailAddress { get; set; }
     public string DisplayName { get; set; }
 
 }
