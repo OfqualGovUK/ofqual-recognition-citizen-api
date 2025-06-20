@@ -21,14 +21,14 @@ public class ApplicationRepository : IApplicationRepository
 
     public async Task<Application?> CreateApplication()
     {
-        string oid = _userInformationService.GetCurrentUserObjectId();
-        string displayName = _userInformationService.GetCurrentUserDisplayName();
-        string upn = _userInformationService.GetCurrentUserUpn();
-
-        User user = await CreateUser(oid, displayName, upn);
-
         try
         {
+            string oid = _userInformationService.GetCurrentUserObjectId();
+            string displayName = _userInformationService.GetCurrentUserDisplayName();
+            string upn = _userInformationService.GetCurrentUserUpn();
+
+            User user = await CreateUser(oid, displayName, upn);
+
             const string query = @"
                 INSERT INTO [recognitionCitizen].[Application] (
                     OwnerUserId,

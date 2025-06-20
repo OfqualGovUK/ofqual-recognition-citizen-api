@@ -26,7 +26,7 @@ public class ApplicationRepositoryTests : IClassFixture<SqlTestFixture>
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task CreateApplication_ShouldCreateApplicationWithUser()
+    public async Task CreateApplication_WhenAuthorizedCorrectly__ShouldCreateApplicationWithUser()
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
