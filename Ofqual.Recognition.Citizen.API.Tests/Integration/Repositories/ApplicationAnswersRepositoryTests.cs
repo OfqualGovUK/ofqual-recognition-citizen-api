@@ -4,6 +4,7 @@ using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using System.Text.Json;
 using Xunit;
+using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 

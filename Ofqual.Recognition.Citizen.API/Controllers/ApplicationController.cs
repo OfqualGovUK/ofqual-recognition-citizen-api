@@ -23,16 +23,18 @@ public class ApplicationController : ControllerBase
     private readonly ITaskStatusService _taskStatusService;
     private readonly IStageService _stageService;
     private readonly IApplicationAnswersService _applicationAnswersService;
+    private readonly IUserInformationService _userInformationService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ApplicationController"/>.
     /// </summary>
-    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService, IStageService stageService)
+    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService, IStageService stageService, IUserInformationService userInformationService)
     {
         _context = context;
         _taskStatusService = taskStatusService;
         _applicationAnswersService = applicationAnswersService;
         _stageService = stageService;
+        _userInformationService = userInformationService;
     }
 
     /// <summary>
@@ -44,7 +46,11 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            Application? application = await _context.ApplicationRepository.CreateApplication();
+            string oid = _userInformationService.GetCurrentUserObjectId();
+            string displayName = _userInformationService.GetCurrentUserDisplayName();
+            string upn = _userInformationService.GetCurrentUserUpn();
+
+            Application? application = await _context.ApplicationRepository.CreateApplication(oid, displayName, upn);
             if (application == null)
             {
                 return BadRequest("Application could not be created.");

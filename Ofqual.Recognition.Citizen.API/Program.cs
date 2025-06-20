@@ -58,11 +58,14 @@ builder.Services.AddScoped<IDbConnection>(sp =>
     new SqlConnection(builder.Configuration.GetConnectionString("OfqualODS"))
 );
 
+builder.Services.AddHttpContextAccessor();
+
 // Register application services
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ITaskStatusService, TaskStatusService>();
 builder.Services.AddScoped<IApplicationAnswersService, ApplicationAnswersService>();
 builder.Services.AddScoped<IStageService, StageService>();
+builder.Services.AddTransient<IUserInformationService, UserInformationService>();
 
 // Register AntiVirus service
 builder.Services.Configure<AntiVirusConfiguration>(builder.Configuration.GetSection("AntiVirus"));
