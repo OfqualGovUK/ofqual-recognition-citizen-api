@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Xunit;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
+namespace Ofqual.Recognition.Citizen.Tests.Unit.Services;
 
 public class UserInformationServiceTests
 {
