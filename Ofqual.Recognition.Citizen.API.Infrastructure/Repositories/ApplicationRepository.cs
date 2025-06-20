@@ -10,23 +10,17 @@ public class ApplicationRepository : IApplicationRepository
 {
     private readonly IDbConnection _connection;
     private readonly IDbTransaction _transaction;
-    public IUserInformationService _userInformationService;
 
-    public ApplicationRepository(IDbConnection connection, IDbTransaction transaction, IUserInformationService userInformationService)
+    public ApplicationRepository(IDbConnection connection, IDbTransaction transaction)
     {
         _connection = connection;
         _transaction = transaction;
-        _userInformationService = userInformationService;
     }
 
-    public async Task<Application?> CreateApplication()
+    public async Task<Application?> CreateApplication(string oid, string displayName, string upn)
     {
         try
         {
-            string oid = _userInformationService.GetCurrentUserObjectId();
-            string displayName = _userInformationService.GetCurrentUserDisplayName();
-            string upn = _userInformationService.GetCurrentUserUpn();
-
             User user = await CreateUser(oid, displayName, upn);
 
             const string query = @"

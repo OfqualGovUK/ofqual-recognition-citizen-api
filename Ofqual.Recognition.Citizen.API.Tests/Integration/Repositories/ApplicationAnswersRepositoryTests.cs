@@ -11,12 +11,10 @@ namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
 {
     private readonly SqlTestFixture _fixture;
-    private readonly Mock<IUserInformationService> _mockUserInformationService;
 
     public ApplicationAnswersRepositoryTests(SqlTestFixture fixture)
     {
         _fixture = fixture;
-        _mockUserInformationService = new Mock<IUserInformationService>();
     }
 
     [Fact]
@@ -25,7 +23,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
+        using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
@@ -133,7 +131,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
+        using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
@@ -227,7 +225,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
+        using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
@@ -319,7 +317,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
+        using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
@@ -405,7 +403,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
+        using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
@@ -483,7 +481,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
+        using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
@@ -563,7 +561,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection, _mockUserInformationService.Object);
+        using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
