@@ -4,6 +4,8 @@ using Ofqual.Recognition.Citizen.API.Core.Helpers;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
@@ -11,6 +13,8 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 
 [ApiController]
 [Route("files")]
+[Authorize]
+[RequiredScope("Applications.ReadWrite")]
 public class FileController : ControllerBase
 {
     private readonly IUnitOfWork _context;

@@ -3,10 +3,10 @@ using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
-using Microsoft.AspNetCore.Mvc;
-using Serilog;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
+using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -163,8 +163,13 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            ValidationResponse validationResult = await _applicationAnswersService.ValidateQuestionAnswers(questionId, request.Answer);
-            if (!string.IsNullOrEmpty(validationResult.Message) || (validationResult.Errors != null && validationResult.Errors.Any()))
+            ValidationResponse? validationResult = await _applicationAnswersService.ValidateQuestionAnswers(questionId, request.Answer);
+            if (validationResult == null)
+            {
+                return BadRequest("We could not check your answer. Please try again.");
+            }
+
+            if (validationResult.Errors != null && validationResult.Errors.Any())
             {
                 return BadRequest(validationResult);
             }

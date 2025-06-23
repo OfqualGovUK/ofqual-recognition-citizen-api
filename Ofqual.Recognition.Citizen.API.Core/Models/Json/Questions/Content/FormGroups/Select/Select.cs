@@ -5,9 +5,14 @@ namespace Ofqual.Recognition.API.Models.JSON.Questions;
 public class Select : IValidatable
 {
     /// <summary>
-    /// The label shown above the select dropdown.
+    /// The text label displayed above the select dropdown.
     /// </summary>
-    public string Label { get; set; } = "Item";
+    public required string Label { get; set; }
+
+    /// <summary>
+    /// The label used in validation messages.
+    /// </summary>
+    public string ValidationLabel => Label;
 
     /// <summary>
     /// Hint text shown below the label.
@@ -15,17 +20,17 @@ public class Select : IValidatable
     public string? Hint { get; set; }
 
     /// <summary>
-    /// The name and id attribute for the select element.
+    /// The field name for the select element.
     /// </summary>
     public required string Name { get; set; }
 
     /// <summary>
-    /// Whether the select element is disabled.
+    /// Indicates whether the select dropdown is disabled.
     /// </summary>
     public bool Disabled { get; set; } = false;
 
     /// <summary>
-    /// A list of selectable options.
+    /// The list of options shown in the dropdown.
     /// </summary>
     public required List<SelectOption> Options { get; set; }
 

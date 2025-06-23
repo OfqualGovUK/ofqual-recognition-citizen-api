@@ -3,6 +3,7 @@ using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.API.Models.JSON.Questions;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 using System.Text.Json;
 using Xunit;
 using Moq;
@@ -14,6 +15,7 @@ public class ApplicationAnswersServiceTests
     private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly Mock<IQuestionRepository> _mockQuestionRepository;
     private readonly Mock<IApplicationAnswersRepository> _mockApplicationAnswersRepository;
+    private readonly Mock<IAttachmentRepository> _mockAttachmentRepository;
     private readonly ApplicationAnswersService _applicationAnswersService;
 
     public ApplicationAnswersServiceTests()
@@ -25,6 +27,9 @@ public class ApplicationAnswersServiceTests
 
         _mockApplicationAnswersRepository = new Mock<IApplicationAnswersRepository>();
         _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository).Returns(_mockApplicationAnswersRepository.Object);
+
+        _mockAttachmentRepository = new Mock<IAttachmentRepository>();
+        _mockUnitOfWork.Setup(u => u.AttachmentRepository).Returns(_mockAttachmentRepository.Object);
 
         _applicationAnswersService = new ApplicationAnswersService(_mockUnitOfWork.Object);
     }
@@ -46,9 +51,9 @@ public class ApplicationAnswersServiceTests
             {
                 FormGroup = new FormGroup
                 {
-                    TextInput = new TextInput
+                    TextInputGroup = new TextInputGroup
                     {
-                        TextInputs = new List<TextInputItem>
+                        Fields = new List<TextInputItem>
                         {
                             new TextInputItem
                             {
@@ -61,7 +66,7 @@ public class ApplicationAnswersServiceTests
                 }
             }),
             CurrentQuestionNameUrl = "question-url",
-            QuestionTypeName = "TextInput",
+            QuestionTypeName = "TextInputGroup",
             TaskNameUrl = "task-url"
         };
 
@@ -77,11 +82,11 @@ public class ApplicationAnswersServiceTests
         _mockQuestionRepository
             .Setup(repo => repo.GetQuestionByQuestionId(questionId))
             .ReturnsAsync(questionDetails);
-        
+
         _mockApplicationAnswersRepository
             .Setup(repo => repo.UpsertQuestionAnswer(applicationId, questionId, answerJson))
             .ReturnsAsync(true);
-        
+
         // Act
         var result = await _applicationAnswersService.SavePreEngagementAnswers(applicationId, preEngagementAnswers);
 
@@ -106,9 +111,9 @@ public class ApplicationAnswersServiceTests
             {
                 FormGroup = new FormGroup
                 {
-                    TextInput = new TextInput
+                    TextInputGroup = new TextInputGroup
                     {
-                        TextInputs = new List<TextInputItem>
+                        Fields = new List<TextInputItem>
                         {
                             new TextInputItem
                             {
@@ -121,7 +126,7 @@ public class ApplicationAnswersServiceTests
                 }
             }),
             CurrentQuestionNameUrl = "question-url",
-            QuestionTypeName = "TextInput",
+            QuestionTypeName = "TextInputGroup",
             TaskNameUrl = "task-url"
         };
 
@@ -137,15 +142,15 @@ public class ApplicationAnswersServiceTests
         _mockQuestionRepository
             .Setup(repo => repo.GetQuestionByQuestionId(questionId))
             .ReturnsAsync(questionDetails);
-        
+
         // Act
         var result = await _applicationAnswersService.SavePreEngagementAnswers(applicationId, preEngagementAnswers);
 
         // Assert
         Assert.False(result);
     }
-    [Fact]
 
+    [Fact]
     [Trait("Category", "Unit")]
     public async Task SavePreEngagementAnswers_ShouldReturnFalse_WhenUpsertFails()
     {
@@ -162,9 +167,9 @@ public class ApplicationAnswersServiceTests
             {
                 FormGroup = new FormGroup
                 {
-                    TextInput = new TextInput
+                    TextInputGroup = new TextInputGroup
                     {
-                        TextInputs = new List<TextInputItem>
+                        Fields = new List<TextInputItem>
                         {
                             new TextInputItem
                             {
@@ -177,7 +182,7 @@ public class ApplicationAnswersServiceTests
                 }
             }),
             CurrentQuestionNameUrl = "question-url",
-            QuestionTypeName = "TextInput",
+            QuestionTypeName = "TextInputGroup",
             TaskNameUrl = "task-url"
         };
 
@@ -193,11 +198,11 @@ public class ApplicationAnswersServiceTests
         _mockQuestionRepository
             .Setup(repo => repo.GetQuestionByQuestionId(questionId))
             .ReturnsAsync(questionDetails);
-        
+
         _mockApplicationAnswersRepository
             .Setup(repo => repo.UpsertQuestionAnswer(applicationId, questionId, answerJson))
             .ReturnsAsync(false);
-        
+
         // Act
         var result = await _applicationAnswersService.SavePreEngagementAnswers(applicationId, preEngagementAnswers);
 
@@ -214,6 +219,12 @@ public class ApplicationAnswersServiceTests
         var taskId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
 
+        var attachments = new List<Attachment>
+        {
+            new Attachment { FileName = "Zeta.pdf", FileMIMEtype = "application/pdf", CreatedByUpn = "user1", ModifiedByUpn = "user1" },
+            new Attachment { FileName = "Alpha.pdf", FileMIMEtype = "application/pdf", CreatedByUpn = "user2", ModifiedByUpn = "user2" }
+        };
+
         var taskQuestionAnswers = new List<TaskQuestionAnswer>
         {
             new TaskQuestionAnswer
@@ -229,10 +240,10 @@ public class ApplicationAnswersServiceTests
                 {
                     FormGroup = new FormGroup
                     {
-                        TextInput = new TextInput
+                        TextInputGroup = new TextInputGroup
                         {
                             SectionName = "Personal Details",
-                            TextInputs = new List<TextInputItem>
+                            Fields = new List<TextInputItem>
                             {
                                 new TextInputItem { Name = "txtName", Label = "Your name" }
                             }
@@ -243,23 +254,23 @@ public class ApplicationAnswersServiceTests
                             Name = "txtArea1",
                             Label = new TextWithSize { Text = "Tell us about your experience" }
                         },
-                        RadioButton = new RadioButton
+                        RadioButtonGroup = new RadioButtonGroup
                         {
                             SectionName = "Role",
                             Name = "radio1",
                             Heading = new TextWithSize { Text = "Select your role" },
-                            Radios = new List<RadioButtonItem>
+                            Options = new List<RadioButtonItem>
                             {
                                 new RadioButtonItem { Label = "Teacher", Value = "Teacher" },
                                 new RadioButtonItem { Label = "Examiner", Value = "Examiner" }
                             }
                         },
-                        CheckBox = new CheckBox
+                        CheckboxGroup = new CheckBoxGroup
                         {
                             SectionName = "Involvement",
                             Name = "checks",
                             Heading = new TextWithSize { Text = "Select areas of involvement" },
-                            CheckBoxes = new List<CheckBoxItem>
+                            Options = new List<CheckBoxItem>
                             {
                                 new CheckBoxItem
                                 {
@@ -280,6 +291,12 @@ public class ApplicationAnswersServiceTests
                                     Value = "assessment"
                                 }
                             }
+                        },
+                        FileUpload = new FileUpload
+                        {
+                            SectionName = "Supporting Documents",
+                            Label = new TextWithSize { Text = "Upload your documents" },
+                            Name = "uploads"
                         }
                     }
                 }),
@@ -298,46 +315,39 @@ public class ApplicationAnswersServiceTests
             .Setup(x => x.GetTaskQuestionAnswers(applicationId, taskId))
             .ReturnsAsync(taskQuestionAnswers);
 
+        _mockAttachmentRepository
+            .Setup(x => x.GetAllAttachmentsForLink(applicationId, questionId, LinkType.Question))
+            .ReturnsAsync(attachments);
+
         // Act
         var result = await _applicationAnswersService.GetTaskAnswerReview(applicationId, taskId);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(4, result.Count);
+        Assert.Equal(5, result.Count);
 
-        var personalDetails = result.FirstOrDefault(s => s.SectionHeading == "Personal Details");
-        Assert.NotNull(personalDetails);
-        Assert.Equal("Your name", personalDetails!.QuestionAnswers[0].QuestionText);
-        Assert.Equal("Ofqual User", personalDetails.QuestionAnswers[0].AnswerValue!.First());
+        var fileSection = result.FirstOrDefault(s => s.SectionHeading == "Supporting Documents");
+        Assert.NotNull(fileSection);
 
-        var experience = result.FirstOrDefault(s => s.SectionHeading == "Experience");
-        Assert.NotNull(experience);
-        Assert.Equal("Tell us about your experience", experience!.QuestionAnswers[0].QuestionText);
-        Assert.Equal("Experience with qualification reviews", experience.QuestionAnswers[0].AnswerValue!.First());
+        var fileAnswer = fileSection!.QuestionAnswers.FirstOrDefault();
+        Assert.NotNull(fileAnswer);
+        Assert.Equal("Files you uploaded", fileAnswer!.QuestionText);
 
-        var role = result.FirstOrDefault(s => s.SectionHeading == "Role");
-        Assert.NotNull(role);
-        Assert.Equal("Select your role", role!.QuestionAnswers[0].QuestionText);
-        Assert.Equal("Examiner", role.QuestionAnswers[0].AnswerValue!.First());
-
-        var involvement = result.FirstOrDefault(s => s.SectionHeading == "Involvement");
-        Assert.NotNull(involvement);
-        Assert.Equal("Select areas of involvement", involvement!.QuestionAnswers[0].QuestionText);
-        Assert.Equal("moderation", involvement.QuestionAnswers[0].AnswerValue!.First());
-
-        var conditional = involvement.QuestionAnswers.FirstOrDefault(q => q.QuestionText == "Details of moderation role");
-        Assert.NotNull(conditional);
-        Assert.Equal("I lead standardisation", conditional!.AnswerValue!.First());
+        var fileNames = fileAnswer.AnswerValue!;
+        Assert.Equal(2, fileNames.Count);
+        Assert.Equal("Alpha.pdf", fileNames[0]);
+        Assert.Equal("Zeta.pdf", fileNames[1]);
     }
 
     [Theory]
     [InlineData(null)] // Question not found
     [InlineData("{}")] // Question found but formGroup is missing
     [Trait("Category", "Unit")]
-    public async Task ValidateQuestionAnswers_ShouldReturnGenericError_WhenQuestionInvalid(string? questionContentJson)
+    public async Task ValidateQuestionAnswers_ShouldReturnNull_WhenQuestionIsInvalid(string? questionContentJson)
     {
         // Arrange
         var questionId = Guid.NewGuid();
+
         _mockQuestionRepository
             .Setup(q => q.GetQuestionByQuestionId(questionId))
             .ReturnsAsync(questionContentJson == null
@@ -356,8 +366,7 @@ public class ApplicationAnswersServiceTests
         var result = await _applicationAnswersService.ValidateQuestionAnswers(questionId, "{}");
 
         // Assert
-        Assert.False(string.IsNullOrWhiteSpace(result.Message));
-        Assert.Null(result.Errors);
+        Assert.Null(result);
     }
 
     [Fact]
@@ -370,9 +379,9 @@ public class ApplicationAnswersServiceTests
         {
             FormGroup = new FormGroup
             {
-                TextInput = new TextInput
+                TextInputGroup = new TextInputGroup
                 {
-                    TextInputs = new List<TextInputItem>
+                    Fields = new List<TextInputItem>
                     {
                         new TextInputItem
                         {
@@ -393,7 +402,7 @@ public class ApplicationAnswersServiceTests
                 TaskId = Guid.NewGuid(),
                 QuestionContent = JsonSerializer.Serialize(questionContent),
                 CurrentQuestionNameUrl = "test-question",
-                QuestionTypeName = "TextInput",
+                QuestionTypeName = "TextInputGroup",
                 TaskNameUrl = "test-task"
             });
 
@@ -416,9 +425,9 @@ public class ApplicationAnswersServiceTests
         {
             FormGroup = new FormGroup
             {
-                TextInput = new TextInput
+                TextInputGroup = new TextInputGroup
                 {
-                    TextInputs = new List<TextInputItem>
+                    Fields = new List<TextInputItem>
                     {
                         new TextInputItem
                         {
@@ -444,7 +453,7 @@ public class ApplicationAnswersServiceTests
                 TaskId = Guid.NewGuid(),
                 QuestionContent = JsonSerializer.Serialize(questionContent),
                 CurrentQuestionNameUrl = "test-question",
-                QuestionTypeName = "TextInput",
+                QuestionTypeName = "TextInputGroup",
                 TaskNameUrl = "test-task"
             });
 
@@ -465,18 +474,18 @@ public class ApplicationAnswersServiceTests
         {
             FormGroup = new FormGroup
             {
-                TextInput = new TextInput
+                TextInputGroup = new TextInputGroup
                 {
                     SectionName = "Details",
-                    TextInputs = new List<TextInputItem>
-                {
-                    new()
+                    Fields = new List<TextInputItem>
                     {
-                        Name = "field",
-                        Label = "Your name",
-                        Validation = new ValidationRule { Unique = true }
+                        new()
+                        {
+                            Name = "field",
+                            Label = "Your name",
+                            Validation = new ValidationRule { Unique = true }
+                        }
                     }
-                }
                 }
             }
         });
@@ -490,7 +499,7 @@ public class ApplicationAnswersServiceTests
                 QuestionContent = questionContent,
                 TaskId = Guid.NewGuid(),
                 CurrentQuestionNameUrl = "q1",
-                QuestionTypeName = "TextBox",
+                QuestionTypeName = "TextInputGroup",
                 TaskNameUrl = "task"
             });
 
@@ -559,18 +568,17 @@ public class ApplicationAnswersServiceTests
         {
             FormGroup = new FormGroup
             {
-                TextInput = new TextInput
+                TextInputGroup = new TextInputGroup
                 {
-                    SectionName = "Code",
-                    TextInputs = new List<TextInputItem>
-                {
-                    new()
+                    Fields = new List<TextInputItem>
                     {
-                        Name = "code",
-                        Label = "Reference Code",
-                        Validation = new ValidationRule { Pattern = "^[A-Z]{3}$" }
+                        new()
+                        {
+                            Name = "code",
+                            Label = "Reference code",
+                            Validation = new ValidationRule { Pattern = "^[A-Z]{3}$" }
+                        }
                     }
-                }
                 }
             }
         });
@@ -584,7 +592,7 @@ public class ApplicationAnswersServiceTests
                 QuestionContent = questionContent,
                 TaskId = Guid.NewGuid(),
                 CurrentQuestionNameUrl = "q1",
-                QuestionTypeName = "TextBox",
+                QuestionTypeName = "TextInputGroup",
                 TaskNameUrl = "task"
             });
 
@@ -602,12 +610,12 @@ public class ApplicationAnswersServiceTests
     {
         // Arrange
         var questionId = Guid.NewGuid();
-        var checkBox = new CheckBox
+        var checkboxGroup = new CheckBoxGroup
         {
             Name = "activities",
             Heading = new TextWithSize { Text = "Activities" },
             Validation = new ValidationRule { MinSelected = 2 },
-            CheckBoxes = new List<CheckBoxItem>
+            Options = new List<CheckBoxItem>
             {
                 new() { Label = "A", Value = "A" },
                 new() { Label = "B", Value = "B" },
@@ -617,7 +625,7 @@ public class ApplicationAnswersServiceTests
 
         var questionContent = JsonSerializer.Serialize(new QuestionContent
         {
-            FormGroup = new FormGroup { CheckBox = checkBox }
+            FormGroup = new FormGroup { CheckboxGroup = checkboxGroup }
         });
 
         var answerJson = JsonSerializer.Serialize(new { activities = new[] { "A" } });
@@ -629,7 +637,7 @@ public class ApplicationAnswersServiceTests
                 QuestionContent = questionContent,
                 TaskId = Guid.NewGuid(),
                 CurrentQuestionNameUrl = "q1",
-                QuestionTypeName = "Checkbox",
+                QuestionTypeName = "CheckboxGroup",
                 TaskNameUrl = "task"
             });
 
@@ -654,14 +662,15 @@ public class ApplicationAnswersServiceTests
             Validation = new ValidationRule { Required = true }
         };
 
-        var checkBox = new CheckBox
+        var checkboxGroup = new CheckBoxGroup
         {
             Name = "roles",
             Heading = new TextWithSize { Text = "Select roles" },
-            CheckBoxes = new List<CheckBoxItem>
+            Options = new List<CheckBoxItem>
             {
                 new()
                 {
+                    Label = "Label test",
                     Value = "moderator",
                     ConditionalInputs = new List<TextInputItem> { conditionalField }
                 }
@@ -670,7 +679,7 @@ public class ApplicationAnswersServiceTests
 
         var questionContent = JsonSerializer.Serialize(new QuestionContent
         {
-            FormGroup = new FormGroup { CheckBox = checkBox }
+            FormGroup = new FormGroup { CheckboxGroup = checkboxGroup }
         });
 
         var answerJson = JsonSerializer.Serialize(new { roles = new[] { "other" } });
@@ -682,7 +691,7 @@ public class ApplicationAnswersServiceTests
                 QuestionContent = questionContent,
                 TaskId = Guid.NewGuid(),
                 CurrentQuestionNameUrl = "q1",
-                QuestionTypeName = "Checkbox",
+                QuestionTypeName = "CheckboxGroup",
                 TaskNameUrl = "task"
             });
 

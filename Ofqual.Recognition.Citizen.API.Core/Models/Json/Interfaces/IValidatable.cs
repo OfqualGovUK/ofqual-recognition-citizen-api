@@ -5,6 +5,6 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
 public interface IValidatable
 {
     public string Name { set; get; }
-    public string Label { get; }  
+    public string ValidationLabel { get; }  
     public ValidationRule? Validation { get; set; }
 }
