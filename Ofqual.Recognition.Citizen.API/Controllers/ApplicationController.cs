@@ -146,13 +146,6 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            bool canAccess = await _userInformationService.CheckUserCanModifyApplication(applicationId);
-
-            if (!canAccess)
-            {
-                return Forbid("User does not have permission to access this application");
-            }
-
             bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, request.Status);
             if (!isStatusUpdated)
             {

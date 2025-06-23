@@ -16,7 +16,7 @@ public class ApplicationRepositoryTests : IClassFixture<SqlTestFixture>
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task CreateApplication_WhenAuthorizedCorrectly__ShouldCreateApplicationWithUser()
+    public async Task CreateApplication__WhenAuthorizedCorrectly__ShouldCreateApplicationWithUser()
     {
         // Initialise test container and connection
         await using var connection = await _fixture.InitNewTestDatabaseContainer();
@@ -38,5 +38,33 @@ public class ApplicationRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.True(value != null);
         Assert.Equal(upn, value.CreatedByUpn);
         Assert.Equal(upn, value.ModifiedByUpn);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetLatestApplication__WhenApplicationPresent__ReturnApplication()
+    {
+        // Arrange
+
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Set up UserInformationService mock
+        string upn = "test@test.com";
+        string oid = Guid.NewGuid().ToString();
+        string displayName = "Test Name";
+
+        Application? application = await unitOfWork.ApplicationRepository.CreateApplication(oid, displayName, upn);
+
+        // Act
+
+        Application? value = await unitOfWork.ApplicationRepository.GetLatestApplication(oid);
+
+        unitOfWork.Commit();
+
+        // Assert
+
+        Assert.Equal(application.ApplicationId, value.ApplicationId);
     }
 }
