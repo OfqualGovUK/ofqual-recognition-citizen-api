@@ -23,6 +23,7 @@ public class ApplicationControllerTests
     private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService;
     private readonly Mock<IStageService> _mockStageService;
     private readonly Mock<IUserInformationService> _mockUserInformationService;
+    private readonly Mock<IFeatureFlagService> _mockFeatureFlagService;
 
     public ApplicationControllerTests()
     {
@@ -31,6 +32,7 @@ public class ApplicationControllerTests
         _mockApplicationAnswersService = new Mock<IApplicationAnswersService>();
         _mockStageService = new Mock<IStageService>();
         _mockUserInformationService = new Mock<IUserInformationService>();
+        _mockFeatureFlagService = new Mock<IFeatureFlagService>();
 
         _mockTaskRepository = new Mock<ITaskRepository>();
         _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
@@ -43,7 +45,7 @@ public class ApplicationControllerTests
 
 
 
-        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockTaskStatusService.Object, _mockApplicationAnswersService.Object, _mockStageService.Object, _mockUserInformationService.Object)
+        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockTaskStatusService.Object, _mockApplicationAnswersService.Object, _mockStageService.Object, _mockUserInformationService.Object, _mockFeatureFlagService.Object)
         {
             ControllerContext = new ControllerContext
             {
