@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
+using Ofqual.Recognition.Frontend.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,6 +66,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ITaskStatusService, TaskStatusService>();
 builder.Services.AddScoped<IApplicationAnswersService, ApplicationAnswersService>();
 builder.Services.AddScoped<IStageService, StageService>();
+builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
 builder.Services.AddTransient<IUserInformationService, UserInformationService>();
 
 // Register AntiVirus service
