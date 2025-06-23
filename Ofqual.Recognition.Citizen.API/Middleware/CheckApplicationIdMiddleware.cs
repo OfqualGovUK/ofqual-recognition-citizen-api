@@ -5,6 +5,10 @@ using System.Net;
 
 namespace Ofqual.Recognition.Citizen.API.Middleware;
 
+/* 
+ * Middleware that checks if a user can modify an application
+ * This check only runs on endpoints that use the CheckApplicationId Attribute
+ */
 public class CheckApplicationIdMiddleware
 {
     private RequestDelegate _next;
@@ -21,18 +25,14 @@ public class CheckApplicationIdMiddleware
         if (attribute != null && attribute.QueryParam != null)
         {
             // Attribute has been set; perform Application Check
-            string? applicationId = context.Request.Query[attribute.QueryParam].ToString(); // pull out the applicationId based on the attribute
+            RouteValueDictionary routeValues = context.GetRouteData().Values;
+            string? applicationId = routeValues[attribute.QueryParam] as string; // pull out the applicationId based on the attribute
             if (applicationId == null)
             {
                 throw new ArgumentException("ApplicationId was not found when using CheckApplicationId attribute");
             }
             bool canAccess = await userInformationService.CheckUserCanModifyApplication(applicationId);
-            if (canAccess)
-            {
-                await _next(context); 
-            }
-            else
-            {
+            if (!canAccess) { 
                 // Return a 403 Forbidden if not allowed to access
                 context.Response.Clear();
                 context.Response.StatusCode = (int)HttpStatusCode.Forbidden; // Forbidden
@@ -41,5 +41,6 @@ public class CheckApplicationIdMiddleware
                 return;
             }
         }
+        await _next(context);
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using Ofqual.Recognition.Citizen.API.Attributes;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -112,17 +113,11 @@ public class ApplicationController : ControllerBase
     /// <param name="applicationId">The application ID.</param>
     /// <returns>A list of sections containing tasks with statuses.</returns>
     [HttpGet("{applicationId}/tasks")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<ActionResult<List<TaskItemStatusSectionDto>>> GetApplicationTasks(Guid applicationId)
     {
         try
         {
-            bool canAccess = await _userInformationService.CheckUserCanModifyApplication(applicationId);
-
-            if (!canAccess)
-            {
-                return Forbid("User does not have permission to access this application");
-            }
-
             var taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
             if (taskStatuses == null || !taskStatuses.Any())
             {
@@ -146,6 +141,7 @@ public class ApplicationController : ControllerBase
     /// <param name="applicationId">The application ID.</param>
     /// <param name="taskId">The task ID.</param>
     [HttpPost("{applicationId}/tasks/{taskId}")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<IActionResult> UpdateTaskStatus(Guid applicationId, Guid taskId, [FromBody] UpdateTaskStatusDto request)
     {
         try
@@ -190,17 +186,11 @@ public class ApplicationController : ControllerBase
     /// <param name="questionId">The ID of the question being answered.</param>
     /// <param name="request">The answer payload.</param>
     [HttpPost("{applicationId}/tasks/{taskId}/questions/{questionId}")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<IActionResult> SubmitQuestionAnswer(Guid applicationId, Guid taskId, Guid questionId, [FromBody] QuestionAnswerSubmissionDto request)
     {
         try
         {
-            bool canAccess = await _userInformationService.CheckUserCanModifyApplication(applicationId);
-
-            if (!canAccess)
-            {
-                return Forbid("User does not have permission to access this application");
-            }
-
             ValidationResponse? validationResult = await _applicationAnswersService.ValidateQuestionAnswers(questionId, request.Answer);
             if (validationResult == null)
             {
@@ -240,17 +230,11 @@ public class ApplicationController : ControllerBase
     /// <param name="applicationId">The ID of the application.</param>
     /// <param name="taskId">The ID of the task.</param>
     [HttpGet("{applicationId}/tasks/{taskId}/questions/answers")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<ActionResult<List<QuestionAnswerSectionDto>>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
         try
         {
-            bool canAccess = await _userInformationService.CheckUserCanModifyApplication(applicationId);
-
-            if (!canAccess)
-            {
-                return Forbid("User does not have permission to access this application");
-            }
-
             var reviewAnswers = await _applicationAnswersService.GetTaskAnswerReview(applicationId, taskId);
             if (reviewAnswers != null && !reviewAnswers.Any())
             {
@@ -272,17 +256,11 @@ public class ApplicationController : ControllerBase
     /// <param name="applicationId">The ID of the application.</param>
     /// <param name="questionId">The ID of the question.</param>
     [HttpGet("{applicationId}/questions/{questionId}/answer")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<ActionResult<QuestionAnswerDto>> GetQuestionAnswer(Guid applicationId, Guid questionId)
     {
         try
         {
-            bool canAccess = await _userInformationService.CheckUserCanModifyApplication(applicationId);
-
-            if (!canAccess)
-            {
-                return Forbid("User does not have permission to access this application");
-            }
-
             QuestionAnswerDto? answer = await _context.ApplicationAnswersRepository.GetQuestionAnswer(applicationId, questionId);
             if (answer == null)
             {
