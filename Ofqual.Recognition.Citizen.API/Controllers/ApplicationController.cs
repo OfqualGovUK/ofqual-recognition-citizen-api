@@ -116,6 +116,13 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            bool canAccess = await _userInformationService.CheckUserCanModifyApplication(applicationId);
+
+            if (!canAccess)
+            {
+                return Forbid("User does not have permission to access this application");
+            }
+
             var taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
             if (taskStatuses == null || !taskStatuses.Any())
             {
@@ -143,6 +150,13 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            bool canAccess = await _userInformationService.CheckUserCanModifyApplication(applicationId);
+
+            if (!canAccess)
+            {
+                return Forbid("User does not have permission to access this application");
+            }
+
             bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, request.Status);
             if (!isStatusUpdated)
             {
@@ -180,6 +194,13 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            bool canAccess = await _userInformationService.CheckUserCanModifyApplication(applicationId);
+
+            if (!canAccess)
+            {
+                return Forbid("User does not have permission to access this application");
+            }
+
             ValidationResponse? validationResult = await _applicationAnswersService.ValidateQuestionAnswers(questionId, request.Answer);
             if (validationResult == null)
             {
@@ -223,6 +244,13 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            bool canAccess = await _userInformationService.CheckUserCanModifyApplication(applicationId);
+
+            if (!canAccess)
+            {
+                return Forbid("User does not have permission to access this application");
+            }
+
             var reviewAnswers = await _applicationAnswersService.GetTaskAnswerReview(applicationId, taskId);
             if (reviewAnswers != null && !reviewAnswers.Any())
             {
@@ -248,6 +276,13 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            bool canAccess = await _userInformationService.CheckUserCanModifyApplication(applicationId);
+
+            if (!canAccess)
+            {
+                return Forbid("User does not have permission to access this application");
+            }
+
             QuestionAnswerDto? answer = await _context.ApplicationAnswersRepository.GetQuestionAnswer(applicationId, questionId);
             if (answer == null)
             {
