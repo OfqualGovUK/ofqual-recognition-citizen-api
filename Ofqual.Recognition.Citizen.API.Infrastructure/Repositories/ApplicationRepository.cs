@@ -17,31 +17,73 @@ public class ApplicationRepository : IApplicationRepository
         _transaction = transaction;
     }
 
-    public async Task<Application?> CreateApplication()
+    public async Task<Application?> CreateApplication(string oid, string displayName, string upn)
     {
         try
         {
+            User user = await CreateUser(oid, displayName, upn);
+
             const string query = @"
                 INSERT INTO [recognitionCitizen].[Application] (
+                    OwnerUserId,
                     CreatedByUpn,
                     ModifiedByUpn
                 ) 
                 OUTPUT INSERTED.* 
                 VALUES (
+                    @OwnerUserId,
                     @CreatedByUpn,
                     @ModifiedByUpn
                 )";
 
             return await _connection.QuerySingleAsync<Application>(query, new
             {
-                CreatedByUpn = "USER", // TODO: replace once auth gets added
-                ModifiedByUpn = "USER" // TODO: replace once auth gets added
+                OwnerUserId = user.UserId,
+                CreatedByUpn = upn,
+                ModifiedByUpn = upn
             }, _transaction);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error creating a new application");
+            Log.Error(ex, "Exception raised when trying to create an application in ApplicationRepository::CreateApplication");
             return null;
+        }
+    }
+
+    private async Task<User> CreateUser(string oid, string displayName, string emailAddress)
+    {
+        try
+        {
+            const string query = @"
+                INSERT INTO [recognitionCitizen].[RecognitionCitizenUser] (
+                    B2CId,
+                    EmailAddress,
+                    DisplayName,
+                    CreatedByUpn,
+                    ModifiedByUpn
+                ) 
+                OUTPUT INSERTED.* 
+                VALUES (
+                    @B2CId,
+                    @EmailAddress,
+                    @DisplayName,
+                    @CreatedByUpn,
+                    @ModifiedByUpn
+                )";
+
+            return await _connection.QuerySingleAsync<User>(query, new
+            {
+                B2CId = oid,
+                EmailAddress = emailAddress,
+                DisplayName = displayName,
+                CreatedByUpn = emailAddress,
+                ModifiedByUpn = emailAddress,
+            }, _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Exception raised when trying to create a user in ApplicationRepository::CreateUser");
+            throw;
         }
     }
 }

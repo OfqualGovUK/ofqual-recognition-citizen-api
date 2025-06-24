@@ -22,6 +22,7 @@ public class ApplicationControllerTests
     private readonly Mock<ITaskStatusService> _mockTaskStatusService;
     private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService;
     private readonly Mock<IStageService> _mockStageService;
+    private readonly Mock<IUserInformationService> _mockUserInformationService;
 
     public ApplicationControllerTests()
     {
@@ -29,6 +30,7 @@ public class ApplicationControllerTests
         _mockTaskStatusService = new Mock<ITaskStatusService>();
         _mockApplicationAnswersService = new Mock<IApplicationAnswersService>();
         _mockStageService = new Mock<IStageService>();
+        _mockUserInformationService = new Mock<IUserInformationService>();
 
         _mockTaskRepository = new Mock<ITaskRepository>();
         _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
@@ -39,7 +41,9 @@ public class ApplicationControllerTests
         _mockApplicationAnswersRepository = new Mock<IApplicationAnswersRepository>();
         _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository).Returns(_mockApplicationAnswersRepository.Object);
 
-        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockTaskStatusService.Object, _mockApplicationAnswersService.Object, _mockStageService.Object)
+
+
+        _controller = new ApplicationController(_mockUnitOfWork.Object, _mockTaskStatusService.Object, _mockApplicationAnswersService.Object, _mockStageService.Object, _mockUserInformationService.Object)
         {
             ControllerContext = new ControllerContext
             {
@@ -53,7 +57,23 @@ public class ApplicationControllerTests
     public async Task CreateApplication_ReturnsBadRequest_WhenApplicationCreationFails()
     {
         // Arrange
-        _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync((Application?)null);
+
+        // Set up UserInformationService mock
+        string upn = "test@test.com";
+        string oid = Guid.NewGuid().ToString();
+        string displayName = "Test Name";
+
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserUpn())
+            .Returns(upn);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserObjectId())
+            .Returns(oid);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserDisplayName())
+            .Returns(displayName);
+
+        _mockApplicationRepository.Setup(x => x.CreateApplication(oid, displayName, upn)).ReturnsAsync((Application?)null);
 
         // Act
         var result = await _controller.CreateApplication(null);
@@ -69,6 +89,21 @@ public class ApplicationControllerTests
     public async Task CreateApplication_ReturnsBadRequest_WhenTaskStatusesCreationFails()
     {
         // Arrange
+        // Set up UserInformationService mock
+        string upn = "test@test.com";
+        string oid = Guid.NewGuid().ToString();
+        string displayName = "Test Name";
+
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserUpn())
+            .Returns(upn);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserObjectId())
+            .Returns(oid);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserDisplayName())
+            .Returns(displayName);
+
         var app = new Application
         {
             ApplicationId = Guid.NewGuid(),
@@ -77,7 +112,7 @@ public class ApplicationControllerTests
             CreatedByUpn = "testuser@ofqual.gov.uk"
         };
 
-        _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync(app);
+        _mockApplicationRepository.Setup(x => x.CreateApplication(oid, displayName, upn)).ReturnsAsync(app);
         _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, null)).ReturnsAsync(false);
 
         // Act
@@ -94,6 +129,21 @@ public class ApplicationControllerTests
     public async Task CreateApplication_ReturnsBadRequest_WhenPreEngagementInsertFails()
     {
         // Arrange
+        // Set up UserInformationService mock
+        string upn = "test@test.com";
+        string oid = Guid.NewGuid().ToString();
+        string displayName = "Test Name";
+
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserUpn())
+            .Returns(upn);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserObjectId())
+            .Returns(oid);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserDisplayName())
+            .Returns(displayName);
+
         var app = new Application
         {
             ApplicationId = Guid.NewGuid(),
@@ -107,7 +157,7 @@ public class ApplicationControllerTests
             new PreEngagementAnswerDto { QuestionId = Guid.NewGuid(), AnswerJson = "{}" }
         };
 
-        _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync(app);
+        _mockApplicationRepository.Setup(x => x.CreateApplication(oid, displayName, upn)).ReturnsAsync(app);
         _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, preAnswers)).ReturnsAsync(true);
         _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, preAnswers)).ReturnsAsync(false);
 
@@ -125,6 +175,21 @@ public class ApplicationControllerTests
     public async Task CreateApplication_ReturnsBadRequest_WhenStageStatusUpdateFails()
     {
         // Arrange
+        // Set up UserInformationService mock
+        string upn = "test@test.com";
+        string oid = Guid.NewGuid().ToString();
+        string displayName = "Test Name";
+
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserUpn())
+            .Returns(upn);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserObjectId())
+            .Returns(oid);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserDisplayName())
+            .Returns(displayName);
+
         var app = new Application
         {
             ApplicationId = Guid.NewGuid(),
@@ -138,7 +203,7 @@ public class ApplicationControllerTests
             new PreEngagementAnswerDto { QuestionId = Guid.NewGuid(), AnswerJson = "{}" }
         };
 
-        _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync(app);
+        _mockApplicationRepository.Setup(x => x.CreateApplication(oid, displayName, upn)).ReturnsAsync(app);
         _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, preAnswers)).ReturnsAsync(true);
         _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, preAnswers)).ReturnsAsync(true);
         _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(app.ApplicationId, Stage.PreEngagement)).ReturnsAsync(false);
@@ -157,6 +222,21 @@ public class ApplicationControllerTests
     public async Task CreateApplication_ReturnsOk_WhenAllStepsSucceed()
     {
         // Arrange
+        // Set up UserInformationService mock
+        string upn = "test@test.com";
+        string oid = Guid.NewGuid().ToString();
+        string displayName = "Test Name";
+
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserUpn())
+            .Returns(upn);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserObjectId())
+            .Returns(oid);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserDisplayName())
+            .Returns(displayName);
+
         var app = new Application
         {
             ApplicationId = Guid.NewGuid(),
@@ -171,7 +251,7 @@ public class ApplicationControllerTests
             new PreEngagementAnswerDto { QuestionId = Guid.NewGuid(), AnswerJson = "{}" }
         };
 
-        _mockApplicationRepository.Setup(x => x.CreateApplication()).ReturnsAsync(app);
+        _mockApplicationRepository.Setup(x => x.CreateApplication(oid, displayName, upn)).ReturnsAsync(app);
         _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, preAnswers)).ReturnsAsync(true);
         _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, preAnswers)).ReturnsAsync(true);
         _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(app.ApplicationId, Stage.PreEngagement)).ReturnsAsync(true);
@@ -191,7 +271,22 @@ public class ApplicationControllerTests
     public async Task CreateApplication_ThrowsException_WhenUnexpectedErrorOccurs()
     {
         // Arrange
-        _mockApplicationRepository.Setup(x => x.CreateApplication()).ThrowsAsync(new Exception("Database failure"));
+        // Set up UserInformationService mock
+        string upn = "test@test.com";
+        string oid = Guid.NewGuid().ToString();
+        string displayName = "Test Name";
+
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserUpn())
+            .Returns(upn);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserObjectId())
+            .Returns(oid);
+        _mockUserInformationService
+            .Setup(_ => _.GetCurrentUserDisplayName())
+            .Returns(displayName);
+
+        _mockApplicationRepository.Setup(x => x.CreateApplication(oid, displayName, upn)).ThrowsAsync(new Exception("Database failure"));
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<Exception>(() => _controller.CreateApplication(null));

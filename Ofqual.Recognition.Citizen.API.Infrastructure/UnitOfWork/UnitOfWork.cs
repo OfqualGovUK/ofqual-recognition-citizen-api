@@ -26,6 +26,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
 
         _transaction = _connection.BeginTransaction();
         InitialiseRepositories();
+        
     }
 
     private void InitialiseRepositories()

@@ -3,6 +3,8 @@ using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Xunit;
+using Microsoft.AspNetCore.Http;
+using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 
