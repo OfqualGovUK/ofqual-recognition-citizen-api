@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using Ofqual.Recognition.Citizen.API.Attributes;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -22,19 +23,21 @@ public class ApplicationController : ControllerBase
     private readonly IUnitOfWork _context;
     private readonly ITaskStatusService _taskStatusService;
     private readonly IStageService _stageService;
+    private readonly IFeatureFlagService _featureFlagService;
     private readonly IApplicationAnswersService _applicationAnswersService;
     private readonly IUserInformationService _userInformationService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ApplicationController"/>.
     /// </summary>
-    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService, IStageService stageService, IUserInformationService userInformationService)
+    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService, IStageService stageService, IUserInformationService userInformationService, IFeatureFlagService featureFlagService)
     {
         _context = context;
         _taskStatusService = taskStatusService;
         _applicationAnswersService = applicationAnswersService;
         _stageService = stageService;
         _userInformationService = userInformationService;
+        _featureFlagService = featureFlagService;
     }
 
     /// <summary>
@@ -46,11 +49,26 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            Application? application;
+            ApplicationDetailsDto applicationDetailsDto;
+
             string oid = _userInformationService.GetCurrentUserObjectId();
             string displayName = _userInformationService.GetCurrentUserDisplayName();
             string upn = _userInformationService.GetCurrentUserUpn();
 
-            Application? application = await _context.ApplicationRepository.CreateApplication(oid, displayName, upn);
+            if (_featureFlagService.IsFeatureEnabled("CheckUser"))
+            {
+                application = await _context.ApplicationRepository.GetLatestApplication(oid);
+                if (application != null)
+                {
+                    applicationDetailsDto = ApplicationMapper.ToDto(application);
+
+                    _context.Commit();
+                    return Ok(applicationDetailsDto);
+                }
+            }
+
+            application = await _context.ApplicationRepository.CreateApplication(oid, displayName, upn);
             if (application == null)
             {
                 return BadRequest("Application could not be created.");
@@ -77,7 +95,7 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Unable to determine or save the stage status for the application.");
             }
 
-            ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
+            applicationDetailsDto = ApplicationMapper.ToDto(application);
 
             _context.Commit();
             return Ok(applicationDetailsDto);
@@ -95,6 +113,7 @@ public class ApplicationController : ControllerBase
     /// <param name="applicationId">The application ID.</param>
     /// <returns>A list of sections containing tasks with statuses.</returns>
     [HttpGet("{applicationId}/tasks")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<ActionResult<List<TaskItemStatusSectionDto>>> GetApplicationTasks(Guid applicationId)
     {
         try
@@ -122,6 +141,7 @@ public class ApplicationController : ControllerBase
     /// <param name="applicationId">The application ID.</param>
     /// <param name="taskId">The task ID.</param>
     [HttpPost("{applicationId}/tasks/{taskId}")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<IActionResult> UpdateTaskStatus(Guid applicationId, Guid taskId, [FromBody] UpdateTaskStatusDto request)
     {
         try
@@ -159,6 +179,7 @@ public class ApplicationController : ControllerBase
     /// <param name="questionId">The ID of the question being answered.</param>
     /// <param name="request">The answer payload.</param>
     [HttpPost("{applicationId}/tasks/{taskId}/questions/{questionId}")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<IActionResult> SubmitQuestionAnswer(Guid applicationId, Guid taskId, Guid questionId, [FromBody] QuestionAnswerSubmissionDto request)
     {
         try
@@ -202,6 +223,7 @@ public class ApplicationController : ControllerBase
     /// <param name="applicationId">The ID of the application.</param>
     /// <param name="taskId">The ID of the task.</param>
     [HttpGet("{applicationId}/tasks/{taskId}/questions/answers")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<ActionResult<List<QuestionAnswerSectionDto>>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
         try
@@ -227,6 +249,7 @@ public class ApplicationController : ControllerBase
     /// <param name="applicationId">The ID of the application.</param>
     /// <param name="questionId">The ID of the question.</param>
     [HttpGet("{applicationId}/questions/{questionId}/answer")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<ActionResult<QuestionAnswerDto>> GetQuestionAnswer(Guid applicationId, Guid questionId)
     {
         try

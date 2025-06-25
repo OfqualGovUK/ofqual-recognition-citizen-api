@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
+using Ofqual.Recognition.Frontend.Infrastructure.Services;
+using Ofqual.Recognition.Citizen.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,6 +67,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ITaskStatusService, TaskStatusService>();
 builder.Services.AddScoped<IApplicationAnswersService, ApplicationAnswersService>();
 builder.Services.AddScoped<IStageService, StageService>();
+builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
 builder.Services.AddTransient<IUserInformationService, UserInformationService>();
 
 // Register AntiVirus service
@@ -161,6 +164,7 @@ app.UseCors("CORS_POLICY");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<CheckApplicationIdMiddleware>(); // This MUST come after UseAuthentication and UseAuthorization middlewares, as the checks need a logged in user!
 app.MapControllers();
 
 #endregion

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using Ofqual.Recognition.Citizen.API.Attributes;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -38,6 +39,7 @@ public class FileController : ControllerBase
     [HttpPost("linked/{linkType}/{linkId}/application/{applicationId}")]
     [RequestSizeLimit(25 * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = 25 * 1024 * 1024)]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<ActionResult<AttachmentDto>> UploadFile(LinkType linkType, Guid linkId, Guid applicationId, IFormFile file)
     {
         try
@@ -97,6 +99,7 @@ public class FileController : ControllerBase
     /// <param name="linkId">The unique identifier of the entity the files are linked to.</param>
     /// <returns>A list of attachments linked to the specified entity.</returns>
     [HttpGet("linked/{linkType}/{linkId}/application/{applicationId}")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<ActionResult<List<Attachment>>> GetAllFiles(LinkType linkType, Guid linkId, Guid applicationId)
     {
         try
@@ -127,6 +130,7 @@ public class FileController : ControllerBase
     /// <param name="applicationId">The unique identifier of the application to associate the file with.</param>
     /// <returns>The file stream with appropriate MIME type and file name.</returns>
     [HttpGet("linked/{linkType}/{linkId}/attachment/{attachmentId}/application/{applicationId}")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<IActionResult> DownloadFile(LinkType linkType, Guid linkId, Guid attachmentId, Guid applicationId)
     {
         try
@@ -161,6 +165,7 @@ public class FileController : ControllerBase
     /// <param name="applicationId">The unique identifier of the application to associate the file with.</param>
     /// <returns>No content if the deletion is successful.</returns>
     [HttpDelete("linked/{linkType}/{linkId}/attachment/{attachmentId}/application/{applicationId}")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<IActionResult> DeleteFile(LinkType linkType, Guid linkId, Guid attachmentId, Guid applicationId)
     {
         try
