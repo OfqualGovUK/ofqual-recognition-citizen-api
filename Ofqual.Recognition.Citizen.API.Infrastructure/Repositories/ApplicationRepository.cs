@@ -1,8 +1,9 @@
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
-using Ofqual.Recognition.Citizen.API.Core.Models;
-using System.Data;
-using Serilog;
 using Dapper;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Serilog;
+using System.Data;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
@@ -85,5 +86,26 @@ public class ApplicationRepository : IApplicationRepository
             Log.Error(ex, "Exception raised when trying to create a user in ApplicationRepository::CreateUser");
             throw;
         }
+    }
+
+    public async Task<ApplicationStatus?> CheckIfReadyToSubmit(Guid applicationId)
+    {
+        var result = await _connection.QuerySingleAsync<int>(@"
+            SELECT COUNT(*) AS [Count]
+            FROM   [recognitionCitizen].[Task] AS t           
+            JOIN   [recognitionCitizen].[TaskStatus] ts ON ts.TaskId = t.TaskId
+            WHERE  t.TaskNameUrl NOT IN(N'get-engagement', N'declaration-submit') --replace w/ tasktype check when implemented                              
+            AND    ts.[Status] <> @CompletedStatus
+            AND    ts.ApplicationId = @ApplicationId;",
+            new
+            {
+                completedStatus = (int)TaskStatusEnum.Completed,
+                applicationId
+            },
+            _transaction);
+
+        return result > 0
+            ? ApplicationStatus.InProgress
+            : ApplicationStatus.Completed;
     }
 }

@@ -245,4 +245,10 @@ public class ApplicationController : ControllerBase
             throw new Exception("An error occurred while fetching the question answer. Please try again later.");
         }
     }
+
+    [HttpPost("{applicationId}/complete")]
+    public async Task<IActionResult> CompleteApplication(Guid applicationId)
+    {
+        return Ok();
+    }
 }
