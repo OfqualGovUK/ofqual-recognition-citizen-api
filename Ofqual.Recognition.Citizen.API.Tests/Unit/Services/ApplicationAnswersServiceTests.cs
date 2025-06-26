@@ -257,6 +257,7 @@ public class ApplicationAnswersServiceTests
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
+        var sectionId = Guid.NewGuid();
 
         var attachments = new List<Attachment>
         {
@@ -268,6 +269,9 @@ public class ApplicationAnswersServiceTests
         {
             new SectionTaskQuestionAnswer
             {
+                SectionId = sectionId,
+                SectionName = "Criteria A",
+                SectionOrderNumber = 1,
                 ApplicationId = applicationId,
                 TaskId = taskId,
                 TaskName = "About You",

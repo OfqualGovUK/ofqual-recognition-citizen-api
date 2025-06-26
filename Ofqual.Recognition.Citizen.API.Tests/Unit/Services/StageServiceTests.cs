@@ -108,6 +108,8 @@ public class StageServiceTests
     {
         // Arrange
         var applicationId = Guid.NewGuid();
+        var sectionId1 = Guid.NewGuid();
+        var sectionId2 = Guid.NewGuid();
         var taskId1 = Guid.NewGuid();
         var taskId2 = Guid.NewGuid();
         var questionId1 = Guid.NewGuid();
@@ -147,6 +149,9 @@ public class StageServiceTests
             {
                 new SectionTaskQuestionAnswer
                 {
+                    SectionId = sectionId1,
+                    SectionName = "Criteria A",
+                    SectionOrderNumber = 1,
                     TaskId  = taskId1,
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
@@ -158,7 +163,9 @@ public class StageServiceTests
                     ApplicationId = applicationId
                 },
                 new SectionTaskQuestionAnswer {
-
+                    SectionId = sectionId2,
+                    SectionName = "Criteria A",
+                    SectionOrderNumber = 1,
                     TaskId  = taskId2,
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
@@ -215,6 +222,8 @@ public class StageServiceTests
     {
         // Arrange
         var applicationId = Guid.NewGuid();
+        var sectionId1 = Guid.NewGuid();
+        var sectionId2 = Guid.NewGuid();
         var taskId1 = Guid.NewGuid();
         var taskId2 = Guid.NewGuid();
         var questionId1 = Guid.NewGuid();
@@ -254,6 +263,9 @@ public class StageServiceTests
             {
                 new SectionTaskQuestionAnswer
                 {
+                    SectionId = sectionId1,
+                    SectionName = "Criteria A",
+                    SectionOrderNumber = 1,
                     TaskId  = taskId1,
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
@@ -265,7 +277,9 @@ public class StageServiceTests
                     ApplicationId = applicationId
                 },
                 new SectionTaskQuestionAnswer {
-
+                    SectionId = sectionId2,
+                    SectionName = "Criteria A",
+                    SectionOrderNumber = 1,
                     TaskId  = taskId2,
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
