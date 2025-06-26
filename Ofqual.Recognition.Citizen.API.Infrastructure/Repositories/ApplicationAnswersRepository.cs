@@ -119,12 +119,12 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
                     Q.QuestionNameUrl,
                     AA.Answer,
                     AA.ApplicationId
-                FROM [recognitionCitizen].[ApplicationAnswers] AA
-                INNER JOIN [recognitionCitizen].[Question] Q ON AA.QuestionId = Q.QuestionId
-                INNER JOIN [recognitionCitizen].[Task] T ON Q.TaskId = T.TaskId
+                FROM [recognitionCitizen].[Task] T
                 INNER JOIN [recognitionCitizen].[Section] S ON T.SectionId = S.SectionId
-                WHERE AA.ApplicationId = @ApplicationId
-                AND T.TaskId = @TaskId
+                INNER JOIN [recognitionCitizen].[Question] Q ON Q.TaskId = T.TaskId
+                LEFT JOIN [recognitionCitizen].[ApplicationAnswers] AA 
+                    ON AA.QuestionId = Q.QuestionId AND AA.ApplicationId = @ApplicationId
+                WHERE T.TaskId = @TaskId
                 ORDER BY S.OrderNumber, T.OrderNumber, Q.OrderNumber";
 
             return await _connection.QueryAsync<SectionTaskQuestionAnswer>(query, new
