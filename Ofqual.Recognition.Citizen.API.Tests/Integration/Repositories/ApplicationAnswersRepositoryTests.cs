@@ -4,7 +4,6 @@ using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using System.Text.Json;
 using Xunit;
-using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 
@@ -26,9 +25,21 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -85,7 +96,8 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var insertSuccess = await unitOfWork.ApplicationAnswersRepository.UpsertQuestionAnswer(
             application.ApplicationId,
             question.QuestionId,
-            initialAnswer
+            initialAnswer,
+            application.CreatedByUpn
         );
 
         unitOfWork.Commit();
@@ -105,7 +117,8 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var updateSuccess = await unitOfWork.ApplicationAnswersRepository.UpsertQuestionAnswer(
             application.ApplicationId,
             question.QuestionId,
-            updatedAnswer
+            updatedAnswer,
+            application.CreatedByUpn
         );
 
         unitOfWork.Commit();
@@ -134,9 +147,21 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -191,7 +216,8 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var success = await unitOfWork.ApplicationAnswersRepository.UpsertQuestionAnswer(
             application.ApplicationId,
             question.QuestionId,
-            answerJson
+            answerJson,
+            application.CreatedByUpn
         );
 
         unitOfWork.Commit();
@@ -228,9 +254,21 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -285,7 +323,8 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var upserted = await unitOfWork.ApplicationAnswersRepository.UpsertQuestionAnswer(
             application.ApplicationId,
             question.QuestionId,
-            answerJson
+            answerJson,
+            application.CreatedByUpn
         );
 
         unitOfWork.Commit();
@@ -320,9 +359,21 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -377,7 +428,8 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         await unitOfWork.ApplicationAnswersRepository.UpsertQuestionAnswer(
             application.ApplicationId,
             question.QuestionId,
-            answerJson
+            answerJson,
+            application.CreatedByUpn
         );
 
         unitOfWork.Commit();
@@ -406,9 +458,22 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -484,9 +549,21 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -538,7 +615,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
 
         var answer = JsonSerializer.Serialize(new { contact = "email" });
 
-        await unitOfWork.ApplicationAnswersRepository.UpsertQuestionAnswer(application.ApplicationId, question.QuestionId, answer);
+        await unitOfWork.ApplicationAnswersRepository.UpsertQuestionAnswer(application.ApplicationId, question.QuestionId, answer, application.CreatedByUpn);
         unitOfWork.Commit();
 
         // Act
@@ -564,9 +641,21 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -618,7 +707,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
 
         var answer = JsonSerializer.Serialize(new { contact = "phone" });
 
-        await unitOfWork.ApplicationAnswersRepository.UpsertQuestionAnswer(application.ApplicationId, question.QuestionId, answer);
+        await unitOfWork.ApplicationAnswersRepository.UpsertQuestionAnswer(application.ApplicationId, question.QuestionId, answer, application.CreatedByUpn);
         unitOfWork.Commit();
 
         // Act
@@ -630,7 +719,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
 
         // Assert
         Assert.False(exists);
-        
+
         // Clean up test container
         await _fixture.DisposeAsync();
     }

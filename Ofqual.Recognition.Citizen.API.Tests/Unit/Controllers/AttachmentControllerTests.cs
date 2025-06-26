@@ -12,29 +12,25 @@ using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 
-public class FileControllerTests
+public class AttachmentControllerTests
 {
-    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-    private readonly Mock<IAttachmentRepository> _mockAttachmentRepo;
-    private readonly Mock<IAzureBlobStorageService> _mockBlobStorage;
-    private readonly Mock<IAntiVirusService> _mockAntiVirus;
-    private readonly FileController _controller;
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
+    private readonly Mock<IAttachmentRepository> _mockAttachmentRepo = new();
+    private readonly Mock<IAzureBlobStorageService> _mockBlobStorage = new();
+    private readonly Mock<IAntiVirusService> _mockAntiVirus = new();
+    private readonly Mock<IAttachmentService> _mockAttachmentService = new();
+    private readonly AttachmentController _controller;
 
-    public FileControllerTests()
+    public AttachmentControllerTests()
     {
-        _mockUnitOfWork = new Mock<IUnitOfWork>();
-        _mockAttachmentRepo = new Mock<IAttachmentRepository>();
-        _mockBlobStorage = new Mock<IAzureBlobStorageService>();
-        _mockAntiVirus = new Mock<IAntiVirusService>();
-
         _mockUnitOfWork.Setup(u => u.AttachmentRepository).Returns(_mockAttachmentRepo.Object);
-        _controller = new FileController(_mockUnitOfWork.Object, _mockBlobStorage.Object, _mockAntiVirus.Object)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext()
-            }
-        };
+
+        _controller = new AttachmentController(
+            _mockUnitOfWork.Object,
+            _mockBlobStorage.Object,
+            _mockAntiVirus.Object,
+            _mockAttachmentService.Object
+        );
     }
 
     [Fact]
@@ -44,8 +40,8 @@ public class FileControllerTests
         // Arrange
         var fileContent = "Fake file content";
         var fileName = "document.pdf";
-        var fileStream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
-        var formFile = new FormFile(fileStream, 0, fileStream.Length, "file", fileName)
+        var stream = new MemoryStream(Encoding.UTF8.GetBytes(fileContent));
+        var formFile = new FormFile(stream, 0, stream.Length, "file", fileName)
         {
             Headers = new HeaderDictionary(),
             ContentType = "application/pdf"
@@ -55,8 +51,8 @@ public class FileControllerTests
         {
             AttachmentId = Guid.NewGuid(),
             FileName = fileName,
-            FileMIMEtype = "application/pdf",
-            FileSize = fileStream.Length,
+            FileMIMEtype = formFile.ContentType!,
+            FileSize = formFile.Length,
             BlobId = Guid.NewGuid(),
             CreatedByUpn = "test@ofqual.gov.uk",
             ModifiedByUpn = "test@ofqual.gov.uk",
@@ -65,16 +61,17 @@ public class FileControllerTests
         };
 
         _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), fileName)).ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
-        _mockAttachmentRepo.Setup(r => r.CreateAttachment(fileName, formFile.ContentType, formFile.Length)).ReturnsAsync(attachment);
-        _mockAttachmentRepo.Setup(r => r.CreateAttachmentLink(It.IsAny<Guid>(), attachment.AttachmentId, It.IsAny<Guid>(), It.IsAny<LinkType>())).ReturnsAsync(true);
-        _mockBlobStorage.Setup(s => s.Write(It.IsAny<Guid>(), attachment.BlobId, It.IsAny<Stream>(), false)).ReturnsAsync(true);
+        _mockAttachmentService.Setup(s => s.SaveAttachmentAndLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>(), formFile))
+                            .ReturnsAsync(attachment);
+        _mockBlobStorage.Setup(s => s.Write(It.IsAny<Guid>(), attachment.BlobId, It.IsAny<Stream>(), false))
+                            .ReturnsAsync(true);
 
         // Act
         var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
 
         // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var dto = Assert.IsType<AttachmentDto>(okResult.Value);
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<AttachmentDto>(ok.Value);
         Assert.Equal(fileName, dto.FileName);
         _mockUnitOfWork.Verify(u => u.Commit(), Times.Once);
     }
@@ -98,8 +95,10 @@ public class FileControllerTests
         // Arrange
         var file = new Mock<IFormFile>();
         file.Setup(f => f.Length).Returns(0);
+
         // Act
         var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file.Object);
+
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Equal("A file must be provided and must not be empty.", badRequest.Value);
@@ -119,7 +118,7 @@ public class FileControllerTests
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.StartsWith("Unsupported file type", badRequest.Value!.ToString());
+        Assert.StartsWith("Unsupported file type", badRequest.Value?.ToString());
     }
 
     [Fact]
@@ -127,18 +126,17 @@ public class FileControllerTests
     public async Task UploadFile_ReturnsBadRequest_WhenVirusScanFails()
     {
         // Arrange
-        var stream = new MemoryStream(Encoding.UTF8.GetBytes("virus"));
-        var formFile = new FormFile(stream, 0, stream.Length, "file", "unsafe.pdf")
+        var file = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("virus")), 0, 5, "file", "unsafe.pdf")
         {
             Headers = new HeaderDictionary(),
-            ContentType = "application/pdf",
-            ContentDisposition = "form-data; name=\"file\"; filename=\"unsafe.pdf\""
+            ContentType = "application/pdf"
         };
 
-        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Found });
+        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), "unsafe.pdf"))
+                      .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Found });
 
         // Act
-        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file);
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
@@ -147,49 +145,45 @@ public class FileControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task UploadFile_ReturnsBadRequest_WhenCreateAttachmentFails()
+    public async Task UploadFile_ReturnsBadRequest_WhenAttachmentSaveFails()
     {
         // Arrange
-        var stream = new MemoryStream(Encoding.UTF8.GetBytes("file"));
-        var formFile = new FormFile(stream, 0, stream.Length, "file", "doc.pdf")
+        var file = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("valid")), 0, 5, "file", "valid.pdf")
         {
             Headers = new HeaderDictionary(),
-            ContentType = "application/pdf",
-            ContentDisposition = "form-data; name=\"file\"; filename=\"doc.pdf\""
+            ContentType = "application/pdf"
         };
 
-        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>()))
+        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), "valid.pdf"))
                       .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
-        _mockAttachmentRepo.Setup(r => r.CreateAttachment(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<long>()))
-                           .ReturnsAsync((Attachment?)null);
+        _mockAttachmentService.Setup(s => s.SaveAttachmentAndLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>(), file))
+                              .ReturnsAsync((Attachment?)null);
 
         // Act
-        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file);
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Failed to save attachment metadata.", badRequest.Value);
+        Assert.Equal("Failed to save attachment.", badRequest.Value);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task UploadFile_ReturnsBadRequest_WhenCreateAttachmentLinkFails()
+    public async Task UploadFile_ReturnsBadRequest_WhenBlobWriteFails()
     {
         // Arrange
-        var stream = new MemoryStream(Encoding.UTF8.GetBytes("valid"));
-        var formFile = new FormFile(stream, 0, stream.Length, "file", "report.pdf")
+        var file = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("valid")), 0, 5, "file", "valid.pdf")
         {
             Headers = new HeaderDictionary(),
-            ContentType = "application/pdf",
-            ContentDisposition = "form-data; name=\"file\"; filename=\"report.pdf\""
+            ContentType = "application/pdf"
         };
 
         var attachment = new Attachment
         {
             AttachmentId = Guid.NewGuid(),
-            FileName = "report.pdf",
-            FileMIMEtype = "application/pdf",
-            FileSize = stream.Length,
+            FileName = "valid.pdf",
+            FileMIMEtype = file.ContentType!,
+            FileSize = file.Length,
             BlobId = Guid.NewGuid(),
             CreatedByUpn = "test@ofqual.gov.uk",
             ModifiedByUpn = "test@ofqual.gov.uk",
@@ -197,57 +191,15 @@ public class FileControllerTests
             ModifiedDate = DateTime.UtcNow
         };
 
-        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>()))
+        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), "valid.pdf"))
                       .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
-        _mockAttachmentRepo.Setup(r => r.CreateAttachment(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<long>()))
-                           .ReturnsAsync(attachment);
-        _mockAttachmentRepo.Setup(r => r.CreateAttachmentLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
-                           .ReturnsAsync(false);
+        _mockAttachmentService.Setup(s => s.SaveAttachmentAndLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>(), file))
+                              .ReturnsAsync(attachment);
+        _mockBlobStorage.Setup(s => s.Write(It.IsAny<Guid>(), attachment.BlobId, It.IsAny<Stream>(), false))
+                            .ReturnsAsync(false);
 
         // Act
-        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
-
-        // Assert
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("Failed to create attachment link.", badRequest.Value);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public async Task UploadFile_ReturnsBadRequest_WhenBlobStorageWriteFails()
-    {
-        // Arrange
-        var stream = new MemoryStream(Encoding.UTF8.GetBytes("valid"));
-        var formFile = new FormFile(stream, 0, stream.Length, "file", "report.pdf")
-        {
-            Headers = new HeaderDictionary(),
-            ContentType = "application/pdf",
-            ContentDisposition = "form-data; name=\"file\"; filename=\"report.pdf\""
-        };
-
-        var attachment = new Attachment
-        {
-            AttachmentId = Guid.NewGuid(),
-            FileName = "report.pdf",
-            FileMIMEtype = "application/pdf",
-            FileSize = stream.Length,
-            BlobId = Guid.NewGuid(),
-            CreatedByUpn = "test@ofqual.gov.uk",
-            ModifiedByUpn = "test@ofqual.gov.uk",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow
-        };
-
-        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), It.IsAny<string>()))
-                           .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
-        _mockAttachmentRepo.Setup(r => r.CreateAttachment(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<long>()))
-                           .ReturnsAsync(attachment);
-        _mockAttachmentRepo.Setup(r => r.CreateAttachmentLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
-                           .ReturnsAsync(true);
-        _mockBlobStorage.Setup(s => s.Write(It.IsAny<Guid>(), attachment.BlobId, It.IsAny<Stream>(), false)).ReturnsAsync(false);
-
-        // Act
-        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), formFile);
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file);
 
         // Assert
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);

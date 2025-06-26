@@ -49,7 +49,7 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
         }
     }
 
-    public async Task<bool> UpsertQuestionAnswer(Guid applicationId, Guid questionId, string answer)
+    public async Task<bool> UpsertQuestionAnswer(Guid applicationId, Guid questionId, string answer, string upn)
     {
         try
         {
@@ -83,8 +83,8 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
                 applicationId,
                 questionId,
                 answer,
-                CreatedByUpn = "USER", // TODO: replace once auth gets added
-                ModifiedByUpn = "USER" // TODO: replace once auth gets added
+                CreatedByUpn = upn,
+                ModifiedByUpn = upn
             }, _transaction);
 
             return rowsAffected > 0;

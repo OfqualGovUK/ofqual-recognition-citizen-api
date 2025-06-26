@@ -8,10 +8,36 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 public class TaskStatusService : ITaskStatusService
 {
     private readonly IUnitOfWork _context;
+    private readonly IUserInformationService _userInformationService;
+    private readonly IStageService _stageService;
 
-    public TaskStatusService(IUnitOfWork context)
+    public TaskStatusService(IUnitOfWork context, IUserInformationService userInformationService, IStageService stageService)
     {
         _context = context;
+        _userInformationService = userInformationService;
+        _stageService = stageService;
+    }
+
+    public async Task<bool> UpdateTaskAndStageStatus(Guid applicationId, Guid taskId, TaskStatusEnum status, Stage stageToUpdate)
+    {
+        string upn = _userInformationService.GetCurrentUserUpn();
+
+        bool taskStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, status, upn);
+        if (!taskStatusUpdated)
+        {
+            return false;
+        }
+
+        if (status == TaskStatusEnum.Completed)
+        {
+            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(applicationId, stageToUpdate);
+            if (!stageStatusUpdated)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public async Task<bool> DetermineAndCreateTaskStatuses(Guid applicationId, IEnumerable<PreEngagementAnswerDto>? answers)
@@ -31,21 +57,21 @@ public class TaskStatusService : ITaskStatusService
         var questionsByTask = questions
             .GroupBy(q => q.TaskId)
             .ToDictionary(g => g.Key, g => g.ToList());
-        
+
         var answeredQuestionIds = answers?
             .Where(a => !string.IsNullOrWhiteSpace(a.AnswerJson) && !JsonHelper.IsEmptyJsonObject(a.AnswerJson))
             .Select(a => a.QuestionId)
             .ToHashSet() ?? new HashSet<Guid>();
-        
+
         var now = DateTime.UtcNow;
-        var user = "USER";
+        string upn = _userInformationService.GetCurrentUserUpn();
 
         var newTaskStatuses = tasks.Select(task =>
         {
             var taskQuestions = questionsByTask.TryGetValue(task.TaskId, out var qList)
                 ? qList
                 : new List<Question>();
-            
+
             TaskStatusEnum status;
 
             if (taskQuestions.Count == 0)
@@ -74,8 +100,8 @@ public class TaskStatusService : ITaskStatusService
                 ApplicationId = applicationId,
                 TaskId = task.TaskId,
                 Status = status,
-                CreatedByUpn = user,
-                ModifiedByUpn = user
+                CreatedByUpn = upn,
+                ModifiedByUpn = upn
             };
         });
 

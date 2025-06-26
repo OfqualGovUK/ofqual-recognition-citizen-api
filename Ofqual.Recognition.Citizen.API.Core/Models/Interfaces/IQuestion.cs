@@ -6,4 +6,3 @@ public interface IQuestion
     public Guid TaskId { get; set; }
     public string QuestionContent { get; set; }
 }
-

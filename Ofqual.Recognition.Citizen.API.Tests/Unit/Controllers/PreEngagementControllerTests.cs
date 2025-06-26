@@ -4,7 +4,6 @@ using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Controllers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 using Moq;
@@ -13,27 +12,19 @@ namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 
 public class PreEngagementControllerTests
 {
-    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-    private readonly Mock<IStageRepository> _mockStageRepository;
-    private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService;
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
+    private readonly Mock<IStageRepository> _mockStageRepository = new();
+    private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService = new();
     private readonly PreEngagementController _controller;
 
     public PreEngagementControllerTests()
     {
-        _mockUnitOfWork = new Mock<IUnitOfWork>();
-
-        _mockStageRepository = new Mock<IStageRepository>();
         _mockUnitOfWork.Setup(u => u.StageRepository).Returns(_mockStageRepository.Object);
 
-        _mockApplicationAnswersService = new Mock<IApplicationAnswersService>();
-
-        _controller = new PreEngagementController(_mockUnitOfWork.Object, _mockApplicationAnswersService.Object)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext()
-            }
-        };
+        _controller = new PreEngagementController(
+            _mockUnitOfWork.Object,
+            _mockApplicationAnswersService.Object
+        );
     }
 
     [Fact]
@@ -144,7 +135,7 @@ public class PreEngagementControllerTests
         _mockApplicationAnswersService
             .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
             .ReturnsAsync(validationResponse);
-        
+
         // Act
         var result = await _controller.ValidateAnswer(questionId, dto);
 
@@ -167,7 +158,7 @@ public class PreEngagementControllerTests
         _mockApplicationAnswersService
             .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
             .ReturnsAsync(validationResponse);
-        
+
         // Act
         var result = await _controller.ValidateAnswer(questionId, dto);
 
@@ -187,7 +178,7 @@ public class PreEngagementControllerTests
         _mockApplicationAnswersService
             .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
             .ThrowsAsync(new Exception("Database error"));
-        
+
         // Act & Assert
         var ex = await Assert.ThrowsAsync<Exception>(() => _controller.ValidateAnswer(questionId, dto));
         Assert.Equal("An unexpected error occurred while validating the answer. Please try again shortly.", ex.Message);

@@ -4,4 +4,3 @@ public interface IQuestionType
 {
     public string QuestionTypeName { get; set; }
 }
-

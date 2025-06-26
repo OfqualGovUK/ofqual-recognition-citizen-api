@@ -13,14 +13,37 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 public class ApplicationAnswersService : IApplicationAnswersService
 {
     private readonly IUnitOfWork _context;
+    private readonly IUserInformationService _userInformationService;
 
-    public ApplicationAnswersService(IUnitOfWork context)
+    public ApplicationAnswersService(IUnitOfWork context, IUserInformationService userInformationService)
     {
         _context = context;
+        _userInformationService = userInformationService;
+    }
+
+    public async Task<bool> SubmitAnswerAndUpdateStatus(Guid applicationId, Guid taskId, Guid questionId, string answerJson)
+    {
+        string upn = _userInformationService.GetCurrentUserUpn();
+
+        bool isAnswerUpserted = await _context.ApplicationAnswersRepository.UpsertQuestionAnswer(applicationId, questionId, answerJson, upn);
+        if (!isAnswerUpserted)
+        {
+            return false;
+        }
+
+        bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, upn);
+        if (!isStatusUpdated)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public async Task<bool> SavePreEngagementAnswers(Guid applicationId, IEnumerable<PreEngagementAnswerDto> answers)
     {
+        string upn = _userInformationService.GetCurrentUserUpn();
+
         foreach (var answer in answers)
         {
             ValidationResponse? validationResult = await ValidateQuestionAnswers(answer.QuestionId, answer.AnswerJson);
@@ -29,7 +52,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 return false;
             }
 
-            bool success = await _context.ApplicationAnswersRepository.UpsertQuestionAnswer(applicationId, answer.QuestionId, answer.AnswerJson);
+            bool success = await _context.ApplicationAnswersRepository.UpsertQuestionAnswer(applicationId, answer.QuestionId, answer.AnswerJson, upn);
             if (!success)
             {
                 return false;

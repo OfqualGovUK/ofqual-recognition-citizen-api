@@ -5,7 +5,6 @@ using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Xunit;
-using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 

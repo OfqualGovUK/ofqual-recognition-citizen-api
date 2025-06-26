@@ -1,4 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
@@ -10,22 +11,114 @@ namespace Ofqual.Recognition.Citizen.Tests.Unit.Services;
 
 public class TaskStatusServiceTests
 {
-    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-    private readonly Mock<ITaskRepository> _mockTaskRepository;
-    private readonly Mock<IQuestionRepository> _mockQuestionRepository;
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
+    private readonly Mock<ITaskRepository> _mockTaskRepository = new();
+    private readonly Mock<IQuestionRepository> _mockQuestionRepository = new();
+    private readonly Mock<IUserInformationService> _mockUserInformationService = new();
+    private readonly Mock<IStageService> _mockStageService = new();
     private readonly TaskStatusService _service;
 
     public TaskStatusServiceTests()
     {
-        _mockUnitOfWork = new Mock<IUnitOfWork>();
-
-        _mockTaskRepository = new Mock<ITaskRepository>();
         _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
-
-        _mockQuestionRepository = new Mock<IQuestionRepository>();
         _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
-        
-        _service = new TaskStatusService(_mockUnitOfWork.Object);
+
+        _service = new TaskStatusService(
+            _mockUnitOfWork.Object,
+            _mockUserInformationService.Object,
+            _mockStageService.Object
+        );
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UpdateTaskAndStageStatus_Should_Return_True_When_Task_Updated_And_Stage_Updated()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var upn = "user@ofqual.gov.uk";
+
+        _mockUserInformationService.Setup(s => s.GetCurrentUserUpn()).Returns(upn);
+        _mockTaskRepository.Setup(r =>
+            r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.Completed, upn))
+            .ReturnsAsync(true);
+        _mockStageService.Setup(s =>
+            s.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.Completed, Stage.PreEngagement);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UpdateTaskAndStageStatus_Should_Return_True_When_Task_Updated_And_Stage_Not_Required()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var upn = "user@ofqual.gov.uk";
+
+        _mockUserInformationService.Setup(s => s.GetCurrentUserUpn()).Returns(upn);
+        _mockTaskRepository.Setup(r =>
+            r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, upn))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.InProgress, Stage.PreEngagement);
+
+        // Assert
+        Assert.True(result);
+        _mockStageService.Verify(s => s.EvaluateAndUpsertStageStatus(It.IsAny<Guid>(), It.IsAny<Stage>()), Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UpdateTaskAndStageStatus_Should_Return_False_When_Task_Update_Fails()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var upn = "user@ofqual.gov.uk";
+
+        _mockUserInformationService.Setup(s => s.GetCurrentUserUpn()).Returns(upn);
+        _mockTaskRepository.Setup(r =>
+            r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, upn))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.InProgress, Stage.PreEngagement);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UpdateTaskAndStageStatus_Should_Return_False_When_Stage_Update_Fails()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var upn = "user@ofqual.gov.uk";
+
+        _mockUserInformationService.Setup(s => s.GetCurrentUserUpn()).Returns(upn);
+        _mockTaskRepository.Setup(r =>
+            r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.Completed, upn))
+            .ReturnsAsync(true);
+        _mockStageService.Setup(s =>
+            s.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.Completed, Stage.PreEngagement);
+
+        // Assert
+        Assert.False(result);
     }
 
     [Fact]
@@ -36,7 +129,7 @@ public class TaskStatusServiceTests
         _mockTaskRepository
             .Setup(r => r.GetAllTask())
             .ReturnsAsync((IEnumerable<TaskItem>?)null!);
-        
+
         // Act
         var result = await _service.DetermineAndCreateTaskStatuses(Guid.NewGuid(), null);
 
@@ -65,11 +158,11 @@ public class TaskStatusServiceTests
                     CreatedByUpn = "test@ofqual.gov.uk"
                 }
             });
-        
+
         _mockQuestionRepository
             .Setup(r => r.GetAllQuestions())
             .ReturnsAsync((IEnumerable<Question>?)null!);
-        
+
         // Act
         var result = await _service.DetermineAndCreateTaskStatuses(Guid.NewGuid(), null);
 
@@ -104,7 +197,7 @@ public class TaskStatusServiceTests
                     CreatedByUpn = "test@ofqual.gov.uk"
                 }
             });
-        
+
         _mockQuestionRepository
             .Setup(r => r.GetAllQuestions())
             .ReturnsAsync(new List<Question>
@@ -130,7 +223,7 @@ public class TaskStatusServiceTests
                     CreatedByUpn = "test@ofqual.gov.uk"
                 }
             });
-        
+
         var answers = new List<PreEngagementAnswerDto>
         {
             new PreEngagementAnswerDto { QuestionId = questionId1, AnswerJson = "{\"some\":\"data\"}" }
@@ -139,7 +232,7 @@ public class TaskStatusServiceTests
         _mockTaskRepository
             .Setup(r => r.CreateTaskStatuses(It.IsAny<IEnumerable<TaskItemStatus>>()))
             .ReturnsAsync(true);
-        
+
         // Act
         var result = await _service.DetermineAndCreateTaskStatuses(appId, answers);
 

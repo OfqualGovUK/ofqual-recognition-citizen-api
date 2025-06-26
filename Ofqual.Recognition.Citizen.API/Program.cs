@@ -1,23 +1,23 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
+using Ofqual.Recognition.Frontend.Infrastructure.Services;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Middleware;
 using CorrelationId.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using CorrelationId.HttpClient;
 using Microsoft.Data.SqlClient;
+using System.Security.Claims;
+using Microsoft.Identity.Web;
 using Serilog.Sinks.Http;
 using System.Reflection;
 using Serilog.Events;
 using CorrelationId;
 using System.Data;
 using Serilog;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Identity.Web;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using Ofqual.Recognition.Frontend.Infrastructure.Services;
-using Ofqual.Recognition.Citizen.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,6 +69,8 @@ builder.Services.AddScoped<IApplicationAnswersService, ApplicationAnswersService
 builder.Services.AddScoped<IStageService, StageService>();
 builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
 builder.Services.AddTransient<IUserInformationService, UserInformationService>();
+builder.Services.AddTransient<IApplicationService, ApplicationService>();
+builder.Services.AddTransient<IAttachmentService, AttachmentService>();
 
 // Register AntiVirus service
 builder.Services.Configure<AntiVirusConfiguration>(builder.Configuration.GetSection("AntiVirus"));

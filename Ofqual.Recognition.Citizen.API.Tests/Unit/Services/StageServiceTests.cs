@@ -1,4 +1,5 @@
 ﻿using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
@@ -10,26 +11,20 @@ namespace Ofqual.Recognition.Citizen.Tests.Unit.Services;
 
 public class StageServiceTests
 {
-    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-    private readonly Mock<IQuestionRepository> _mockQuestionRepository;
-    private readonly Mock<IApplicationAnswersRepository> _mockApplicationAnswersRepository;
-    private readonly Mock<IStageRepository> _mockStageRepository;
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
+    private readonly Mock<IQuestionRepository> _mockQuestionRepository = new();
+    private readonly Mock<IApplicationAnswersRepository> _mockApplicationAnswersRepository = new();
+    private readonly Mock<IStageRepository> _mockStageRepository = new();
+    private readonly Mock<IUserInformationService> _mockUserInformationService = new();
     private readonly StageService _stageService;
 
     public StageServiceTests()
     {
-        _mockUnitOfWork = new Mock<IUnitOfWork>();
-
-        _mockQuestionRepository = new Mock<IQuestionRepository>();
         _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
-
-        _mockApplicationAnswersRepository = new Mock<IApplicationAnswersRepository>();
         _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository).Returns(_mockApplicationAnswersRepository.Object);
-
-        _mockStageRepository = new Mock<IStageRepository>();
         _mockUnitOfWork.Setup(u => u.StageRepository).Returns(_mockStageRepository.Object);
 
-        _stageService = new StageService(_mockUnitOfWork.Object);
+        _stageService = new StageService(_mockUnitOfWork.Object, _mockUserInformationService.Object);
     }
 
     [Fact]
@@ -81,7 +76,7 @@ public class StageServiceTests
 
         // Act
         var result = await _stageService.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement);
-        
+
         // Assert
         Assert.False(result);
         _mockStageRepository.Verify(r => r.UpsertStageStatusRecord(It.IsAny<StageStatus>()), Times.Never);

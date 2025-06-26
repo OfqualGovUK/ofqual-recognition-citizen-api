@@ -7,10 +7,12 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 public class StageService : IStageService
 {
     private readonly IUnitOfWork _context;
+    private readonly IUserInformationService _userInformationService;
 
-    public StageService(IUnitOfWork context)
+    public StageService(IUnitOfWork context, IUserInformationService userInformationService)
     {
         _context = context;
+        _userInformationService = userInformationService;
     }
 
     public async Task<bool> EvaluateAndUpsertStageStatus(Guid applicationId, Stage stage)
@@ -81,7 +83,7 @@ public class StageService : IStageService
         }
 
         var now = DateTime.UtcNow;
-        var user = "USER";
+        string upn = _userInformationService.GetCurrentUserUpn();
 
         var stageStatus = new StageStatus
         {
@@ -90,8 +92,8 @@ public class StageService : IStageService
             StatusId = newStatus,
             StageStartDate = existingStatus?.StageStartDate ?? now,
             StageCompletionDate = newStatus == TaskStatusEnum.Completed ? now : null,
-            CreatedByUpn = user,
-            ModifiedByUpn = user
+            CreatedByUpn = upn,
+            ModifiedByUpn = upn
         };
 
         // If the stage status already exists, update it; otherwise, insert a new record

@@ -1,4 +1,4 @@
-using Ofqual.Recognition.Citizen.API.Core.Validations;
+using Ofqual.Recognition.Citizen.API.Core.Attributes;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
