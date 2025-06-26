@@ -63,15 +63,15 @@ public class TaskStatusService : ITaskStatusService
 
         var sectionDtos = TaskMapper.ToDto(taskStatuses);
 
-        bool isBeforeReleaseDate = application.ApplicationReleaseDate != null && application.ApplicationReleaseDate > DateTime.UtcNow;
+        bool isSubmitted = application.SubmittedDate.HasValue && application.SubmittedDate.Value > DateTime.UtcNow;
 
         foreach (var section in sectionDtos)
         {
             foreach (var task in section.Tasks)
             {
-                if (declarationTaskIds.Contains(task.TaskId))
+                if (declarationTaskIds.Contains(task.TaskId) && task.Status == TaskStatusEnum.CannotStartYet)
                 {
-                    task.Hint = isBeforeReleaseDate
+                    task.Hint = isSubmitted
                         ? "Not Yet Released"
                         : "You must complete all sections first";
                 }

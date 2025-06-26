@@ -146,7 +146,7 @@ public class TaskStatusServiceTests
                 TaskNameUrl = "declaration-task",
                 TaskOrderNumber = 1,
                 TaskStatusId = Guid.NewGuid(),
-                Status = TaskStatusEnum.NotStarted,
+                Status = TaskStatusEnum.CannotStartYet,
                 QuestionNameUrl = "q1"
             },
             new TaskItemStatusSection
@@ -168,7 +168,7 @@ public class TaskStatusServiceTests
         {
             ApplicationId = applicationId,
             OwnerUserId = Guid.NewGuid(),
-            SubmittedDate = DateTime.UtcNow,
+            SubmittedDate = null,
             ApplicationReleaseDate = DateTime.UtcNow.AddDays(-1),
             OrganisationId = Guid.NewGuid(),
             CreatedDate = DateTime.UtcNow,
@@ -177,23 +177,10 @@ public class TaskStatusServiceTests
             ModifiedByUpn = "test@ofqual.gov.uk"
         };
 
-        _mockTaskRepository.Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
-            .ReturnsAsync(taskStatuses);
-
-        _mockApplicationRepository.Setup(r => r.GetApplicationById(applicationId))
-            .ReturnsAsync(application);
-
-        _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(StageType.Declaration))
-            .ReturnsAsync(new List<StageTaskView>
-            {
-            new StageTaskView { TaskId = declarationTaskId }
-            });
-
-        _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(StageType.Information))
-            .ReturnsAsync(new List<StageTaskView>
-            {
-            new StageTaskView { TaskId = informationTaskId }
-            });
+        _mockTaskRepository.Setup(r => r.GetTaskStatusesByApplicationId(applicationId)).ReturnsAsync(taskStatuses);
+        _mockApplicationRepository.Setup(r => r.GetApplicationById(applicationId)).ReturnsAsync(application);
+        _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(StageType.Declaration)).ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = declarationTaskId } });
+        _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(StageType.Information)).ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = informationTaskId } });
 
         // Act
         var result = await _service.GetTaskStatusesForApplication(applicationId);
@@ -211,9 +198,7 @@ public class TaskStatusServiceTests
     {
         // Arrange
         var applicationId = Guid.NewGuid();
-
-        _mockTaskRepository.Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
-            .ReturnsAsync((IEnumerable<TaskItemStatusSection>?)null!);
+        _mockTaskRepository.Setup(r => r.GetTaskStatusesByApplicationId(applicationId)).ReturnsAsync((IEnumerable<TaskItemStatusSection>?)null!);
 
         // Act
         var result = await _service.GetTaskStatusesForApplication(applicationId);
@@ -229,9 +214,8 @@ public class TaskStatusServiceTests
         // Arrange
         var applicationId = Guid.NewGuid();
 
-        _mockTaskRepository.Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
-            .ReturnsAsync(new List<TaskItemStatusSection>
-            {
+        _mockTaskRepository.Setup(r => r.GetTaskStatusesByApplicationId(applicationId)).ReturnsAsync(new List<TaskItemStatusSection>
+        {
             new TaskItemStatusSection
             {
                 SectionId = Guid.NewGuid(),
@@ -245,10 +229,9 @@ public class TaskStatusServiceTests
                 Status = TaskStatusEnum.NotStarted,
                 QuestionNameUrl = "q1"
             }
-            });
+        });
 
-        _mockApplicationRepository.Setup(r => r.GetApplicationById(applicationId))
-            .ReturnsAsync((Application?)null);
+        _mockApplicationRepository.Setup(r => r.GetApplicationById(applicationId)).ReturnsAsync((Application?)null);
 
         // Act
         var result = await _service.GetTaskStatusesForApplication(applicationId);
@@ -259,7 +242,7 @@ public class TaskStatusServiceTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetTaskStatusesForApplication_ShouldReturnNotYetReleasedHint_IfBeforeReleaseDate()
+    public async Task GetTaskStatusesForApplication_ShouldReturnNotYetReleasedHint_IfSubmitted()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -277,7 +260,7 @@ public class TaskStatusServiceTests
                 TaskNameUrl = "declaration-task",
                 TaskOrderNumber = 1,
                 TaskStatusId = Guid.NewGuid(),
-                Status = TaskStatusEnum.NotStarted,
+                Status = TaskStatusEnum.CannotStartYet,
                 QuestionNameUrl = "q1"
             }
         };
@@ -286,7 +269,7 @@ public class TaskStatusServiceTests
         {
             ApplicationId = applicationId,
             OwnerUserId = Guid.NewGuid(),
-            SubmittedDate = DateTime.UtcNow,
+            SubmittedDate = DateTime.UtcNow.AddDays(1),
             ApplicationReleaseDate = DateTime.UtcNow.AddDays(2),
             OrganisationId = Guid.NewGuid(),
             CreatedDate = DateTime.UtcNow,
@@ -295,20 +278,10 @@ public class TaskStatusServiceTests
             ModifiedByUpn = "test@ofqual.gov.uk"
         };
 
-        _mockTaskRepository.Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
-            .ReturnsAsync(taskStatuses);
-
-        _mockApplicationRepository.Setup(r => r.GetApplicationById(applicationId))
-            .ReturnsAsync(application);
-
-        _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(StageType.Declaration))
-            .ReturnsAsync(new List<StageTaskView>
-            {
-            new StageTaskView { TaskId = declarationTaskId }
-            });
-
-        _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(StageType.Information))
-            .ReturnsAsync(Enumerable.Empty<StageTaskView>());
+        _mockTaskRepository.Setup(r => r.GetTaskStatusesByApplicationId(applicationId)).ReturnsAsync(taskStatuses);
+        _mockApplicationRepository.Setup(r => r.GetApplicationById(applicationId)).ReturnsAsync(application);
+        _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(StageType.Declaration)).ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = declarationTaskId } });
+        _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(StageType.Information)).ReturnsAsync(Enumerable.Empty<StageTaskView>());
 
         // Act
         var result = await _service.GetTaskStatusesForApplication(applicationId);
