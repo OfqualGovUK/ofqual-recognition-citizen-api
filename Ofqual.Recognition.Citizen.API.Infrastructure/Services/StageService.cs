@@ -36,7 +36,7 @@ public class StageService : IStageService
         }
 
         // Get all answers for the application. Default to an empty list if none found
-        var answers = (await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId))?.ToList() ?? new List<TaskQuestionAnswer>();
+        var answers = (await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId))?.ToList() ?? new List<SectionTaskQuestionAnswer>();
 
         // Group questions by TaskId they belong to
         var questionsByTask = questions

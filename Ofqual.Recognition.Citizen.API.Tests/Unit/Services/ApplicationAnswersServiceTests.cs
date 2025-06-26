@@ -251,7 +251,7 @@ public class ApplicationAnswersServiceTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetTaskAnswerReview_ShouldReturnSectionedAnswers_ForAllControlTypes()
+    public async Task GetTaskAnswerReview_ShouldReturnCombinedSection_ForAllControlTypes()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -264,15 +264,15 @@ public class ApplicationAnswersServiceTests
             new Attachment { FileName = "Alpha.pdf", FileMIMEtype = "application/pdf", CreatedByUpn = "user2", ModifiedByUpn = "user2" }
         };
 
-        var taskQuestionAnswers = new List<TaskQuestionAnswer>
+        var taskQuestionAnswers = new List<SectionTaskQuestionAnswer>
         {
-            new TaskQuestionAnswer
+            new SectionTaskQuestionAnswer
             {
                 ApplicationId = applicationId,
                 TaskId = taskId,
                 TaskName = "About You",
                 TaskNameUrl = "about-you",
-                TaskOrder = 1,
+                TaskOrderNumber = 1,
                 QuestionId = questionId,
                 QuestionNameUrl = "your-background",
                 QuestionContent = JsonSerializer.Serialize(new QuestionContent
@@ -363,16 +363,16 @@ public class ApplicationAnswersServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(5, result.Count);
+        Assert.Single(result);
 
-        var fileSection = result.FirstOrDefault(s => s.SectionHeading == "Supporting Documents");
-        Assert.NotNull(fileSection);
+        var section = result.First();
+        Assert.NotEmpty(section.QuestionAnswers);
+        Assert.Equal(6, section.QuestionAnswers.Count);
 
-        var fileAnswer = fileSection!.QuestionAnswers.FirstOrDefault();
+        var fileAnswer = section.QuestionAnswers.FirstOrDefault(a => a.QuestionText == "Files you uploaded");
         Assert.NotNull(fileAnswer);
-        Assert.Equal("Files you uploaded", fileAnswer!.QuestionText);
 
-        var fileNames = fileAnswer.AnswerValue!;
+        var fileNames = fileAnswer!.AnswerValue!;
         Assert.Equal(2, fileNames.Count);
         Assert.Equal("Alpha.pdf", fileNames[0]);
         Assert.Equal("Zeta.pdf", fileNames[1]);

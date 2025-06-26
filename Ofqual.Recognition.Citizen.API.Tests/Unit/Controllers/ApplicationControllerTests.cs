@@ -1,7 +1,6 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
-using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Controllers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
@@ -516,14 +515,14 @@ public class ApplicationControllerTests
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
 
-        var expectedReviewAnswers = new List<QuestionAnswerSectionDto>
+        var expectedReviewAnswers = new List<TaskReviewGroupDto>
         {
-            new QuestionAnswerSectionDto
+            new TaskReviewGroupDto
             {
                 SectionHeading = "Test Section",
-                QuestionAnswers = new List<QuestionAnswerReviewDto>
+                QuestionAnswers = new List<TaskReviewItemDto>
                 {
-                    new QuestionAnswerReviewDto
+                    new TaskReviewItemDto
                     {
                         QuestionText = "Sample Question",
                         AnswerValue = new List<string> { "Sample Answer" },
@@ -541,7 +540,7 @@ public class ApplicationControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnedSections = Assert.IsType<List<QuestionAnswerSectionDto>>(okResult.Value);
+        var returnedSections = Assert.IsType<List<TaskReviewGroupDto>>(okResult.Value);
 
         Assert.Single(returnedSections);
         var section = returnedSections[0];
@@ -563,7 +562,7 @@ public class ApplicationControllerTests
 
         _mockApplicationAnswersService
             .Setup(service => service.GetTaskAnswerReview(applicationId, taskId))
-            .ReturnsAsync(new List<QuestionAnswerSectionDto>());
+            .ReturnsAsync(new List<TaskReviewGroupDto>());
 
         // Act
         var result = await _controller.GetTaskAnswerReview(applicationId, taskId);

@@ -238,8 +238,12 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.Equal(question.QuestionNameUrl, item.QuestionNameUrl);
         Assert.Equal(task.TaskName, item.TaskName);
         Assert.Equal(task.TaskNameUrl, item.TaskNameUrl);
-        Assert.Equal(task.TaskOrderNumber, item.TaskOrder);
+        Assert.Equal(task.TaskOrderNumber, item.TaskOrderNumber);
         Assert.Equal(answerJson, item.Answer);
+
+        Assert.Equal(section.SectionId, item.SectionId);
+        Assert.Equal(section.SectionName, item.SectionName);
+        Assert.Equal(section.SectionOrderNumber, item.SectionOrderNumber);
 
         // Clean up test container
         await _fixture.DisposeAsync();
@@ -330,21 +334,31 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var result = (await unitOfWork.ApplicationAnswersRepository.GetTaskQuestionAnswers(application.ApplicationId, task.TaskId)).ToList();
+        var result = (await unitOfWork.ApplicationAnswersRepository
+            .GetTaskQuestionAnswers(application.ApplicationId, task.TaskId))
+            .ToList();
 
         // Assert
         Assert.True(upserted);
         Assert.Single(result);
+
         var answer = result[0];
+
         Assert.Equal(task.TaskId, answer.TaskId);
         Assert.Equal(task.TaskName, answer.TaskName);
         Assert.Equal(task.TaskNameUrl, answer.TaskNameUrl);
-        Assert.Equal(task.TaskOrderNumber, answer.TaskOrder);
+        Assert.Equal(task.TaskOrderNumber, answer.TaskOrderNumber);
+
         Assert.Equal(question.QuestionId, answer.QuestionId);
         Assert.Equal(question.QuestionNameUrl, answer.QuestionNameUrl);
         Assert.Equal(question.QuestionContent, answer.QuestionContent);
+
         Assert.Equal(application.ApplicationId, answer.ApplicationId);
         Assert.Equal(answerJson, answer.Answer);
+
+        Assert.Equal(section.SectionId, answer.SectionId);
+        Assert.Equal(section.SectionName, answer.SectionName);
+        Assert.Equal(section.SectionOrderNumber, answer.SectionOrderNumber);
 
         // Clean up test container
         await _fixture.DisposeAsync();

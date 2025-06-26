@@ -1,9 +1,9 @@
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 /// <summary>
-/// Used for displaying a question and its answer on a review page.
+/// Represents a question and its answer.
 /// </summary>
-public class QuestionAnswerReviewDto
+public class TaskReviewItemDto
 {
     public string? QuestionText { get; set; }
     public List<string>? AnswerValue { get; set; }

@@ -1,6 +1,8 @@
+using Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
+
 namespace Ofqual.Recognition.API.Models.JSON.Questions;
 
-public class FileUpload
+public class FileUpload : ISectionGroup
 {
     /// <summary>
     /// The label shown above the file input.

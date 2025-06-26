@@ -35,7 +35,7 @@ public class StageServiceTests
         var applicationId = Guid.NewGuid();
         var stageTasks = new List<StageTaskView>(); // No tasks for the stage
         var questions = new List<Question>(); // No questions available
-        var answers = new List<TaskQuestionAnswer>(); // No answers available
+        var answers = new List<SectionTaskQuestionAnswer>(); // No answers available
         var stageStatus = new StageStatusView
         {
             ApplicationId = applicationId,
@@ -143,26 +143,26 @@ public class StageServiceTests
                 }
             };
 
-        var answers = new List<TaskQuestionAnswer>
+        var answers = new List<SectionTaskQuestionAnswer>
             {
-                new TaskQuestionAnswer
+                new SectionTaskQuestionAnswer
                 {
                     TaskId  = taskId1,
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
-                    TaskOrder = 1,
+                    TaskOrderNumber = 1,
                     QuestionId = questionId1,
                     QuestionContent = "What is A?",
                     QuestionNameUrl = "question-a",
                     Answer = "{\"some\":\"data\"}",
                     ApplicationId = applicationId
                 },
-                new TaskQuestionAnswer {
+                new SectionTaskQuestionAnswer {
 
                     TaskId  = taskId2,
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
-                    TaskOrder = 1,
+                    TaskOrderNumber = 1,
                     QuestionId = questionId2,
                     QuestionContent = "What is A?",
                     QuestionNameUrl = "question-a",
@@ -250,26 +250,26 @@ public class StageServiceTests
                 }
             };
 
-        var answers = new List<TaskQuestionAnswer>
+        var answers = new List<SectionTaskQuestionAnswer>
             {
-                new TaskQuestionAnswer
+                new SectionTaskQuestionAnswer
                 {
                     TaskId  = taskId1,
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
-                    TaskOrder = 1,
+                    TaskOrderNumber = 1,
                     QuestionId = questionId1,
                     QuestionContent = "What is A?",
                     QuestionNameUrl = "question-a",
                     Answer = "{\"some\":\"data\"}",
                     ApplicationId = applicationId
                 },
-                new TaskQuestionAnswer {
+                new SectionTaskQuestionAnswer {
 
                     TaskId  = taskId2,
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
-                    TaskOrder = 1,
+                    TaskOrderNumber = 1,
                     QuestionId = questionId2,
                     QuestionContent = "What is A?",
                     QuestionNameUrl = "question-a",

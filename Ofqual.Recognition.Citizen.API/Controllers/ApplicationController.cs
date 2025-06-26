@@ -193,7 +193,7 @@ public class ApplicationController : ControllerBase
     /// <param name="taskId">The ID of the task.</param>
     [HttpGet("{applicationId}/tasks/{taskId}/questions/answers")]
     [CheckApplicationId(queryParam: "applicationId")]
-    public async Task<ActionResult<List<QuestionAnswerSectionDto>>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
+    public async Task<ActionResult<List<TaskReviewGroupDto>>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
         try
         {

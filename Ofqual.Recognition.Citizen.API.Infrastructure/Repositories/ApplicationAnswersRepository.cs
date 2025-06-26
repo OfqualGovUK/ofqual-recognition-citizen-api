@@ -17,7 +17,7 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
         _transaction = transaction;
     }
 
-    public async Task<IEnumerable<TaskQuestionAnswer>?> GetAllApplicationAnswers(Guid applicationId)
+    public async Task<IEnumerable<SectionTaskQuestionAnswer>?> GetAllApplicationAnswers(Guid applicationId)
     {
         try
         {
@@ -31,13 +31,18 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
                     Q.QuestionNameUrl,
                     T.TaskName,
                     T.TaskNameUrl,
-                    T.OrderNumber AS TaskOrder
+                    T.OrderNumber AS TaskOrderNumber,
+                    S.SectionId,
+                    S.SectionName,
+                    S.OrderNumber AS SectionOrderNumber
                 FROM [recognitionCitizen].[ApplicationAnswers] AA
                 INNER JOIN [recognitionCitizen].[Question] Q ON AA.QuestionId = Q.QuestionId
                 INNER JOIN [recognitionCitizen].[Task] T ON Q.TaskId = T.TaskId
-                WHERE ApplicationId = @applicationId";
+                INNER JOIN [recognitionCitizen].[Section] S ON T.SectionId = S.SectionId
+                WHERE AA.ApplicationId = @applicationId
+                ORDER BY S.OrderNumber, T.OrderNumber, Q.OrderNumber";
 
-            return await _connection.QueryAsync<TaskQuestionAnswer>(query, new
+            return await _connection.QueryAsync<SectionTaskQuestionAnswer>(query, new
             {
                 applicationId
             }, _transaction);
@@ -96,29 +101,33 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
         }
     }
 
-    public async Task<IEnumerable<TaskQuestionAnswer>> GetTaskQuestionAnswers(Guid applicationId, Guid taskId)
+    public async Task<IEnumerable<SectionTaskQuestionAnswer>> GetTaskQuestionAnswers(Guid applicationId, Guid taskId)
     {
         try
         {
             const string query = @"
                 SELECT
-                    t.TaskId,
-                    t.TaskName,
-                    t.TaskNameUrl,
-                    t.OrderNumber AS TaskOrder,
-                    q.QuestionId,
-                    q.QuestionContent,
-                    q.QuestionNameUrl,
-                    a.Answer,
-                    a.ApplicationId
-                FROM [recognitionCitizen].[Task] t
-                INNER JOIN [recognitionCitizen].[Question] q ON q.TaskId = t.TaskId
-                LEFT JOIN [recognitionCitizen].[ApplicationAnswers] a
-                    ON a.QuestionId = q.QuestionId AND a.ApplicationId = @ApplicationId
-                WHERE t.TaskId = @TaskId
-                ORDER BY t.OrderNumber, q.OrderNumber";
+                    S.SectionId,
+                    S.SectionName,
+                    S.OrderNumber AS SectionOrderNumber,
+                    T.TaskId,
+                    T.TaskName,
+                    T.TaskNameUrl,
+                    T.OrderNumber AS TaskOrderNumber,
+                    Q.QuestionId,
+                    Q.QuestionContent,
+                    Q.QuestionNameUrl,
+                    AA.Answer,
+                    AA.ApplicationId
+                FROM [recognitionCitizen].[ApplicationAnswers] AA
+                INNER JOIN [recognitionCitizen].[Question] Q ON AA.QuestionId = Q.QuestionId
+                INNER JOIN [recognitionCitizen].[Task] T ON Q.TaskId = T.TaskId
+                INNER JOIN [recognitionCitizen].[Section] S ON T.SectionId = S.SectionId
+                WHERE AA.ApplicationId = @ApplicationId
+                AND T.TaskId = @TaskId
+                ORDER BY S.OrderNumber, T.OrderNumber, Q.OrderNumber";
 
-            return await _connection.QueryAsync<TaskQuestionAnswer>(query, new
+            return await _connection.QueryAsync<SectionTaskQuestionAnswer>(query, new
             {
                 ApplicationId = applicationId,
                 TaskId = taskId
@@ -127,7 +136,7 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to fetch question answers for TaskId: {TaskId}, ApplicationId: {ApplicationId}", taskId, applicationId);
-            return Enumerable.Empty<TaskQuestionAnswer>();
+            return Enumerable.Empty<SectionTaskQuestionAnswer>();
         }
     }
 
