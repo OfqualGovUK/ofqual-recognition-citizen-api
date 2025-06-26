@@ -269,9 +269,21 @@ public class ApplicationController : ControllerBase
         }
     }
 
+
+    /// <summary>
+    /// Checks if all subsequent tasks are completed and marks the application ready to submit
+    /// </summary>
+    /// <param name="applicationId"></param>
     [HttpPost("{applicationId}/complete")]
+    [CheckApplicationId(queryParam: "applicationId")]
     public async Task<IActionResult> CompleteApplication(Guid applicationId)
     {
+        if (await _context.ApplicationRepository.CheckIfReadyToSubmit(applicationId) != ApplicationStatus.Completed)
+            return BadRequest("Unable to complete application, there are outstanding tasks that are required");
+
+
+
+
         return Ok();
     }
 }
