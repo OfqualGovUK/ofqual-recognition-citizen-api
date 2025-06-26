@@ -15,7 +15,7 @@ namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 public class AttachmentControllerTests
 {
     private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
-    private readonly Mock<IAttachmentRepository> _mockAttachmentRepo = new();
+    private readonly Mock<IAttachmentRepository> _mockAttachmentRepository = new();
     private readonly Mock<IAzureBlobStorageService> _mockBlobStorage = new();
     private readonly Mock<IAntiVirusService> _mockAntiVirus = new();
     private readonly Mock<IAttachmentService> _mockAttachmentService = new();
@@ -23,7 +23,7 @@ public class AttachmentControllerTests
 
     public AttachmentControllerTests()
     {
-        _mockUnitOfWork.Setup(u => u.AttachmentRepository).Returns(_mockAttachmentRepo.Object);
+        _mockUnitOfWork.Setup(u => u.AttachmentRepository).Returns(_mockAttachmentRepository.Object);
 
         _controller = new AttachmentController(
             _mockUnitOfWork.Object,
@@ -227,7 +227,7 @@ public class AttachmentControllerTests
             }
         };
 
-        _mockAttachmentRepo.Setup(r => r.GetAllAttachmentsForLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.GetAllAttachmentsForLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachments);
 
         // Act
@@ -243,7 +243,7 @@ public class AttachmentControllerTests
     public async Task GetAllFiles_ReturnsNotFound_WhenNoAttachmentsExist()
     {
         // Arrange
-        _mockAttachmentRepo.Setup(r => r.GetAllAttachmentsForLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.GetAllAttachmentsForLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(new List<Attachment>());
 
         // Act
@@ -273,7 +273,7 @@ public class AttachmentControllerTests
 
         var stream = new MemoryStream(Encoding.UTF8.GetBytes("content"));
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
         _mockBlobStorage.Setup(s => s.Read(It.IsAny<Guid>(), It.IsAny<Guid>()))
                         .ReturnsAsync(stream);
@@ -291,7 +291,7 @@ public class AttachmentControllerTests
     public async Task DownloadFile_ReturnsBadRequest_WhenAttachmentNotFound()
     {
         // Arrange
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync((Attachment?)null);
 
         // Act
@@ -319,7 +319,7 @@ public class AttachmentControllerTests
             ModifiedDate = DateTime.UtcNow
         };
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
         _mockBlobStorage.Setup(s => s.Read(It.IsAny<Guid>(), It.IsAny<Guid>()))
                         .ReturnsAsync((Stream?)null);
@@ -351,7 +351,7 @@ public class AttachmentControllerTests
 
         var emptyStream = new MemoryStream();
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
         _mockBlobStorage.Setup(s => s.Read(It.IsAny<Guid>(), It.IsAny<Guid>()))
                         .ReturnsAsync(emptyStream);
@@ -383,7 +383,7 @@ public class AttachmentControllerTests
 
         var stream = new MemoryStream(Encoding.UTF8.GetBytes("some content"));
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
         _mockBlobStorage.Setup(s => s.Read(It.IsAny<Guid>(), It.IsAny<Guid>()))
                         .ReturnsAsync(stream);
@@ -414,9 +414,9 @@ public class AttachmentControllerTests
             ModifiedDate = DateTime.UtcNow
         };
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
-        _mockAttachmentRepo.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(true);
         _mockBlobStorage.Setup(s => s.Delete(It.IsAny<Guid>(), It.IsAny<Guid>()))
                         .ReturnsAsync(true);
@@ -434,7 +434,7 @@ public class AttachmentControllerTests
     public async Task DeleteFile_ReturnsBadRequest_WhenAttachmentNotFound()
     {
         // Arrange
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync((Attachment?)null);
 
         // Act
@@ -463,9 +463,9 @@ public class AttachmentControllerTests
             ModifiedDate = DateTime.UtcNow
         };
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
-        _mockAttachmentRepo.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(false);
 
         // Act
@@ -494,9 +494,9 @@ public class AttachmentControllerTests
             ModifiedDate = DateTime.UtcNow
         };
 
-        _mockAttachmentRepo.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.GetLinkedAttachment(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(attachment);
-        _mockAttachmentRepo.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+        _mockAttachmentRepository.Setup(r => r.DeleteAttachmentWithLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
                            .ReturnsAsync(true);
         _mockBlobStorage.Setup(r => r.Delete(It.IsAny<Guid>(), It.IsAny<Guid>())).ReturnsAsync(false);
 

@@ -39,7 +39,7 @@ public class StageServiceTests
         var stageStatus = new StageStatusView
         {
             ApplicationId = applicationId,
-            StageId = Stage.PreEngagement,
+            StageId = StageType.PreEngagement,
             StatusId = TaskStatusEnum.InProgress,
             StageStartDate = DateTime.UtcNow.AddDays(-1),
             StageCompletionDate = DateTime.UtcNow,
@@ -47,7 +47,7 @@ public class StageServiceTests
             Status = "In Progress"
         };
 
-        _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(Stage.PreEngagement))
+        _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(StageType.PreEngagement))
             .ReturnsAsync(stageTasks);
 
         _mockQuestionRepository.Setup(r => r.GetAllQuestions())
@@ -56,11 +56,11 @@ public class StageServiceTests
         _mockApplicationAnswersRepository.Setup(r => r.GetAllApplicationAnswers(applicationId))
             .ReturnsAsync(answers);
 
-        _mockStageRepository.Setup(r => r.GetStageStatus(applicationId, Stage.PreEngagement))
+        _mockStageRepository.Setup(r => r.GetStageStatus(applicationId, StageType.PreEngagement))
             .ReturnsAsync(stageStatus);
 
         // Act
-        var result = await _stageService.EvaluateAndUpsertStageStatus(Guid.NewGuid(), Stage.PreEngagement);
+        var result = await _stageService.EvaluateAndUpsertStageStatus(Guid.NewGuid(), StageType.PreEngagement);
 
         // Assert
         Assert.False(result);
@@ -75,7 +75,7 @@ public class StageServiceTests
         var applicationId = Guid.Empty;
 
         // Act
-        var result = await _stageService.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement);
+        var result = await _stageService.EvaluateAndUpsertStageStatus(applicationId, StageType.PreEngagement);
 
         // Assert
         Assert.False(result);
@@ -88,7 +88,7 @@ public class StageServiceTests
     {
         // Arrange
         _mockStageRepository
-            .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<Stage>()))
+            .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<StageType>()))
             .ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = Guid.NewGuid() } });
 
         _mockQuestionRepository
@@ -96,7 +96,7 @@ public class StageServiceTests
             .ReturnsAsync((IEnumerable<Question>?)null!);
 
         // Act
-        var result = await _stageService.EvaluateAndUpsertStageStatus(Guid.NewGuid(), Stage.PreEngagement);
+        var result = await _stageService.EvaluateAndUpsertStageStatus(Guid.NewGuid(), StageType.PreEngagement);
 
         // Assert
         Assert.False(result);
@@ -115,8 +115,8 @@ public class StageServiceTests
 
         var stageTasks = new List<StageTaskView>
             {
-                new StageTaskView { TaskId = taskId1, StageId = Stage.PreEngagement, OrderNumber = 1 },
-                new StageTaskView { TaskId = taskId2, StageId = Stage.PreEngagement, OrderNumber = 2 }
+                new StageTaskView { TaskId = taskId1, StageId = StageType.PreEngagement, OrderNumber = 1 },
+                new StageTaskView { TaskId = taskId2, StageId = StageType.PreEngagement, OrderNumber = 2 }
             };
 
         var questions = new List<Question>
@@ -174,7 +174,7 @@ public class StageServiceTests
         var stageStatus = new StageStatusView
         {
             ApplicationId = applicationId,
-            StageId = Stage.PreEngagement,
+            StageId = StageType.PreEngagement,
             StatusId = TaskStatusEnum.Completed,
             StageStartDate = DateTime.UtcNow.AddDays(-1),
             StageCompletionDate = DateTime.UtcNow,
@@ -183,7 +183,7 @@ public class StageServiceTests
         };
 
         _mockStageRepository
-            .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<Stage>()))
+            .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<StageType>()))
             .ReturnsAsync(stageTasks);
 
         _mockQuestionRepository
@@ -195,12 +195,12 @@ public class StageServiceTests
             .ReturnsAsync(answers);
 
         // Mock: The existing stage status has been set to Completed
-        _mockStageRepository.Setup(r => r.GetStageStatus(applicationId, It.IsAny<Stage>()))
+        _mockStageRepository.Setup(r => r.GetStageStatus(applicationId, It.IsAny<StageType>()))
             .ReturnsAsync(stageStatus);
 
         // Act
         // Evaluate the attempt to Upsert the stage status
-        var result = await _stageService.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement);
+        var result = await _stageService.EvaluateAndUpsertStageStatus(applicationId, StageType.PreEngagement);
 
         // Assert
         // The result should be true, but no Upsert should occur since the status is unchanged
@@ -222,8 +222,8 @@ public class StageServiceTests
 
         var stageTasks = new List<StageTaskView>
             {
-                new StageTaskView { TaskId = taskId1, StageId = Stage.PreEngagement, OrderNumber = 1 },
-                new StageTaskView { TaskId = taskId2, StageId = Stage.PreEngagement, OrderNumber = 2 }
+                new StageTaskView { TaskId = taskId1, StageId = StageType.PreEngagement, OrderNumber = 1 },
+                new StageTaskView { TaskId = taskId2, StageId = StageType.PreEngagement, OrderNumber = 2 }
             };
 
         var questions = new List<Question>
@@ -279,7 +279,7 @@ public class StageServiceTests
             };
 
         _mockStageRepository
-            .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<Stage>()))
+            .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<StageType>()))
             .ReturnsAsync(stageTasks);
 
         _mockQuestionRepository
@@ -290,7 +290,7 @@ public class StageServiceTests
             .Setup(r => r.GetAllApplicationAnswers(applicationId))
             .ReturnsAsync(answers);
 
-        _mockStageRepository.Setup(r => r.GetStageStatus(applicationId, It.IsAny<Stage>()))
+        _mockStageRepository.Setup(r => r.GetStageStatus(applicationId, It.IsAny<StageType>()))
             .ReturnsAsync((StageStatusView?)null);
 
         StageStatus stageStatus = null!
@@ -301,7 +301,7 @@ public class StageServiceTests
             .ReturnsAsync(true);
 
         // Act
-        var result = await _stageService.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement);
+        var result = await _stageService.EvaluateAndUpsertStageStatus(applicationId, StageType.PreEngagement);
 
         // Assert
         Assert.True(result);

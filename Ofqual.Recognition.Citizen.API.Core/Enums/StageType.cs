@@ -1,6 +1,6 @@
 ﻿namespace Ofqual.Recognition.Citizen.API.Core.Enums;
 
-public enum Stage
+public enum StageType
 {
     PreEngagement = 1,
 }

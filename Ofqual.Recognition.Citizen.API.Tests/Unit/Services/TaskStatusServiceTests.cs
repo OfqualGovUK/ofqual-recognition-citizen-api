@@ -44,11 +44,11 @@ public class TaskStatusServiceTests
             r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.Completed, upn))
             .ReturnsAsync(true);
         _mockStageService.Setup(s =>
-            s.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement))
+            s.EvaluateAndUpsertStageStatus(applicationId, StageType.PreEngagement))
             .ReturnsAsync(true);
 
         // Act
-        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.Completed, Stage.PreEngagement);
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.Completed, StageType.PreEngagement);
 
         // Assert
         Assert.True(result);
@@ -69,11 +69,11 @@ public class TaskStatusServiceTests
             .ReturnsAsync(true);
 
         // Act
-        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.InProgress, Stage.PreEngagement);
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.InProgress, StageType.PreEngagement);
 
         // Assert
         Assert.True(result);
-        _mockStageService.Verify(s => s.EvaluateAndUpsertStageStatus(It.IsAny<Guid>(), It.IsAny<Stage>()), Times.Never);
+        _mockStageService.Verify(s => s.EvaluateAndUpsertStageStatus(It.IsAny<Guid>(), It.IsAny<StageType>()), Times.Never);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public class TaskStatusServiceTests
             .ReturnsAsync(false);
 
         // Act
-        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.InProgress, Stage.PreEngagement);
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.InProgress, StageType.PreEngagement);
 
         // Assert
         Assert.False(result);
@@ -111,11 +111,11 @@ public class TaskStatusServiceTests
             r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.Completed, upn))
             .ReturnsAsync(true);
         _mockStageService.Setup(s =>
-            s.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement))
+            s.EvaluateAndUpsertStageStatus(applicationId, StageType.PreEngagement))
             .ReturnsAsync(false);
 
         // Act
-        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.Completed, Stage.PreEngagement);
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.Completed, StageType.PreEngagement);
 
         // Assert
         Assert.False(result);

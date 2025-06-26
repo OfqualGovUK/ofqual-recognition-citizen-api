@@ -33,7 +33,7 @@ public class PreEngagementController : Controller
     {
         try
         {
-            StageQuestionDto? firstQuestion = await _context.StageRepository.GetFirstQuestionByStage(Stage.PreEngagement);
+            StageQuestionDto? firstQuestion = await _context.StageRepository.GetFirstQuestionByStage(StageType.PreEngagement);
             if (firstQuestion == null)
             {
                 return NotFound("No Pre-Engagement question found.");
@@ -59,7 +59,7 @@ public class PreEngagementController : Controller
     {
         try
         {
-            StageQuestionDetails? question = await _context.StageRepository.GetStageQuestionByTaskAndQuestionUrl(Stage.PreEngagement, taskNameUrl, questionNameUrl);
+            StageQuestionDetails? question = await _context.StageRepository.GetStageQuestionByTaskAndQuestionUrl(StageType.PreEngagement, taskNameUrl, questionNameUrl);
             if (question == null)
             {
                 return BadRequest($"No pre-engagement question found for URL: {taskNameUrl}/{questionNameUrl}");

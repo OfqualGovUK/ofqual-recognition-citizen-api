@@ -18,7 +18,7 @@ public class TaskStatusService : ITaskStatusService
         _stageService = stageService;
     }
 
-    public async Task<bool> UpdateTaskAndStageStatus(Guid applicationId, Guid taskId, TaskStatusEnum status, Stage stageToUpdate)
+    public async Task<bool> UpdateTaskAndStageStatus(Guid applicationId, Guid taskId, TaskStatusEnum status, StageType stageToUpdate)
     {
         string upn = _userInformationService.GetCurrentUserUpn();
 

@@ -151,7 +151,7 @@ public class ApplicationControllerTests
             .ReturnsAsync(true);
         _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, answers))
             .ReturnsAsync(true);
-        _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(app.ApplicationId, Stage.PreEngagement))
+        _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(app.ApplicationId, StageType.PreEngagement))
             .ReturnsAsync(false);
 
         // Act
@@ -191,7 +191,7 @@ public class ApplicationControllerTests
             .ReturnsAsync(true);
         _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, answers))
             .ReturnsAsync(true);
-        _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(app.ApplicationId, Stage.PreEngagement))
+        _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(app.ApplicationId, StageType.PreEngagement))
             .ReturnsAsync(true);
 
         // Act
@@ -314,7 +314,7 @@ public class ApplicationControllerTests
         var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
 
         _mockTaskStatusService
-            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, Stage.PreEngagement))
+            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, StageType.PreEngagement))
             .ReturnsAsync(true);
 
         // Act
@@ -335,7 +335,7 @@ public class ApplicationControllerTests
         var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
 
         _mockTaskStatusService
-            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, Stage.PreEngagement))
+            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, StageType.PreEngagement))
             .ReturnsAsync(false);
 
         // Act
@@ -357,7 +357,7 @@ public class ApplicationControllerTests
         var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.InProgress };
 
         _mockTaskStatusService
-            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, Stage.PreEngagement))
+            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, StageType.PreEngagement))
             .ThrowsAsync(new Exception("Unexpected error"));
 
         // Act & Assert
