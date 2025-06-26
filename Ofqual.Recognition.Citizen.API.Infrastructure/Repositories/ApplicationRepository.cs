@@ -51,6 +51,29 @@ public class ApplicationRepository : IApplicationRepository
         }
     }
 
+    public async Task<Application?> GetLatestApplication(string oid)
+    {
+        try
+        {
+            const string query = @"
+                SELECT TOP 1 * FROM [recognitionCitizen].[Application] AS app
+                INNER JOIN [recognitionCitizen].[RecognitionCitizenUser] ON app.OwnerUserId = UserId
+                WHERE B2CId = @oid
+                ORDER BY app.CreatedDate DESC
+            ";
+
+            return await _connection.QuerySingleAsync<Application>(query, new
+            {
+                oid
+            }, _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Exception raised when trying to retrieve an application in ApplicationRepository::GetLatestApplication");
+            return null;
+        }
+    }
+
     private async Task<User> CreateUser(string oid, string displayName, string emailAddress)
     {
         try
