@@ -247,9 +247,21 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
             CreatedByUpn = "test@ofqual.gov.uk"
@@ -388,9 +400,21 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
             CreatedByUpn = "test@ofqual.gov.uk"

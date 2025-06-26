@@ -21,7 +21,7 @@ public class AttachmentService : IAttachmentService
         string upn = _userInformationService.GetCurrentUserUpn();
 
         // Save attachment metadata
-        var savedAttachment = await _context.AttachmentRepository.CreateAttachment(file.FileName, file.ContentType, file.Length, upn);
+        Attachment? savedAttachment = await _context.AttachmentRepository.CreateAttachment(file.FileName, file.ContentType, file.Length, upn);
         if (savedAttachment == null)
         {
             return null;
