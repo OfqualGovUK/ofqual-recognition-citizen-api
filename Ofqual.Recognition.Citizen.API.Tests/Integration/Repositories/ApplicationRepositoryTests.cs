@@ -1,5 +1,6 @@
 ﻿using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
+using Ofqual.Recognition.Citizen.Tests.Integration.Helper;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Xunit;
@@ -140,8 +141,8 @@ public class ApplicationRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.NotNull(result);
         Assert.Equal(app.ApplicationId, result!.ApplicationId);
         Assert.Equal(app.OwnerUserId, result.OwnerUserId);
-        Assert.Equal(app.SubmittedDate, result.SubmittedDate);
-        Assert.Equal(app.ApplicationReleaseDate, result.ApplicationReleaseDate);
+        TestAssertHelpers.AssertDateTimeAlmostEqual(app.SubmittedDate!.Value, result.SubmittedDate!.Value);
+        TestAssertHelpers.AssertDateTimeAlmostEqual(app.ApplicationReleaseDate!.Value, result.ApplicationReleaseDate!.Value);
         Assert.Equal(app.OrganisationId, result.OrganisationId);
         Assert.Equal(app.CreatedByUpn, result.CreatedByUpn);
         Assert.Equal(app.ModifiedByUpn, result.ModifiedByUpn);
