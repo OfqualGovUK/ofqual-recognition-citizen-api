@@ -11,6 +11,10 @@ public class TaskQuestionAnswer
     public required string TaskNameUrl { get; set; }
     public int TaskOrder { get; set; }
 
+    // Section table
+    public Guid SectionId { get; set; }
+    public required string SectionName { get; set; }
+
     // Question table
     public Guid QuestionId { get; set; }
     public required string QuestionContent { get; set; }

@@ -234,6 +234,8 @@ public class ApplicationAnswersServiceTests
                 TaskName = "About You",
                 TaskNameUrl = "about-you",
                 TaskOrder = 1,
+                SectionId = Guid.NewGuid(),
+                SectionName = "Personal Information",
                 QuestionId = questionId,
                 QuestionNameUrl = "your-background",
                 QuestionContent = JsonSerializer.Serialize(new QuestionContent

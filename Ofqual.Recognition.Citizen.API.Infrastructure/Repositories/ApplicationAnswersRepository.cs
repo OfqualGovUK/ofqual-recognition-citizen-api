@@ -31,10 +31,13 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
                     Q.QuestionNameUrl,
                     T.TaskName,
                     T.TaskNameUrl,
-                    T.OrderNumber AS TaskOrder
+                    T.OrderNumber AS TaskOrder,
+                    S.SectionId,
+                    S.SectionName
                 FROM [recognitionCitizen].[ApplicationAnswers] AA
                 INNER JOIN [recognitionCitizen].[Question] Q ON AA.QuestionId = Q.QuestionId
                 INNER JOIN [recognitionCitizen].[Task] T ON Q.TaskId = T.TaskId
+                INNER JOIN [recognitionCitizen].[Section] S ON T.SectionId = S.SectionId
                 WHERE ApplicationId = @applicationId";
 
             return await _connection.QueryAsync<TaskQuestionAnswer>(query, new
@@ -110,12 +113,15 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
                     q.QuestionContent,
                     q.QuestionNameUrl,
                     a.Answer,
-                    a.ApplicationId
+                    a.ApplicationId,
+                    s.SectionId,
+                    s.SectionName
                 FROM [recognitionCitizen].[Task] t
                 INNER JOIN [recognitionCitizen].[Question] q ON q.TaskId = t.TaskId
+                INNER JOIN [recognitionCitizen].[Section] s ON t.SectionId = s.SectionId
                 LEFT JOIN [recognitionCitizen].[ApplicationAnswers] a
-                    ON a.QuestionId = q.QuestionId AND a.ApplicationId = @ApplicationId
-                WHERE t.TaskId = @TaskId
+                    ON a.QuestionId = q.QuestionId AND a.ApplicationId = @applicationId
+                WHERE t.TaskId = @taskId
                 ORDER BY t.OrderNumber, q.OrderNumber";
 
             return await _connection.QueryAsync<TaskQuestionAnswer>(query, new

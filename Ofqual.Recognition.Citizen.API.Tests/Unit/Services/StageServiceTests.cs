@@ -81,7 +81,7 @@ public class StageServiceTests
 
         // Act
         var result = await _stageService.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement);
-        
+
         // Assert
         Assert.False(result);
         _mockStageRepository.Verify(r => r.UpsertStageStatusRecord(It.IsAny<StageStatus>()), Times.Never);
@@ -156,6 +156,8 @@ public class StageServiceTests
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
                     TaskOrder = 1,
+                    SectionId = Guid.NewGuid(),
+                    SectionName = "Personal Information",
                     QuestionId = questionId1,
                     QuestionContent = "What is A?",
                     QuestionNameUrl = "question-a",
@@ -168,6 +170,8 @@ public class StageServiceTests
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
                     TaskOrder = 1,
+                    SectionId = Guid.NewGuid(),
+                    SectionName = "Personal Information",
                     QuestionId = questionId2,
                     QuestionContent = "What is A?",
                     QuestionNameUrl = "question-a",
@@ -263,6 +267,8 @@ public class StageServiceTests
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
                     TaskOrder = 1,
+                    SectionId = Guid.NewGuid(),
+                    SectionName = "Personal Information",
                     QuestionId = questionId1,
                     QuestionContent = "What is A?",
                     QuestionNameUrl = "question-a",
@@ -275,6 +281,8 @@ public class StageServiceTests
                     TaskName = "Task A",
                     TaskNameUrl = "task-a",
                     TaskOrder = 1,
+                    SectionId = Guid.NewGuid(),
+                    SectionName = "Personal Information",
                     QuestionId = questionId2,
                     QuestionContent = "What is A?",
                     QuestionNameUrl = "question-a",
