@@ -6,4 +6,5 @@ public interface IApplicationRepository
 {
     public Task<Application?> CreateApplication(Guid userId, string upn);
     public Task<Application?> GetLatestApplication(string oid);
+    public Task<Application?> GetApplicationById(Guid applicationId);
 }

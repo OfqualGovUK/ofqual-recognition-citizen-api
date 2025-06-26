@@ -8,6 +8,5 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 public class TaskItemStatusSectionDto : ISection
 {
     public required string SectionName { get; set; }
-
     public IEnumerable<TaskItemStatusDto> Tasks { get; set; } = new List<TaskItemStatusDto>();
 }

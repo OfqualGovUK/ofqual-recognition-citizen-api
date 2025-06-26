@@ -96,4 +96,57 @@ public class ApplicationRepositoryTests : IClassFixture<SqlTestFixture>
         // Clean up test container
         await _fixture.DisposeAsync();
     }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetApplicationById_Should_Return_Application()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            UserId = Guid.NewGuid(),
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Test User",
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        });
+
+        var app = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
+        {
+            ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
+            SubmittedDate = DateTime.UtcNow,
+            ApplicationReleaseDate = DateTime.UtcNow.AddDays(5),
+            OrganisationId = Guid.NewGuid(),
+            CreatedByUpn = user.CreatedByUpn,
+            ModifiedByUpn = user.ModifiedByUpn,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        });
+
+        unitOfWork.Commit();
+
+        // Act
+        var result = await unitOfWork.ApplicationRepository.GetApplicationById(app.ApplicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(app.ApplicationId, result!.ApplicationId);
+        Assert.Equal(app.OwnerUserId, result.OwnerUserId);
+        Assert.Equal(app.SubmittedDate, result.SubmittedDate);
+        Assert.Equal(app.ApplicationReleaseDate, result.ApplicationReleaseDate);
+        Assert.Equal(app.OrganisationId, result.OrganisationId);
+        Assert.Equal(app.CreatedByUpn, result.CreatedByUpn);
+        Assert.Equal(app.ModifiedByUpn, result.ModifiedByUpn);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
 }

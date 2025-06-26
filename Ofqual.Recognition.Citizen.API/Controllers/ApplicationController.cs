@@ -104,15 +104,13 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            var taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
-            if (taskStatuses == null || !taskStatuses.Any())
+            var taskStatuses = await _taskStatusService.GetTaskStatusesForApplication(applicationId);
+            if (taskStatuses == null)
             {
                 return BadRequest("No tasks found for the specified application.");
             }
 
-            var taskItemStatusSectionList = TaskMapper.ToDto(taskStatuses);
-
-            return Ok(taskItemStatusSectionList);
+            return Ok(taskStatuses);
         }
         catch (Exception ex)
         {

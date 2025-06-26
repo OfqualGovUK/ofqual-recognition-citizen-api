@@ -1,5 +1,6 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Core.Helpers;
+using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 
@@ -40,6 +41,50 @@ public class TaskStatusService : ITaskStatusService
         return true;
     }
 
+    public async Task<IEnumerable<TaskItemStatusSectionDto>?> GetTaskStatusesForApplication(Guid applicationId)
+    {
+        var taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
+        if (taskStatuses == null || !taskStatuses.Any())
+        {
+            return null;
+        }
+
+        var application = await _context.ApplicationRepository.GetApplicationById(applicationId);
+        if (application == null)
+        {
+            return null;
+        }
+
+        var declarationTasks = await _context.StageRepository.GetAllStageTasksByStageId(StageType.Declaration) ?? Enumerable.Empty<StageTaskView>();
+        var informationTasks = await _context.StageRepository.GetAllStageTasksByStageId(StageType.Information) ?? Enumerable.Empty<StageTaskView>();
+
+        var declarationTaskIds = new HashSet<Guid>(declarationTasks.Select(t => t.TaskId));
+        var informationTaskIds = new HashSet<Guid>(informationTasks.Select(t => t.TaskId));
+
+        var sectionDtos = TaskMapper.ToDto(taskStatuses);
+
+        bool isBeforeReleaseDate = application.ApplicationReleaseDate != null && application.ApplicationReleaseDate > DateTime.UtcNow;
+
+        foreach (var section in sectionDtos)
+        {
+            foreach (var task in section.Tasks)
+            {
+                if (declarationTaskIds.Contains(task.TaskId))
+                {
+                    task.Hint = isBeforeReleaseDate
+                        ? "Not Yet Released"
+                        : "You must complete all sections first";
+                }
+                else if (informationTaskIds.Contains(task.TaskId))
+                {
+                    task.Hint = "Learn more about the application before you apply";
+                }
+            }
+        }
+
+        return sectionDtos;
+    }
+
     public async Task<bool> DetermineAndCreateTaskStatuses(Guid applicationId, IEnumerable<PreEngagementAnswerDto>? answers)
     {
         var tasks = (await _context.TaskRepository.GetAllTask())?.ToList();
@@ -53,6 +98,14 @@ public class TaskStatusService : ITaskStatusService
         {
             return false;
         }
+
+        var declarationTasks = (await _context.StageRepository.GetAllStageTasksByStageId(StageType.Declaration))?.ToList();
+        if (declarationTasks == null || !declarationTasks.Any())
+        {
+            return false;
+        }
+
+        var declarationTaskIds = declarationTasks.Select(dt => dt.TaskId).ToHashSet();
 
         var questionsByTask = questions
             .GroupBy(q => q.TaskId)
@@ -68,30 +121,37 @@ public class TaskStatusService : ITaskStatusService
 
         var newTaskStatuses = tasks.Select(task =>
         {
-            var taskQuestions = questionsByTask.TryGetValue(task.TaskId, out var qList)
-                ? qList
-                : new List<Question>();
-
             TaskStatusEnum status;
 
-            if (taskQuestions.Count == 0)
+            if (declarationTaskIds.Contains(task.TaskId))
             {
-                status = TaskStatusEnum.NotStarted;
+                status = TaskStatusEnum.CannotStartYet;
             }
             else
             {
-                var answeredCount = taskQuestions.Count(q => answeredQuestionIds.Contains(q.QuestionId));
-                if (answeredCount == 0)
+                var taskQuestions = questionsByTask.TryGetValue(task.TaskId, out var qList)
+                    ? qList
+                    : new List<Question>();
+
+                if (taskQuestions.Count == 0)
                 {
                     status = TaskStatusEnum.NotStarted;
                 }
-                else if (answeredCount == taskQuestions.Count)
-                {
-                    status = TaskStatusEnum.Completed;
-                }
                 else
                 {
-                    status = TaskStatusEnum.InProgress;
+                    var answeredCount = taskQuestions.Count(q => answeredQuestionIds.Contains(q.QuestionId));
+                    if (answeredCount == 0)
+                    {
+                        status = TaskStatusEnum.NotStarted;
+                    }
+                    else if (answeredCount == taskQuestions.Count)
+                    {
+                        status = TaskStatusEnum.Completed;
+                    }
+                    else
+                    {
+                        status = TaskStatusEnum.InProgress;
+                    }
                 }
             }
 

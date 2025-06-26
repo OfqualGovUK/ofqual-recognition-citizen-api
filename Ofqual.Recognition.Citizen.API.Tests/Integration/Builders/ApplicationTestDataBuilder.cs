@@ -10,8 +10,8 @@ public static class ApplicationTestDataBuilder
     {
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO [recognitionCitizen].[Application]
-            (ApplicationId, OwnerUserId, CreatedDate, ModifiedDate, CreatedByUpn, ModifiedByUpn)
-            VALUES (@ApplicationId, @OwnerUserId, @CreatedDate, @ModifiedDate, @CreatedByUpn, @ModifiedByUpn);",
+            (ApplicationId, OwnerUserId, SubmittedDate, ApplicationReleaseDate, OrganisationId, CreatedDate, ModifiedDate, CreatedByUpn, ModifiedByUpn)
+            VALUES (@ApplicationId, @OwnerUserId, @SubmittedDate, @ApplicationReleaseDate, @OrganisationId, @CreatedDate, @ModifiedDate, @CreatedByUpn, @ModifiedByUpn);",
             application,
             unitOfWork.Transaction);
 

@@ -53,19 +53,53 @@ public class ApplicationRepository : IApplicationRepository
         try
         {
             const string query = @"
-                SELECT TOP 1 * FROM [recognitionCitizen].[Application] AS app
+                SELECT TOP 1 
+                    app.ApplicationId,
+                    app.OwnerUserId,
+                    app.SubmittedDate,
+                    app.ApplicationReleaseDate,
+                    app.OrganisationId,
+                    app.CreatedDate,
+                    app.ModifiedDate,
+                    app.CreatedByUpn,
+                    app.ModifiedByUpn
+                FROM [recognitionCitizen].[Application] AS app
                 INNER JOIN [recognitionCitizen].[RecognitionCitizenUser] ON app.OwnerUserId = UserId
                 WHERE B2CId = @oid
                 ORDER BY app.CreatedDate DESC";
 
-            return await _connection.QuerySingleAsync<Application>(query, new
-            {
-                oid
-            }, _transaction);
+            return await _connection.QuerySingleOrDefaultAsync<Application>(query, new { oid }, _transaction);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to retrieve latest application for OID: {Oid}", oid);
+            return null;
+        }
+    }
+
+    public async Task<Application?> GetApplicationById(Guid applicationId)
+    {
+        try
+        {
+            const string query = @"
+                SELECT 
+                    app.ApplicationId,
+                    app.OwnerUserId,
+                    app.SubmittedDate,
+                    app.ApplicationReleaseDate,
+                    app.OrganisationId,
+                    app.CreatedDate,
+                    app.ModifiedDate,
+                    app.CreatedByUpn,
+                    app.ModifiedByUpn
+                FROM [recognitionCitizen].[Application] AS app
+                WHERE app.ApplicationId = @applicationId";
+
+            return await _connection.QuerySingleOrDefaultAsync<Application>(query, new { applicationId }, _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to retrieve application with ID: {ApplicationId}", applicationId);
             return null;
         }
     }

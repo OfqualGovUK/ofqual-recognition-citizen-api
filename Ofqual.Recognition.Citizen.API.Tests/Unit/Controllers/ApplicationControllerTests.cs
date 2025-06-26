@@ -226,54 +226,48 @@ public class ApplicationControllerTests
     {
         // Arrange
         var applicationId = Guid.NewGuid();
-        var mockTaskItems = new List<TaskItemStatusSection>
+        var expectedSections = new List<TaskItemStatusSectionDto>
         {
-            new TaskItemStatusSection
+            new TaskItemStatusSectionDto
             {
-                SectionId = Guid.NewGuid(),
                 SectionName = "Section A",
-                SectionOrderNumber = 1,
-                TaskId = Guid.NewGuid(),
-                TaskName = "Task 1",
-                TaskNameUrl = "testurl",
-                TaskOrderNumber = 1,
-                TaskStatusId = Guid.NewGuid(),
-                Status = TaskStatusEnum.Completed,
-                QuestionNameUrl = "path"
+                Tasks = new List<TaskItemStatusDto>
+                {
+                    new TaskItemStatusDto
+                    {
+                        TaskId = Guid.NewGuid(),
+                        TaskName = "Task 1",
+                        Status = TaskStatusEnum.Completed,
+                        FirstQuestionUrl = "path/first-question"
+                    },
+                    new TaskItemStatusDto
+                    {
+                        TaskId = Guid.NewGuid(),
+                        TaskName = "Task 2",
+                        Status = TaskStatusEnum.InProgress,
+                        FirstQuestionUrl = "path/second-question"
+                    }
+                }
             },
-            new TaskItemStatusSection
+            new TaskItemStatusSectionDto
             {
-                SectionId = Guid.NewGuid(),
-                SectionName = "Section A",
-                SectionOrderNumber = 1,
-                TaskId = Guid.NewGuid(),
-                TaskName = "Task 2",
-                TaskNameUrl = "testurl",
-                TaskOrderNumber = 2,
-                TaskStatusId = Guid.NewGuid(),
-                Status = TaskStatusEnum.InProgress,
-                QuestionNameUrl = "path"
-            },
-            new TaskItemStatusSection
-            {
-                SectionId = Guid.NewGuid(),
                 SectionName = "Section B",
-                SectionOrderNumber = 2,
-                TaskId = Guid.NewGuid(),
-                TaskName = "Task 3",
-                TaskNameUrl = "testurl",
-                TaskOrderNumber = 1,
-                TaskStatusId = Guid.NewGuid(),
-                Status = TaskStatusEnum.NotStarted,
-                QuestionNameUrl = "path"
+                Tasks = new List<TaskItemStatusDto>
+                {
+                    new TaskItemStatusDto
+                    {
+                        TaskId = Guid.NewGuid(),
+                        TaskName = "Task 3",
+                        Status = TaskStatusEnum.NotStarted,
+                        FirstQuestionUrl = "path/third-question"
+                    }
+                }
             }
         };
 
-        _mockTaskRepository
-            .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
-            .ReturnsAsync(mockTaskItems);
-
-        var expectedSections = TaskMapper.ToDto(mockTaskItems);
+        _mockTaskStatusService
+            .Setup(s => s.GetTaskStatusesForApplication(applicationId))
+            .ReturnsAsync(expectedSections);
 
         // Act
         var result = await _controller.GetApplicationTasks(applicationId);
@@ -284,6 +278,7 @@ public class ApplicationControllerTests
 
         Assert.Equal(expectedSections.Count, returnedSections.Count);
         Assert.Equal(expectedSections[0].SectionName, returnedSections[0].SectionName);
+        Assert.Equal(expectedSections[0].Tasks.Count(), returnedSections[0].Tasks.Count());
     }
 
     [Fact]
@@ -292,9 +287,10 @@ public class ApplicationControllerTests
     {
         // Arrange
         var applicationId = Guid.NewGuid();
-        _mockTaskRepository
-            .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
-            .ReturnsAsync(new List<TaskItemStatusSection>());
+
+        _mockTaskStatusService
+            .Setup(s => s.GetTaskStatusesForApplication(applicationId))
+            .ReturnsAsync((List<TaskItemStatusSectionDto>?)null);
 
         // Act
         var result = await _controller.GetApplicationTasks(applicationId);
@@ -302,6 +298,24 @@ public class ApplicationControllerTests
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Equal("No tasks found for the specified application.", badRequestResult.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetApplicationTasks_ShouldThrowException_WhenServiceThrows()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+
+        _mockTaskStatusService
+            .Setup(s => s.GetTaskStatusesForApplication(applicationId))
+            .ThrowsAsync(new Exception("Unexpected failure"));
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() =>
+            _controller.GetApplicationTasks(applicationId));
+
+        Assert.Equal("An error occurred while fetching tasks for the application. Please try again later.", exception.Message);
     }
 
     [Fact]
@@ -367,7 +381,7 @@ public class ApplicationControllerTests
         Assert.Equal("An error occurred while updating the task status. Please try again later.", ex.Message);
         _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
     }
-    
+
     [Fact]
     [Trait("Category", "Unit")]
     public async Task SubmitQuestionAnswer_ReturnsBadRequest_WhenValidationErrorsExist()
