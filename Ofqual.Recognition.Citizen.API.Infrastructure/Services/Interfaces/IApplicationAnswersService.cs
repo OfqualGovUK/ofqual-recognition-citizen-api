@@ -10,5 +10,4 @@ public interface IApplicationAnswersService
     public Task<List<TaskReviewSectionDto>> GetAllApplicationAnswerReview(Guid applicationId);
     public Task<List<TaskReviewGroupDto>> GetTaskAnswerReview(Guid applicationId, Guid taskId);
     public Task<ValidationResponse?> ValidateQuestionAnswers(Guid questionId, string answerJson);
-    public Task<List<ApplicationReviewSectionDto>> GetAllApplicationAnswerReview(Guid applicationId);
 }
