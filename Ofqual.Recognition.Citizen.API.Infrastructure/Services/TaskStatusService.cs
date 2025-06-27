@@ -99,12 +99,7 @@ public class TaskStatusService : ITaskStatusService
             return false;
         }
 
-        var declarationTasks = (await _context.StageRepository.GetAllStageTasksByStageId(StageType.Declaration))?.ToList();
-        if (declarationTasks == null || !declarationTasks.Any())
-        {
-            return false;
-        }
-
+        var declarationTasks = (await _context.StageRepository.GetAllStageTasksByStageId(StageType.Declaration))?.ToList() ?? Enumerable.Empty<StageTaskView>();
         var declarationTaskIds = declarationTasks.Select(dt => dt.TaskId).ToHashSet();
 
         var questionsByTask = questions
