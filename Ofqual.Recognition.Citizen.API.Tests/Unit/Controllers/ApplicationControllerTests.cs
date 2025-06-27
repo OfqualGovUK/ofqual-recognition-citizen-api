@@ -389,7 +389,7 @@ public class ApplicationControllerTests
         var taskId = Guid.NewGuid();
         var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
 
-        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status))
+        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status, "test_user"))
             .ReturnsAsync(true);
         _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(applicationId, TaskStage.PreEngagement))
             .ReturnsAsync(true);
@@ -411,7 +411,7 @@ public class ApplicationControllerTests
         var taskId = Guid.NewGuid();
         var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
 
-        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status))
+        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status, "test_user"))
             .ReturnsAsync(false);
 
         // Act
@@ -432,7 +432,7 @@ public class ApplicationControllerTests
         var taskId = Guid.NewGuid();
         var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
 
-        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status))
+        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status, "test_user"))
             .ThrowsAsync(new Exception("DB error"));
 
         // Act & Assert
@@ -451,7 +451,7 @@ public class ApplicationControllerTests
         var taskId = Guid.NewGuid();
         var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
 
-        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status))
+        _mockTaskRepository.Setup(r => r.UpdateTaskStatus(applicationId, taskId, request.Status, "test_user"))
             .ReturnsAsync(true);
 
         _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(applicationId, TaskStage.PreEngagement))
@@ -515,7 +515,7 @@ public class ApplicationControllerTests
             .ReturnsAsync(true);
 
         _mockTaskRepository
-            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress))
+            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, "test_user"))
             .ReturnsAsync(true);
 
         // Act
@@ -572,7 +572,7 @@ public class ApplicationControllerTests
             .ReturnsAsync(true);
 
         _mockTaskRepository
-            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress))
+            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, "test_user"))
             .ReturnsAsync(false);
 
         // Act
