@@ -611,14 +611,14 @@ public class ApplicationControllerTests
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
 
-        var expectedReviewAnswers = new List<QuestionAnswerSectionDto>
+        var expectedReviewAnswers = new List<QuestionAnswerTaskSectionDto>
         {
-            new QuestionAnswerSectionDto
+            new QuestionAnswerTaskSectionDto
             {
                 SectionHeading = "Test Section",
-                QuestionAnswers = new List<QuestionAnswerReviewDto>
+                QuestionAnswers = new List<QuestionAnswerTaskReviewDto>
                 {
-                    new QuestionAnswerReviewDto
+                    new QuestionAnswerTaskReviewDto
                     {
                         QuestionText = "Sample Question",
                         AnswerValue = new List<string> { "Sample Answer" },
@@ -636,7 +636,7 @@ public class ApplicationControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var returnedSections = Assert.IsType<List<QuestionAnswerSectionDto>>(okResult.Value);
+        var returnedSections = Assert.IsType<List<QuestionAnswerTaskSectionDto>>(okResult.Value);
 
         Assert.Single(returnedSections);
         var section = returnedSections[0];
@@ -658,7 +658,7 @@ public class ApplicationControllerTests
 
         _mockApplicationAnswersService
             .Setup(service => service.GetTaskAnswerReview(applicationId, taskId))
-            .ReturnsAsync(new List<QuestionAnswerSectionDto>());
+            .ReturnsAsync(new List<QuestionAnswerTaskSectionDto>());
 
         // Act
         var result = await _controller.GetTaskAnswerReview(applicationId, taskId);

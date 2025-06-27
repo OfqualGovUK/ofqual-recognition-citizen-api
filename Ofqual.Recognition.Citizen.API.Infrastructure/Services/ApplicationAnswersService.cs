@@ -7,6 +7,8 @@ using Ofqual.Recognition.Citizen.API.Core.Enums;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Models.ApplicationAnswers;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -39,15 +41,15 @@ public class ApplicationAnswersService : IApplicationAnswersService
         return true;
     }
 
-    public async Task<List<QuestionAnswerSectionDto>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
+    public async Task<List<QuestionAnswerTaskSectionDto>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
         var taskQuestionAnswers = await _context.ApplicationAnswersRepository.GetTaskQuestionAnswers(applicationId, taskId);
         if (!taskQuestionAnswers.Any())
         {
-            return new List<QuestionAnswerSectionDto>();
+            return new List<QuestionAnswerTaskSectionDto>();
         }
 
-        var sections = new List<QuestionAnswerSectionDto>();
+        var sections = new List<QuestionAnswerTaskSectionDto>();
 
         foreach (var question in taskQuestionAnswers)
         {
@@ -68,7 +70,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             // Text inputs
             if (formGroup.TextInputGroup?.Fields != null)
             {
-                var section = new QuestionAnswerSectionDto
+                var section = new QuestionAnswerTaskSectionDto
                 {
                     SectionHeading = formGroup.TextInputGroup.SectionName
                 };
@@ -76,7 +78,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 foreach (var input in formGroup.TextInputGroup.Fields)
                 {
                     var values = ExtractAnswer(answerValues, input.Name);
-                    section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                    section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
                     {
                         QuestionText = input.Label,
                         AnswerValue = values,
@@ -93,13 +95,13 @@ public class ApplicationAnswersService : IApplicationAnswersService
             // Textarea
             if (formGroup.Textarea != null)
             {
-                var section = new QuestionAnswerSectionDto
+                var section = new QuestionAnswerTaskSectionDto
                 {
                     SectionHeading = formGroup.Textarea.SectionName
                 };
 
                 var values = ExtractAnswer(answerValues, formGroup.Textarea.Name);
-                section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
                 {
                     QuestionText = formGroup.Textarea.Label?.Text,
                     AnswerValue = values,
@@ -112,13 +114,13 @@ public class ApplicationAnswersService : IApplicationAnswersService
             // Radio button group
             if (formGroup.RadioButtonGroup != null)
             {
-                var section = new QuestionAnswerSectionDto
+                var section = new QuestionAnswerTaskSectionDto
                 {
                     SectionHeading = formGroup.RadioButtonGroup.SectionName
                 };
 
                 var values = ExtractAnswer(answerValues, formGroup.RadioButtonGroup.Name);
-                section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
                 {
                     QuestionText = formGroup.RadioButtonGroup.Heading?.Text,
                     AnswerValue = values,
@@ -134,7 +136,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                         foreach (var input in selectedOption.ConditionalInputs)
                         {
                             var conditionalValues = ExtractAnswer(answerValues, input.Name);
-                            section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                            section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
                             {
                                 QuestionText = input.Label,
                                 AnswerValue = conditionalValues,
@@ -148,7 +150,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                         foreach (var select in selectedOption.ConditionalSelects)
                         {
                             var conditionalValues = ExtractAnswer(answerValues, select.Name);
-                            section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                            section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
                             {
                                 QuestionText = select.Label,
                                 AnswerValue = conditionalValues,
@@ -167,7 +169,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             // Checkbox group
             if (formGroup.CheckboxGroup != null)
             {
-                var section = new QuestionAnswerSectionDto
+                var section = new QuestionAnswerTaskSectionDto
                 {
                     SectionHeading = formGroup.CheckboxGroup.SectionName
                 };
@@ -176,7 +178,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 var values = ExtractAnswer(answerValues, checkbox.Name);
                 var selected = values.Select(v => v.ToLowerInvariant()).ToHashSet();
 
-                section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
                 {
                     QuestionText = checkbox.Heading?.Text,
                     AnswerValue = values,
@@ -195,7 +197,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                         foreach (var input in option.ConditionalInputs)
                         {
                             var conditionalValues = ExtractAnswer(answerValues, input.Name);
-                            section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                            section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
                             {
                                 QuestionText = input.Label,
                                 AnswerValue = conditionalValues,
@@ -209,7 +211,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                         foreach (var select in option.ConditionalSelects)
                         {
                             var conditionalValues = ExtractAnswer(answerValues, select.Name);
-                            section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                            section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
                             {
                                 QuestionText = select.Label,
                                 AnswerValue = conditionalValues,
@@ -240,12 +242,12 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     sortedFileNames.Add("Not provided");
                 }
 
-                var section = new QuestionAnswerSectionDto
+                var section = new QuestionAnswerTaskSectionDto
                 {
                     SectionHeading = formGroup.FileUpload.SectionName
                 };
 
-                section.QuestionAnswers.Add(new QuestionAnswerReviewDto
+                section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
                 {
                     QuestionText = "Files you uploaded",
                     AnswerValue = sortedFileNames,
@@ -590,5 +592,40 @@ public class ApplicationAnswersService : IApplicationAnswersService
         }
 
         return new ValidationResponse { Errors = errors };
+    }
+
+    public async Task<List<ApplicationReviewSectionDto>> GetAllApplicationAnswerReview(Guid applicationId)
+    {
+        var allQuestionAnswers = await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId);
+
+        var questionTaskPairs = allQuestionAnswers.Select(a => new { a.QuestionId, a.TaskId}).Distinct().ToList();
+
+        var reviewSections = new List<ApplicationReviewSectionDto>();
+
+        int sectionOrder = 1;
+
+        foreach (var item in allQuestionAnswers)
+        {
+            item.;
+        }
+
+        foreach (var pair in questionTaskPairs)
+        {
+            var taskSections = await GetTaskAnswerReview(applicationId, pair.TaskId);
+
+            
+            foreach (var section in taskSections)
+            {
+                reviewSections.Add(new ApplicationReviewSectionDto
+                {
+                    SectionId = Guid.NewGuid(),
+                    SectionName = section.SectionHeading ?? "Section",
+                    SectionOrderNumber = sectionOrder++,
+                    Answer = allQuestionAnswers
+                });
+            }
+        }
+
+        return reviewSections;
     }
 }
