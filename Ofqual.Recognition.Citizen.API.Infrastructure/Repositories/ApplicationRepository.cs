@@ -111,7 +111,13 @@ public class ApplicationRepository : IApplicationRepository
         }
     }
 
-    public async Task<ApplicationStatus?> CheckAndCompleteApplication(Guid applicationId)
+
+    /// <summary>
+    /// Checks and complete an application
+    /// </summary>
+    /// <param name="applicationId">The application to complete</param>
+    /// <param name="upn">UPN of user to complete</param>    
+    public async Task<ApplicationStatus?> CheckAndCompleteApplication(Guid applicationId, string upn)
     {
         try
         {
@@ -119,10 +125,8 @@ public class ApplicationRepository : IApplicationRepository
             if (await IsApplicationSubmitted(applicationId) ?? true)
                 return null;
 
-
             if (await CheckPendingTasks(applicationId) > 0) 
                 return ApplicationStatus.InProgress;
-
 
             await _connection.QueryAsync(@"
                 UPDATE [recognitionCitizen].[Application];
@@ -130,17 +134,17 @@ public class ApplicationRepository : IApplicationRepository
                         ModifiedDate = @SubmittedDate,
                         ModifiedByUpn = @UserUpn                
                 WHERE   ApplicationId = @ApplicationId;
-                SELECT  @@ROWCOUNT;",
-                new {
+                SELECT  @@ROWCOUNT;", new 
+                {   
                     SubmittedDate = DateTime.UtcNow,
-                    UserUpn = "upn", //todo: insert actual upn value 
+                    UserUpn = upn,
                     ApplicationId = applicationId
                 }, _transaction);
             return ApplicationStatus.Completed;            
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Exception rasied when attempting to submit an application in ApplicationRepository::CheckAndCompleteApplication");
+            Log.Error(ex, "Exception raised when attempting to submit an application in ApplicationRepository::CheckAndCompleteApplication");
             throw;
         }        
     }

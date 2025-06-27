@@ -8,6 +8,7 @@ using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using Ofqual.Recognition.Citizen.API.Attributes;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -269,7 +270,6 @@ public class ApplicationController : ControllerBase
         }
     }
 
-
     /// <summary>
     /// Checks if all subsequent tasks are completed and marks the application ready to submit
     /// </summary>
@@ -278,12 +278,12 @@ public class ApplicationController : ControllerBase
     [CheckApplicationId(queryParam: "applicationId")]
     public async Task<IActionResult> CompleteApplication(Guid applicationId)
     {
-        if (await _context.ApplicationRepository.CheckIfReadyToSubmit(applicationId) != ApplicationStatus.Completed)
+        var upn = _userInformationService.GetCurrentUserUpn();
+        if(upn == null)
+            return Unauthorized();
+
+        if (await _context.ApplicationRepository.CheckAndCompleteApplication(applicationId, upn) != ApplicationStatus.Completed)
             return BadRequest("Unable to complete application, there are outstanding tasks that are required");
-
-
-
-
         return Ok();
     }
 }
