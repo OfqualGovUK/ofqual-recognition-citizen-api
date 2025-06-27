@@ -125,7 +125,7 @@ public class ApplicationRepository : IApplicationRepository
             if (await IsApplicationSubmitted(applicationId) ?? true)
                 return null;
 
-            if (await CheckPendingTasks(applicationId) > 0) 
+            if (await CheckApplicationForPendingTasks(applicationId) > 0) 
                 return ApplicationStatus.InProgress;
 
             await _connection.QueryAsync(@"
@@ -171,22 +171,32 @@ public class ApplicationRepository : IApplicationRepository
                             WHERE  ts.ApplicationId = a.ApplicationId);", 
             new { applicationId }, _transaction);
 
-    private async Task<int> CheckPendingTasks(Guid applicationId) =>    
+    private async Task<int> CheckApplicationForPendingTasks(Guid applicationId) =>
         await _connection.QuerySingleAsync<int>(@"
             SELECT COUNT(*) AS [Count]
             FROM   [recognitionCitizen].[Task] AS t           
             JOIN   [recognitionCitizen].[TaskStatus] ts ON ts.TaskId = t.TaskId
-            WHERE  t.TaskNameUrl NOT IN(N'get-engagement', N'declaration-submit') --replace w/ tasktype check when implemented                              
-            AND    ts.[Status] <> @CompletedStatus
-            AND    ts.ApplicationId = @ApplicationId;",
+            WHERE  ts.[Status] <> @CompletedStatus
+            AND    ts.ApplicationId = @ApplicationId
+            AND    NOT EXISTS ( 
+                       SELECT * 
+                       FROM [recognitionCitizen].[StageTask] st 
+                       WHERE st.TaskId = t.TaskId 
+                       AND st.Enabled = 1 
+                       AND st.StageId NOT IN @ExcludedStages);",
             new
             {
                 completedStatus = (int)TaskStatusEnum.Completed,
+                excludedStages = new int
+                [
+                    (int)TaskStage.Information,
+                    (int)TaskStage.Declare,
+                    (int)TaskStage.Review
+                ],
                 applicationId
-            },
-            _transaction);
+            }, _transaction);
 
-
+    
     
 
 }
