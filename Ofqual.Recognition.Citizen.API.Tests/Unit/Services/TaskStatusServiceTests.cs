@@ -269,7 +269,7 @@ public class TaskStatusServiceTests
         {
             ApplicationId = applicationId,
             OwnerUserId = Guid.NewGuid(),
-            SubmittedDate = DateTime.UtcNow.AddDays(1),
+            SubmittedDate = DateTime.UtcNow.AddDays(-1),
             ApplicationReleaseDate = DateTime.UtcNow.AddDays(2),
             OrganisationId = Guid.NewGuid(),
             CreatedDate = DateTime.UtcNow,

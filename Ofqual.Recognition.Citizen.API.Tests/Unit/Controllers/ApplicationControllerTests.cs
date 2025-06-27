@@ -282,7 +282,7 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetApplicationTasks_ShouldReturnBadRequest_WhenNoTasksFound()
+    public async Task GetApplicationTasks_ShouldReturnNotFound_WhenNoTasksFound()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -295,8 +295,8 @@ public class ApplicationControllerTests
         var result = await _controller.GetApplicationTasks(applicationId);
 
         // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("No tasks found for the specified application.", badRequestResult.Value);
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.Equal("No tasks found for the specified application.", notFoundResult.Value);
     }
 
     [Fact]
