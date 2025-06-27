@@ -176,9 +176,10 @@ public class TaskRepository : ITaskRepository
 
     private async Task<IEnumerable<TaskStage>> GetStagesForTask(Guid taskId) =>
         await _connection.QueryAsync<TaskStage>(@"
-                SELECT  [StageId] 
-                FROM    [recognitionCitizen].[TaskStatus] 
-                WHERE   TaskId = @TaskId;",
+                SELECT   DISTINCT [StageId] 
+                FROM     [recognitionCitizen].[v_StageTask] 
+                WHERE    TaskId = @TaskId
+                ORDER BY [StageId] ASC;",
             new { taskId }, _transaction);
 }
 
