@@ -1,8 +1,9 @@
+using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Xunit;
-using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 
@@ -24,8 +25,10 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Act
-        var attachment = await unitOfWork.AttachmentRepository.CreateAttachment("file.pdf", "application/pdf", 12345);
+        var attachment = await unitOfWork.AttachmentRepository.CreateAttachment("file.pdf", "application/pdf", 12345, "test@ofqual.gov.uk");
+
         unitOfWork.Commit();
+
         // Assert
         Assert.NotNull(attachment);
         Assert.Equal("file.pdf", attachment.FileName);
@@ -45,14 +48,33 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
-        var applicationId = Guid.NewGuid();
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
+        {
+            ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        });
+
         var linkId = Guid.NewGuid();
 
-        var attachment = await unitOfWork.AttachmentRepository.CreateAttachment("image.png", "image/png", 45678);
+        var attachment = await unitOfWork.AttachmentRepository.CreateAttachment("image.png", "image/png", 45678, application.CreatedByUpn);
         unitOfWork.Commit();
-        
+
         // Act
-        var linked = await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, attachment!.AttachmentId, linkId, LinkType.Question);
+        var linked = await unitOfWork.AttachmentRepository.CreateAttachmentLink(application.ApplicationId, attachment!.AttachmentId, linkId, LinkType.Question, application.CreatedByUpn);
         unitOfWork.Commit();
 
         // Assert
@@ -71,15 +93,35 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
-        var applicationId = Guid.NewGuid();
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
+        {
+            ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        });
+
         var linkId = Guid.NewGuid();
 
-        var attachment = await unitOfWork.AttachmentRepository.CreateAttachment("doc.txt", "text/plain", 7890);
-        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, attachment!.AttachmentId, linkId, LinkType.Question);
+        var attachment = await unitOfWork.AttachmentRepository.CreateAttachment("doc.txt", "text/plain", 7890, application.CreatedByUpn);
+        await unitOfWork.AttachmentRepository.CreateAttachmentLink(application.ApplicationId, attachment!.AttachmentId, linkId, LinkType.Question, application.CreatedByUpn);
+
         unitOfWork.Commit();
 
         // Act
-        var fetched = await unitOfWork.AttachmentRepository.GetLinkedAttachment(applicationId, attachment.AttachmentId, linkId, LinkType.Question);
+        var fetched = await unitOfWork.AttachmentRepository.GetLinkedAttachment(application.ApplicationId, attachment.AttachmentId, linkId, LinkType.Question);
 
         // Assert
         Assert.NotNull(fetched);
@@ -98,19 +140,38 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
-        var applicationId = Guid.NewGuid();
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
+        {
+            ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        });
+
         var linkId = Guid.NewGuid();
 
-        var att1 = await unitOfWork.AttachmentRepository.CreateAttachment("one.pdf", "application/pdf", 111);
-        var att2 = await unitOfWork.AttachmentRepository.CreateAttachment("two.docx", "application/vnd.openxmlformats", 222);
+        var att1 = await unitOfWork.AttachmentRepository.CreateAttachment("one.pdf", "application/pdf", 111, application.CreatedByUpn);
+        var att2 = await unitOfWork.AttachmentRepository.CreateAttachment("two.docx", "application/vnd.openxmlformats", 222, application.CreatedByUpn);
 
-        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, att1!.AttachmentId, linkId, LinkType.Question);
-        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, att2!.AttachmentId, linkId, LinkType.Question);
+        await unitOfWork.AttachmentRepository.CreateAttachmentLink(application.ApplicationId, att1!.AttachmentId, linkId, LinkType.Question, application.CreatedByUpn);
+        await unitOfWork.AttachmentRepository.CreateAttachmentLink(application.ApplicationId, att2!.AttachmentId, linkId, LinkType.Question, application.CreatedByUpn);
         unitOfWork.Commit();
 
         // Act
-        var results = (await unitOfWork.AttachmentRepository.GetAllAttachmentsForLink(applicationId, linkId, LinkType.Question)).ToList();
-        
+        var results = (await unitOfWork.AttachmentRepository.GetAllAttachmentsForLink(application.ApplicationId, linkId, LinkType.Question)).ToList();
+
         // Assert
         Assert.Equal(2, results.Count);
         Assert.Contains(results, x => x.AttachmentId == att1.AttachmentId);
@@ -129,17 +190,36 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
-        var applicationId = Guid.NewGuid();
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
+        {
+            ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        });
+
         var linkId = Guid.NewGuid();
 
-        var attachment = await unitOfWork.AttachmentRepository.CreateAttachment("delete-me.txt", "text/plain", 100);
-        await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, attachment!.AttachmentId, linkId, LinkType.Question);
+        var attachment = await unitOfWork.AttachmentRepository.CreateAttachment("delete-me.txt", "text/plain", 100, application.CreatedByUpn);
+        await unitOfWork.AttachmentRepository.CreateAttachmentLink(application.ApplicationId, attachment!.AttachmentId, linkId, LinkType.Question, application.CreatedByUpn);
         unitOfWork.Commit();
 
         // Act
-        var deleted = await unitOfWork.AttachmentRepository.DeleteAttachmentWithLink(applicationId, attachment.AttachmentId, linkId, LinkType.Question);
+        var deleted = await unitOfWork.AttachmentRepository.DeleteAttachmentWithLink(application.ApplicationId, attachment.AttachmentId, linkId, LinkType.Question);
         unitOfWork.Commit();
-        var result = await unitOfWork.AttachmentRepository.GetLinkedAttachment(applicationId, attachment.AttachmentId, linkId, LinkType.Question);
+        var result = await unitOfWork.AttachmentRepository.GetLinkedAttachment(application.ApplicationId, attachment.AttachmentId, linkId, LinkType.Question);
 
         // Assert
         Assert.True(deleted);
@@ -181,12 +261,31 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
-        var applicationId = Guid.NewGuid();
-        var attachmentId = Guid.NewGuid(); 
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
+        {
+            ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        });
+
+        var attachmentId = Guid.NewGuid();
         var linkId = Guid.NewGuid();
 
         // Act
-        var success = await unitOfWork.AttachmentRepository.CreateAttachmentLink(applicationId, attachmentId, linkId, LinkType.Question);
+        var success = await unitOfWork.AttachmentRepository.CreateAttachmentLink(application.ApplicationId, attachmentId, linkId, LinkType.Question, application.CreatedByUpn);
 
         // Assert
         Assert.False(success);

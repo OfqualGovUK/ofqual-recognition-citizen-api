@@ -1,9 +1,9 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
+using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;

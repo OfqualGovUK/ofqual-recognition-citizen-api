@@ -1,38 +1,19 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Identity.Web;
-using Moq;
-using Newtonsoft.Json.Linq;
-using Ofqual.Recognition.Citizen.API.Core.Models;
-using Ofqual.Recognition.Citizen.API.Infrastructure;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Unit.Services;
 
 public class UserInformationServiceTests
 {
-    private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor;
-    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-    private readonly Mock<IApplicationRepository> _mockApplicationRepository;
+    private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor = new();
     private readonly UserInformationService _userInformationService;
 
     public UserInformationServiceTests()
     {
-        _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
-
-        _mockApplicationRepository = new Mock<IApplicationRepository>();
-
-        _mockUnitOfWork = new Mock<IUnitOfWork>();
-        _mockUnitOfWork.Setup(u => u.ApplicationRepository).Returns(_mockApplicationRepository.Object);
-
-        _userInformationService = new UserInformationService(_mockHttpContextAccessor.Object, _mockUnitOfWork.Object);
+        _userInformationService = new UserInformationService(_mockHttpContextAccessor.Object);
     }
 
     [Fact]
@@ -162,7 +143,9 @@ public class UserInformationServiceTests
         try
         {
             var value = _userInformationService.GetCurrentUserObjectId();
-        } catch (InvalidOperationException ex) {
+        }
+        catch (InvalidOperationException ex)
+        {
             Assert.Equal(
                 "Exception raised when trying to obtain Object ID, in UserInformationService::GetCurrentUserObjectId. Exception message: No ObjectId claim found in access token",
                 ex.Message
@@ -248,93 +231,4 @@ public class UserInformationServiceTests
         Assert.Fail();
         return Task.CompletedTask;
     }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public async Task CheckUserCanModifyApplication__WhenLatestApplicationMatches__ReturnTrue()
-    {
-        // Arrange
-
-        // Set up claimsprincipal for user
-        string objectid = Guid.NewGuid().ToString();
-
-        List<Claim> claims = new List<Claim>()
-        {
-            new Claim(ClaimConstants.Oid, objectid)
-        };
-        ClaimsIdentity identity = new ClaimsIdentity(claims, "TestAuthType");
-        ClaimsPrincipal user = new ClaimsPrincipal(identity);
-
-        // Set up HTTP context and plug in the user
-
-        HttpContext context = new DefaultHttpContext();
-        context.User = user;
-
-
-        _mockHttpContextAccessor
-            .SetupGet(accessor => accessor.HttpContext).Returns(context);
-
-        // Set up mock for the ApplicationRepository
-
-        Guid applicationId = Guid.NewGuid();
-
-        Application? application = new Application() { CreatedByUpn = "test", ApplicationId = applicationId };
-
-        _mockApplicationRepository
-            .Setup(_ => _.GetLatestApplication(objectid))
-            .Returns(Task.FromResult(application));
-
-        // Act
-
-        var value = await _userInformationService.CheckUserCanModifyApplication(applicationId.ToString());
-
-        // Assert
-
-        Assert.True(value);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public async Task CheckUserCanModifyApplication__WhenLatestApplicationDoesntMatch__ReturnFalse()
-    {
-        // Arrange
-
-        // Set up claimsprincipal for user
-        string objectid = Guid.NewGuid().ToString();
-
-        List<Claim> claims = new List<Claim>()
-        {
-            new Claim(ClaimConstants.Oid, objectid)
-        };
-        ClaimsIdentity identity = new ClaimsIdentity(claims, "TestAuthType");
-        ClaimsPrincipal user = new ClaimsPrincipal(identity);
-
-        // Set up HTTP context and plug in the user
-
-        HttpContext context = new DefaultHttpContext();
-        context.User = user;
-
-
-        _mockHttpContextAccessor
-            .SetupGet(accessor => accessor.HttpContext).Returns(context);
-
-        // Set up mock for the ApplicationRepository
-
-        Guid applicationId = Guid.NewGuid();
-
-        Application? application = new Application() { CreatedByUpn = "test", ApplicationId = applicationId };
-
-        _mockApplicationRepository
-            .Setup(_ => _.GetLatestApplication(objectid))
-            .Returns(Task.FromResult(application));
-
-        // Act
-
-        var value = await _userInformationService.CheckUserCanModifyApplication(Guid.NewGuid().ToString());
-
-        // Assert
-
-        Assert.False(value);
-    }
 }
-

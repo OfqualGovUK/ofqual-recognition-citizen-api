@@ -1,4 +1,3 @@
-
 namespace Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
 public interface IApplicationAnswer

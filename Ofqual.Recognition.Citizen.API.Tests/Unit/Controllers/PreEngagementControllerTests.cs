@@ -4,7 +4,6 @@ using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Controllers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 using Moq;
@@ -13,27 +12,19 @@ namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 
 public class PreEngagementControllerTests
 {
-    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-    private readonly Mock<IStageRepository> _mockStageRepository;
-    private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService;
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
+    private readonly Mock<IStageRepository> _mockStageRepository = new();
+    private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService = new();
     private readonly PreEngagementController _controller;
 
     public PreEngagementControllerTests()
     {
-        _mockUnitOfWork = new Mock<IUnitOfWork>();
-
-        _mockStageRepository = new Mock<IStageRepository>();
         _mockUnitOfWork.Setup(u => u.StageRepository).Returns(_mockStageRepository.Object);
 
-        _mockApplicationAnswersService = new Mock<IApplicationAnswersService>();
-
-        _controller = new PreEngagementController(_mockUnitOfWork.Object, _mockApplicationAnswersService.Object)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext()
-            }
-        };
+        _controller = new PreEngagementController(
+            _mockUnitOfWork.Object,
+            _mockApplicationAnswersService.Object
+        );
     }
 
     [Fact]
@@ -47,7 +38,7 @@ public class PreEngagementControllerTests
             CurrentQuestionNameUrl = "question-a"
         };
 
-        _mockStageRepository.Setup(r => r.GetFirstQuestionByStage(Stage.PreEngagement)).ReturnsAsync(questionDto);
+        _mockStageRepository.Setup(r => r.GetFirstQuestionByStage(StageType.PreEngagement)).ReturnsAsync(questionDto);
 
         // Act
         var result = await _controller.GetFirstPreEngagementQuestion();
@@ -62,7 +53,7 @@ public class PreEngagementControllerTests
     public async Task GetFirstPreEngagementQuestion_Should_ReturnNotFound_WhenQuestionIsNull()
     {
         // Arrange
-        _mockStageRepository.Setup(r => r.GetFirstQuestionByStage(Stage.PreEngagement)).ReturnsAsync((StageQuestionDto?)null);
+        _mockStageRepository.Setup(r => r.GetFirstQuestionByStage(StageType.PreEngagement)).ReturnsAsync((StageQuestionDto?)null);
 
         // Act
         var result = await _controller.GetFirstPreEngagementQuestion();
@@ -91,7 +82,7 @@ public class PreEngagementControllerTests
             PreviousTaskNameUrl = "prev-t"
         };
 
-        _mockStageRepository.Setup(r => r.GetStageQuestionByTaskAndQuestionUrl(Stage.PreEngagement, "task-b", "question-b")).ReturnsAsync(question);
+        _mockStageRepository.Setup(r => r.GetStageQuestionByTaskAndQuestionUrl(StageType.PreEngagement, "task-b", "question-b")).ReturnsAsync(question);
 
         // Act
         var result = await _controller.GetPreEngagementQuestions("task-b", "question-b");
@@ -113,7 +104,7 @@ public class PreEngagementControllerTests
     public async Task GetPreEngagementQuestions_Should_ReturnBadRequest_WhenQuestionIsNull()
     {
         // Arrange
-        _mockStageRepository.Setup(r => r.GetStageQuestionByTaskAndQuestionUrl(Stage.PreEngagement, "missing-task", "missing-question"))
+        _mockStageRepository.Setup(r => r.GetStageQuestionByTaskAndQuestionUrl(StageType.PreEngagement, "missing-task", "missing-question"))
                          .ReturnsAsync((StageQuestionDetails?)null);
 
         // Act
@@ -144,7 +135,7 @@ public class PreEngagementControllerTests
         _mockApplicationAnswersService
             .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
             .ReturnsAsync(validationResponse);
-        
+
         // Act
         var result = await _controller.ValidateAnswer(questionId, dto);
 
@@ -167,7 +158,7 @@ public class PreEngagementControllerTests
         _mockApplicationAnswersService
             .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
             .ReturnsAsync(validationResponse);
-        
+
         // Act
         var result = await _controller.ValidateAnswer(questionId, dto);
 
@@ -187,7 +178,7 @@ public class PreEngagementControllerTests
         _mockApplicationAnswersService
             .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
             .ThrowsAsync(new Exception("Database error"));
-        
+
         // Act & Assert
         var ex = await Assert.ThrowsAsync<Exception>(() => _controller.ValidateAnswer(questionId, dto));
         Assert.Equal("An unexpected error occurred while validating the answer. Please try again shortly.", ex.Message);

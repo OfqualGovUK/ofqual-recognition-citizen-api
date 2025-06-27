@@ -4,5 +4,5 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
 public interface IStageService
 {
-    public Task<bool> EvaluateAndUpsertStageStatus(Guid applicationId, Stage stage);
+    public Task<bool> EvaluateAndUpsertStageStatus(Guid applicationId, StageType stage);
 }

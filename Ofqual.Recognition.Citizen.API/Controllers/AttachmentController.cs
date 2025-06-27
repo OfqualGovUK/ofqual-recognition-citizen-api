@@ -1,4 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Attributes;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Helpers;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
@@ -8,7 +9,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
-using Ofqual.Recognition.Citizen.API.Attributes;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -16,17 +16,19 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 [Route("files")]
 [Authorize]
 [RequiredScope("Applications.ReadWrite")]
-public class FileController : ControllerBase
+public class AttachmentController : ControllerBase
 {
     private readonly IUnitOfWork _context;
     private readonly IAzureBlobStorageService _blobStorage;
     private readonly IAntiVirusService _antiVirus;
+    private readonly IAttachmentService _attachmentService;
 
-    public FileController(IUnitOfWork context, IAzureBlobStorageService blobStorage, IAntiVirusService antiVirus)
+    public AttachmentController(IUnitOfWork context, IAzureBlobStorageService blobStorage, IAntiVirusService antiVirus, IAttachmentService attachmentService)
     {
         _context = context;
         _blobStorage = blobStorage;
         _antiVirus = antiVirus;
+        _attachmentService = attachmentService;
     }
 
     /// <summary>
@@ -61,26 +63,20 @@ public class FileController : ControllerBase
                 return BadRequest("The uploaded file failed a virus scan and cannot be accepted.");
             }
 
-            Attachment? savedAttachment = await _context.AttachmentRepository.CreateAttachment(file.FileName, file.ContentType, file.Length);
-            if (savedAttachment == null)
+            Attachment? attachment = await _attachmentService.SaveAttachmentAndLink(applicationId, linkId, linkType, file);
+            if (attachment == null)
             {
-                return BadRequest("Failed to save attachment metadata.");
-            }
-
-            bool linkCreated = await _context.AttachmentRepository.CreateAttachmentLink(applicationId, savedAttachment.AttachmentId, linkId, linkType);
-            if (!linkCreated)
-            {
-                return BadRequest("Failed to create attachment link.");
+                return BadRequest("Failed to save attachment.");
             }
 
             await using var writeStream = file.OpenReadStream();
-            bool isBlobStored = await _blobStorage.Write(applicationId, savedAttachment.BlobId, writeStream);
+            bool isBlobStored = await _blobStorage.Write(applicationId, attachment.BlobId, writeStream);
             if (!isBlobStored)
             {
                 return BadRequest("Unable to store the file in blob storage.");
             }
 
-            AttachmentDto savedAttachmentDto = AttachmentMapper.ToDto(savedAttachment);
+            AttachmentDto savedAttachmentDto = AttachmentMapper.ToDto(attachment);
 
             _context.Commit();
             return Ok(savedAttachmentDto);

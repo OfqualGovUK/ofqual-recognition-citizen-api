@@ -78,7 +78,7 @@ public class AttachmentRepository : IAttachmentRepository
         }
     }
 
-    public async Task<Attachment?> CreateAttachment(string fileName, string contentType, long size)
+    public async Task<Attachment?> CreateAttachment(string fileName, string contentType, long size, string upn)
     {
         try
         {
@@ -104,8 +104,8 @@ public class AttachmentRepository : IAttachmentRepository
                 FileName = fileName,
                 FileMIMEtype = contentType,
                 FileSize = size,
-                CreatedByUpn = "USER",      // TODO: replace once auth gets added
-                ModifiedByUpn = "USER"      // TODO: replace once auth gets added
+                CreatedByUpn = upn,
+                ModifiedByUpn = upn
             }, _transaction);
         }
         catch (Exception ex)
@@ -115,7 +115,7 @@ public class AttachmentRepository : IAttachmentRepository
         }
     }
 
-    public async Task<bool> CreateAttachmentLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkType linkTypeId)
+    public async Task<bool> CreateAttachmentLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkType linkTypeId, string upn)
     {
         try
         {
@@ -143,8 +143,8 @@ public class AttachmentRepository : IAttachmentRepository
                 LinkId = linkId,
                 LinkTypeId = (int)linkTypeId,
                 ApplicationId = applicationId,
-                CreatedByUpn = "USER",      // TODO: replace once auth gets added
-                ModifiedByUpn = "USER"      // TODO: replace once auth gets added
+                CreatedByUpn = upn,
+                ModifiedByUpn = upn
             }, _transaction);
 
             return rowsAffected > 0;
