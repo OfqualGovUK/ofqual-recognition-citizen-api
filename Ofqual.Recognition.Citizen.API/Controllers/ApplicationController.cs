@@ -1,4 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Attributes;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
@@ -7,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
-using Ofqual.Recognition.Citizen.API.Attributes;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -23,52 +23,38 @@ public class ApplicationController : ControllerBase
     private readonly IUnitOfWork _context;
     private readonly ITaskStatusService _taskStatusService;
     private readonly IStageService _stageService;
-    private readonly IFeatureFlagService _featureFlagService;
     private readonly IApplicationAnswersService _applicationAnswersService;
-    private readonly IUserInformationService _userInformationService;
+    private readonly IApplicationService _applicationService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ApplicationController"/>.
     /// </summary>
-    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService, IStageService stageService, IUserInformationService userInformationService, IFeatureFlagService featureFlagService)
+    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService, IStageService stageService, IApplicationService applicationService)
     {
         _context = context;
         _taskStatusService = taskStatusService;
         _applicationAnswersService = applicationAnswersService;
         _stageService = stageService;
-        _userInformationService = userInformationService;
-        _featureFlagService = featureFlagService;
+        _applicationService = applicationService;
     }
 
     /// <summary>
-    /// Creates a new application with initial task statuses.
+    /// Initialises a new application or returns the latest one for the current user.
     /// </summary>
-    /// <returns>The created application.</returns>
+    /// <param name="PreEngagementAnswers">Optional pre-engagement answers.</param>
+    /// <returns>The initialised or existing application.</returns>
     [HttpPost]
-    public async Task<ActionResult<ApplicationDetailsDto>> CreateApplication([FromBody] IEnumerable<PreEngagementAnswerDto>? PreEngagementAnswers)
+    public async Task<ActionResult<ApplicationDetailsDto>> InitialiseApplication([FromBody] IEnumerable<PreEngagementAnswerDto>? PreEngagementAnswers)
     {
         try
         {
-            Application? application;
-            ApplicationDetailsDto applicationDetailsDto;
-
-            string oid = _userInformationService.GetCurrentUserObjectId();
-            string displayName = _userInformationService.GetCurrentUserDisplayName();
-            string upn = _userInformationService.GetCurrentUserUpn();
-
-            if (_featureFlagService.IsFeatureEnabled("CheckUser"))
+            ApplicationDetailsDto? latestApplication = await _applicationService.GetLatestApplicationForCurrentUser();
+            if (latestApplication != null)
             {
-                application = await _context.ApplicationRepository.GetLatestApplication(oid);
-                if (application != null)
-                {
-                    applicationDetailsDto = ApplicationMapper.ToDto(application);
-
-                    _context.Commit();
-                    return Ok(applicationDetailsDto);
-                }
+                return latestApplication;
             }
 
-            application = await _context.ApplicationRepository.CreateApplication(oid, displayName, upn);
+            Application? application = await _applicationService.CreateApplicationForCurrentUser();
             if (application == null)
             {
                 return BadRequest("Application could not be created.");
@@ -89,13 +75,13 @@ public class ApplicationController : ControllerBase
                 }
             }
 
-            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(application.ApplicationId, Stage.PreEngagement);
+            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(application.ApplicationId, StageType.PreEngagement);
             if (!stageStatusUpdated)
             {
                 return BadRequest("Unable to determine or save the stage status for the application.");
             }
 
-            applicationDetailsDto = ApplicationMapper.ToDto(application);
+            ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
 
             _context.Commit();
             return Ok(applicationDetailsDto);
@@ -118,15 +104,13 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            var taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
-            if (taskStatuses == null || !taskStatuses.Any())
+            var taskStatuses = await _taskStatusService.GetTaskStatusesForApplication(applicationId);
+            if (taskStatuses == null)
             {
                 return BadRequest("No tasks found for the specified application.");
             }
 
-            var taskItemStatusSectionList = TaskMapper.ToDto(taskStatuses);
-
-            return Ok(taskItemStatusSectionList);
+            return Ok(taskStatuses);
         }
         catch (Exception ex)
         {
@@ -146,19 +130,10 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, request.Status);
-            if (!isStatusUpdated)
+            bool updated = await _taskStatusService.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, StageType.PreEngagement);
+            if (!updated)
             {
-                return BadRequest("Failed to update task status. Either the task does not exist or belongs to a different application.");
-            }
-
-            if (request.Status == TaskStatusEnum.Completed)
-            {
-                bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement);
-                if (!stageStatusUpdated)
-                {
-                    return BadRequest("Unable to determine or save the stage status for the application.");
-                }
+                return BadRequest("Unable to update task or stage status. Please try again.");
             }
 
             _context.Commit();
@@ -195,16 +170,10 @@ public class ApplicationController : ControllerBase
                 return BadRequest(validationResult);
             }
 
-            bool isAnswerUpserted = await _context.ApplicationAnswersRepository.UpsertQuestionAnswer(applicationId, questionId, request.Answer);
-            if (!isAnswerUpserted)
+            bool isSuccessful = await _applicationAnswersService.SubmitAnswerAndUpdateStatus(applicationId, taskId, questionId, request.Answer);
+            if (!isSuccessful)
             {
                 return BadRequest("Failed to save the question answer. Please check your input and try again.");
-            }
-
-            bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress);
-            if (!isStatusUpdated)
-            {
-                return BadRequest("Failed to update task status. Either the task does not exist or belongs to a different application.");
             }
 
             _context.Commit();
@@ -224,7 +193,7 @@ public class ApplicationController : ControllerBase
     /// <param name="taskId">The ID of the task.</param>
     [HttpGet("{applicationId}/tasks/{taskId}/questions/answers")]
     [CheckApplicationId(queryParam: "applicationId")]
-    public async Task<ActionResult<List<QuestionAnswerTaskSectionDto>>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
+    public async Task<ActionResult<List<TaskReviewGroupDto>>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
         try
         {

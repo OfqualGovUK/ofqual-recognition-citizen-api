@@ -2,7 +2,7 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
 
 namespace Ofqual.Recognition.API.Models.JSON.Questions;
 
-public class Textarea : IValidatable
+public class Textarea : IValidatable, ISectionGroup
 {
     /// <summary>
     /// The label displayed above the textarea.

@@ -1,4 +1,4 @@
-﻿namespace Ofqual.Recognition.Citizen.API.Attributes;
+﻿namespace Ofqual.Recognition.Citizen.API.Core.Attributes;
 
 /* 
  * This attribute is used to indicate to middleware that it should perform an ApplicationId check 

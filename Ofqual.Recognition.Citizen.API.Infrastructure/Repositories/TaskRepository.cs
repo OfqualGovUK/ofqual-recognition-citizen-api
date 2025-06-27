@@ -140,7 +140,7 @@ public class TaskRepository : ITaskRepository
         }
     }
 
-    public async Task<bool> UpdateTaskStatus(Guid applicationId, Guid taskId, TaskStatusEnum status)
+    public async Task<bool> UpdateTaskStatus(Guid applicationId, Guid taskId, TaskStatusEnum status, string upn)
     {
         try
         {
@@ -156,7 +156,7 @@ public class TaskRepository : ITaskRepository
             {
                 applicationId,
                 taskId,
-                modifiedByUpn = "USER", // TODO: replace once auth gets added
+                modifiedByUpn = upn,
                 status = (int)status
             }, _transaction);
 

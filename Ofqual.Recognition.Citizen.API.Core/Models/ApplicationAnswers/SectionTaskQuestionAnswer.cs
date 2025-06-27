@@ -1,15 +1,20 @@
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 /// <summary>
-/// Combines task, question and the related answer for an application.
+/// Combines section, task, question and the related answer for an application.
 /// </summary>
-public class TaskQuestionAnswer
+public class SectionTaskQuestionAnswer
 {
+    // Section Table
+    public Guid SectionId { get; set; }
+    public required string SectionName { get; set; }
+    public int SectionOrderNumber { get; set; }
+
     // Task table
     public Guid TaskId { get; set; }
     public required string TaskName { get; set; }
     public required string TaskNameUrl { get; set; }
-    public int TaskOrder { get; set; }
+    public int TaskOrderNumber { get; set; }
 
     // Section table
     public Guid SectionId { get; set; }

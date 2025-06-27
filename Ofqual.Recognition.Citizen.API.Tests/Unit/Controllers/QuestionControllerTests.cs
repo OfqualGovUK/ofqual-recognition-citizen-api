@@ -2,7 +2,6 @@ using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Controllers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 using Moq;
@@ -11,24 +10,15 @@ namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 
 public class QuestionControllerTests
 {
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
+    private readonly Mock<IQuestionRepository> _mockQuestionRepository = new();
     private readonly QuestionController _controller;
-    private readonly Mock<IQuestionRepository> _mockQuestionRepository;
-    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
 
     public QuestionControllerTests()
     {
-        _mockUnitOfWork = new Mock<IUnitOfWork>();
-
-        _mockQuestionRepository = new Mock<IQuestionRepository>();
         _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
 
-        _controller = new QuestionController(_mockUnitOfWork.Object)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext()
-            }
-        };
+        _controller = new QuestionController(_mockUnitOfWork.Object);
     }
 
     [Theory]

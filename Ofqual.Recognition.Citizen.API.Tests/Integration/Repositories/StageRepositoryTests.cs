@@ -5,7 +5,6 @@ using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Xunit;
-using Moq;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 
@@ -96,7 +95,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
 
         await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
         {
-            StageId = Stage.PreEngagement,
+            StageId = StageType.PreEngagement,
             TaskId = task1.TaskId,
             OrderNumber = 2,
             Enabled = true,
@@ -106,7 +105,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         });
         await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
         {
-            StageId = Stage.PreEngagement,
+            StageId = StageType.PreEngagement,
             TaskId = task2.TaskId,
             OrderNumber = 1,
             Enabled = true,
@@ -118,7 +117,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.StageRepository.GetFirstQuestionByStage(Stage.PreEngagement);
+        var result = await unitOfWork.StageRepository.GetFirstQuestionByStage(StageType.PreEngagement);
 
         // Assert
         Assert.NotNull(result);
@@ -210,7 +209,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
 
         await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
         {
-            StageId = Stage.PreEngagement,
+            StageId = StageType.PreEngagement,
             TaskId = task.TaskId,
             OrderNumber = 1,
             Enabled = true,
@@ -222,7 +221,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.StageRepository.GetStageQuestionByTaskAndQuestionUrl(Stage.PreEngagement, task.TaskNameUrl, question2.QuestionNameUrl);
+        var result = await unitOfWork.StageRepository.GetStageQuestionByTaskAndQuestionUrl(StageType.PreEngagement, task.TaskNameUrl, question2.QuestionNameUrl);
 
         // Assert
         Assert.NotNull(result);
@@ -248,15 +247,27 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var stageId = Stage.PreEngagement;
+        var stageId = StageType.PreEngagement;
         var now = DateTime.UtcNow;
 
         var stageStatus = await StageTestDataBuilder.CreateStageStatus(unitOfWork, new StageStatus
@@ -333,7 +344,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var stageId = Stage.PreEngagement;
+        var stageId = StageType.PreEngagement;
         var now = DateTime.UtcNow;
 
         await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
@@ -389,15 +400,27 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Ofqual Test Account",
+            CreatedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedDate = DateTime.UtcNow,
+            ModifiedByUpn = "test@ofqual.gov.uk"
+        });
+
         var application = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
         {
             ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var stageId = Stage.PreEngagement;
+        var stageId = StageType.PreEngagement;
         var now = DateTime.UtcNow;
 
         var initialStatus = new StageStatus

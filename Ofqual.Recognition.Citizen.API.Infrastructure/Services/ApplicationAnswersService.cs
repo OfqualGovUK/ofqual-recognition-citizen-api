@@ -15,14 +15,37 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 public class ApplicationAnswersService : IApplicationAnswersService
 {
     private readonly IUnitOfWork _context;
+    private readonly IUserInformationService _userInformationService;
 
-    public ApplicationAnswersService(IUnitOfWork context)
+    public ApplicationAnswersService(IUnitOfWork context, IUserInformationService userInformationService)
     {
         _context = context;
+        _userInformationService = userInformationService;
+    }
+
+    public async Task<bool> SubmitAnswerAndUpdateStatus(Guid applicationId, Guid taskId, Guid questionId, string answerJson)
+    {
+        string upn = _userInformationService.GetCurrentUserUpn();
+
+        bool isAnswerUpserted = await _context.ApplicationAnswersRepository.UpsertQuestionAnswer(applicationId, questionId, answerJson, upn);
+        if (!isAnswerUpserted)
+        {
+            return false;
+        }
+
+        bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, upn);
+        if (!isStatusUpdated)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public async Task<bool> SavePreEngagementAnswers(Guid applicationId, IEnumerable<PreEngagementAnswerDto> answers)
     {
+        string upn = _userInformationService.GetCurrentUserUpn();
+
         foreach (var answer in answers)
         {
             ValidationResponse? validationResult = await ValidateQuestionAnswers(answer.QuestionId, answer.AnswerJson);
@@ -31,7 +54,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 return false;
             }
 
-            bool success = await _context.ApplicationAnswersRepository.UpsertQuestionAnswer(applicationId, answer.QuestionId, answer.AnswerJson);
+            bool success = await _context.ApplicationAnswersRepository.UpsertQuestionAnswer(applicationId, answer.QuestionId, answer.AnswerJson, upn);
             if (!success)
             {
                 return false;
@@ -41,224 +64,244 @@ public class ApplicationAnswersService : IApplicationAnswersService
         return true;
     }
 
-    public async Task<List<QuestionAnswerTaskSectionDto>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
+    public async Task<List<TaskReviewSectionDto>> GetAllApplicationAnswerReview(Guid applicationId)
+    {
+        var allAnswers = await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId);
+        if (allAnswers == null || !allAnswers.Any())
+        {
+            return new List<TaskReviewSectionDto>();
+        }
+
+        var groupedBySection = allAnswers
+            .GroupBy(a => new { a.SectionId, a.SectionName, a.SectionOrderNumber })
+            .OrderBy(g => g.Key.SectionOrderNumber);
+
+        var result = new List<TaskReviewSectionDto>();
+
+        foreach (var sectionGroup in groupedBySection)
+        {
+            var tasks = sectionGroup
+                .GroupBy(q => new { q.TaskId, q.TaskOrderNumber })
+                .OrderBy(g => g.Key.TaskOrderNumber);
+
+            var sectionTasks = new List<TaskReviewGroupDto>();
+
+            foreach (var taskGroup in tasks)
+            {
+                var taskAnswers = await GetTaskAnswerReview(applicationId, taskGroup.Key.TaskId);
+                sectionTasks.AddRange(taskAnswers);
+            }
+
+            result.Add(new TaskReviewSectionDto
+            {
+                SectionName = sectionGroup.Key.SectionName,
+                TaskGroups = sectionTasks
+            });
+        }
+
+        return result;
+    }
+
+    public async Task<List<TaskReviewGroupDto>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
         var taskQuestionAnswers = await _context.ApplicationAnswersRepository.GetTaskQuestionAnswers(applicationId, taskId);
         if (!taskQuestionAnswers.Any())
         {
-            return new List<QuestionAnswerTaskSectionDto>();
+            return new List<TaskReviewGroupDto>();
         }
 
-        var sections = new List<QuestionAnswerTaskSectionDto>();
+        var sections = new List<TaskReviewGroupDto>();
 
         foreach (var question in taskQuestionAnswers)
         {
-            if (string.IsNullOrWhiteSpace(question.QuestionContent))
+            var section = await ProcessQuestionAnswer(applicationId, question);
+            if (section != null && section.QuestionAnswers.Any())
             {
-                continue;
-            }
-
-            var questionContent = JsonSerializer.Deserialize<QuestionContent>(question.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } });
-            if (questionContent?.FormGroup == null)
-            {
-                continue;
-            }
-
-            var answerValues = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(question.Answer, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            var formGroup = questionContent.FormGroup;
-
-            // Text inputs
-            if (formGroup.TextInputGroup?.Fields != null)
-            {
-                var section = new QuestionAnswerTaskSectionDto
-                {
-                    SectionHeading = formGroup.TextInputGroup.SectionName
-                };
-
-                foreach (var input in formGroup.TextInputGroup.Fields)
-                {
-                    var values = ExtractAnswer(answerValues, input.Name);
-                    section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
-                    {
-                        QuestionText = input.Label,
-                        AnswerValue = values,
-                        QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                    });
-                }
-
-                if (section.QuestionAnswers.Any())
-                {
-                    sections.Add(section);
-                }
-            }
-
-            // Textarea
-            if (formGroup.Textarea != null)
-            {
-                var section = new QuestionAnswerTaskSectionDto
-                {
-                    SectionHeading = formGroup.Textarea.SectionName
-                };
-
-                var values = ExtractAnswer(answerValues, formGroup.Textarea.Name);
-                section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
-                {
-                    QuestionText = formGroup.Textarea.Label?.Text,
-                    AnswerValue = values,
-                    QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                });
-
-                sections.Add(section);
-            }
-
-            // Radio button group
-            if (formGroup.RadioButtonGroup != null)
-            {
-                var section = new QuestionAnswerTaskSectionDto
-                {
-                    SectionHeading = formGroup.RadioButtonGroup.SectionName
-                };
-
-                var values = ExtractAnswer(answerValues, formGroup.RadioButtonGroup.Name);
-                section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
-                {
-                    QuestionText = formGroup.RadioButtonGroup.Heading?.Text,
-                    AnswerValue = values,
-                    QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                });
-
-                var selected = values.FirstOrDefault()?.ToLowerInvariant();
-                var selectedOption = formGroup.RadioButtonGroup.Options.FirstOrDefault(o => o.Value.ToLowerInvariant() == selected);
-                if (selectedOption != null)
-                {
-                    if (selectedOption.ConditionalInputs != null)
-                    {
-                        foreach (var input in selectedOption.ConditionalInputs)
-                        {
-                            var conditionalValues = ExtractAnswer(answerValues, input.Name);
-                            section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
-                            {
-                                QuestionText = input.Label,
-                                AnswerValue = conditionalValues,
-                                QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                            });
-                        }
-                    }
-
-                    if (selectedOption.ConditionalSelects != null)
-                    {
-                        foreach (var select in selectedOption.ConditionalSelects)
-                        {
-                            var conditionalValues = ExtractAnswer(answerValues, select.Name);
-                            section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
-                            {
-                                QuestionText = select.Label,
-                                AnswerValue = conditionalValues,
-                                QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                            });
-                        }
-                    }
-                }
-
-                if (section.QuestionAnswers.Any())
-                {
-                    sections.Add(section);
-                }
-            }
-
-            // Checkbox group
-            if (formGroup.CheckboxGroup != null)
-            {
-                var section = new QuestionAnswerTaskSectionDto
-                {
-                    SectionHeading = formGroup.CheckboxGroup.SectionName
-                };
-
-                var checkbox = formGroup.CheckboxGroup;
-                var values = ExtractAnswer(answerValues, checkbox.Name);
-                var selected = values.Select(v => v.ToLowerInvariant()).ToHashSet();
-
-                section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
-                {
-                    QuestionText = checkbox.Heading?.Text,
-                    AnswerValue = values,
-                    QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                });
-
-                foreach (var option in checkbox.Options)
-                {
-                    if (string.IsNullOrWhiteSpace(option.Value) || !selected.Contains(option.Value.ToLowerInvariant()))
-                    {
-                        continue;
-                    }
-
-                    if (option.ConditionalInputs != null)
-                    {
-                        foreach (var input in option.ConditionalInputs)
-                        {
-                            var conditionalValues = ExtractAnswer(answerValues, input.Name);
-                            section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
-                            {
-                                QuestionText = input.Label,
-                                AnswerValue = conditionalValues,
-                                QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                            });
-                        }
-                    }
-
-                    if (option.ConditionalSelects != null)
-                    {
-                        foreach (var select in option.ConditionalSelects)
-                        {
-                            var conditionalValues = ExtractAnswer(answerValues, select.Name);
-                            section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
-                            {
-                                QuestionText = select.Label,
-                                AnswerValue = conditionalValues,
-                                QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                            });
-                        }
-                    }
-                }
-
-                if (section.QuestionAnswers.Any())
-                {
-                    sections.Add(section);
-                }
-            }
-
-            // File Upload
-            if (formGroup.FileUpload != null)
-            {
-                var allAttachments = await _context.AttachmentRepository.GetAllAttachmentsForLink(applicationId, question.QuestionId, LinkType.Question);
-
-                var sortedFileNames = allAttachments
-                    .Select(a => a.FileName)
-                    .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                if (!sortedFileNames.Any())
-                {
-                    sortedFileNames.Add("Not provided");
-                }
-
-                var section = new QuestionAnswerTaskSectionDto
-                {
-                    SectionHeading = formGroup.FileUpload.SectionName
-                };
-
-                section.QuestionAnswers.Add(new QuestionAnswerTaskReviewDto
-                {
-                    QuestionText = "Files you uploaded",
-                    AnswerValue = sortedFileNames,
-                    QuestionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}"
-                });
-
                 sections.Add(section);
             }
         }
 
         return sections;
+    }
+
+    private async Task<TaskReviewGroupDto?> ProcessQuestionAnswer(Guid applicationId, SectionTaskQuestionAnswer question)
+    {
+        if (string.IsNullOrWhiteSpace(question.QuestionContent))
+        {
+            return null;
+        }
+
+        var questionContent = JsonSerializer.Deserialize<QuestionContent>(question.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } });
+        if (questionContent?.FormGroup == null)
+        {
+            return null;
+        }
+
+        var answerValues = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(question.Answer, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var formGroup = questionContent.FormGroup;
+        var questionUrl = $"{question.TaskNameUrl}/{question.QuestionNameUrl}";
+
+        var sectionGroups = new ISectionGroup?[]
+        {
+            formGroup.TextInputGroup,
+            formGroup.Textarea,
+            formGroup.RadioButtonGroup,
+            formGroup.CheckboxGroup,
+            formGroup.FileUpload
+        };
+
+        var section = new TaskReviewGroupDto
+        {
+            SectionHeading = sectionGroups.FirstOrDefault(s => !string.IsNullOrWhiteSpace(s?.SectionName))?.SectionName
+        };
+
+        // Text input group
+        if (formGroup.TextInputGroup?.Fields != null)
+        {
+            foreach (var input in formGroup.TextInputGroup.Fields)
+            {
+                var values = ExtractAnswer(answerValues, input.Name);
+                section.QuestionAnswers.Add(new TaskReviewItemDto
+                {
+                    QuestionText = input.Label,
+                    AnswerValue = values,
+                    QuestionUrl = questionUrl
+                });
+            }
+        }
+
+        // Textarea
+        if (formGroup.Textarea != null)
+        {
+            var values = ExtractAnswer(answerValues, formGroup.Textarea.Name);
+            section.QuestionAnswers.Add(new TaskReviewItemDto
+            {
+                QuestionText = formGroup.Textarea.Label?.Text,
+                AnswerValue = values,
+                QuestionUrl = questionUrl
+            });
+        }
+
+        // Radio button group
+        if (formGroup.RadioButtonGroup != null)
+        {
+            var values = ExtractAnswer(answerValues, formGroup.RadioButtonGroup.Name);
+            section.QuestionAnswers.Add(new TaskReviewItemDto
+            {
+                QuestionText = formGroup.RadioButtonGroup.Heading?.Text,
+                AnswerValue = values,
+                QuestionUrl = questionUrl
+            });
+
+            var selected = values.FirstOrDefault()?.ToLowerInvariant();
+            var selectedOption = formGroup.RadioButtonGroup.Options.FirstOrDefault(o => o.Value.ToLowerInvariant() == selected);
+            if (selectedOption != null)
+            {
+                if (selectedOption.ConditionalInputs != null)
+                {
+                    foreach (var input in selectedOption.ConditionalInputs)
+                    {
+                        var conditionalValues = ExtractAnswer(answerValues, input.Name);
+                        section.QuestionAnswers.Add(new TaskReviewItemDto
+                        {
+                            QuestionText = input.Label,
+                            AnswerValue = conditionalValues,
+                            QuestionUrl = questionUrl
+                        });
+                    }
+                }
+
+                if (selectedOption.ConditionalSelects != null)
+                {
+                    foreach (var select in selectedOption.ConditionalSelects)
+                    {
+                        var conditionalValues = ExtractAnswer(answerValues, select.Name);
+                        section.QuestionAnswers.Add(new TaskReviewItemDto
+                        {
+                            QuestionText = select.Label,
+                            AnswerValue = conditionalValues,
+                            QuestionUrl = questionUrl
+                        });
+                    }
+                }
+            }
+        }
+
+        // Checkbox group
+        if (formGroup.CheckboxGroup != null)
+        {
+            var checkbox = formGroup.CheckboxGroup;
+            var values = ExtractAnswer(answerValues, checkbox.Name);
+            var selected = values.Select(v => v.ToLowerInvariant()).ToHashSet();
+
+            section.QuestionAnswers.Add(new TaskReviewItemDto
+            {
+                QuestionText = checkbox.Heading?.Text,
+                AnswerValue = values,
+                QuestionUrl = questionUrl
+            });
+
+            foreach (var option in checkbox.Options)
+            {
+                if (string.IsNullOrWhiteSpace(option.Value) || !selected.Contains(option.Value.ToLowerInvariant()))
+                {
+                    continue;
+                }
+
+                if (option.ConditionalInputs != null)
+                {
+                    foreach (var input in option.ConditionalInputs)
+                    {
+                        var conditionalValues = ExtractAnswer(answerValues, input.Name);
+                        section.QuestionAnswers.Add(new TaskReviewItemDto
+                        {
+                            QuestionText = input.Label,
+                            AnswerValue = conditionalValues,
+                            QuestionUrl = questionUrl
+                        });
+                    }
+                }
+
+                if (option.ConditionalSelects != null)
+                {
+                    foreach (var select in option.ConditionalSelects)
+                    {
+                        var conditionalValues = ExtractAnswer(answerValues, select.Name);
+                        section.QuestionAnswers.Add(new TaskReviewItemDto
+                        {
+                            QuestionText = select.Label,
+                            AnswerValue = conditionalValues,
+                            QuestionUrl = questionUrl
+                        });
+                    }
+                }
+            }
+        }
+
+        // File upload
+        if (formGroup.FileUpload != null)
+        {
+            var allAttachments = await _context.AttachmentRepository.GetAllAttachmentsForLink(applicationId, question.QuestionId, LinkType.Question);
+
+            var sortedFileNames = allAttachments
+                .Select(a => a.FileName)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (!sortedFileNames.Any())
+            {
+                sortedFileNames.Add("Not provided");
+            }
+
+            section.QuestionAnswers.Add(new TaskReviewItemDto
+            {
+                QuestionText = "Files you uploaded",
+                AnswerValue = sortedFileNames,
+                QuestionUrl = questionUrl
+            });
+        }
+
+        return section.QuestionAnswers.Any() ? section : null;
     }
 
     private static List<string> ExtractAnswer(Dictionary<string, JsonElement>? answers, string key)
