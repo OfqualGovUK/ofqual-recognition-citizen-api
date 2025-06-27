@@ -125,7 +125,7 @@ public class ApplicationRepository : IApplicationRepository
             if (await IsApplicationSubmitted(applicationId) ?? true)
                 return null;
 
-            if (await CheckPendingTasks(applicationId) > 0) 
+            if (await CheckApplicationForPendingTasks(applicationId) > 0) 
                 return ApplicationStatus.InProgress;
 
             await _connection.QueryAsync(@"
@@ -171,7 +171,7 @@ public class ApplicationRepository : IApplicationRepository
                             WHERE  ts.ApplicationId = a.ApplicationId);", 
             new { applicationId }, _transaction);
 
-    private async Task<int> CheckPendingTasks(Guid applicationId) =>    
+    private async Task<int> CheckApplicationForPendingTasks(Guid applicationId) =>    
         await _connection.QuerySingleAsync<int>(@"
             SELECT COUNT(*) AS [Count]
             FROM   [recognitionCitizen].[Task] AS t           
