@@ -63,7 +63,7 @@ public class TaskStatusService : ITaskStatusService
 
         var sectionDtos = TaskMapper.ToDto(taskStatuses);
 
-        bool isSubmitted = application.SubmittedDate.HasValue && application.SubmittedDate.Value > DateTime.UtcNow;
+        bool isSubmitted = application.SubmittedDate.HasValue && application.SubmittedDate.Value <= DateTime.UtcNow;
 
         foreach (var section in sectionDtos)
         {
