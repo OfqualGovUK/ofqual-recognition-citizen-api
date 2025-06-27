@@ -90,7 +90,7 @@ public class ApplicationController : ControllerBase
                 }
             }
 
-            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(application.ApplicationId, Stage.PreEngagement);
+            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(application.ApplicationId, TaskStage.PreEngagement);
             if (!stageStatusUpdated)
             {
                 return BadRequest("Unable to determine or save the stage status for the application.");
@@ -147,7 +147,11 @@ public class ApplicationController : ControllerBase
     {
         try
         {
-            bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, request.Status);
+            var upn = _userInformationService.GetCurrentUserUpn();
+            if (upn == null)
+                return Unauthorized();
+
+            bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, request.Status, upn);
             if (!isStatusUpdated)
             {
                 return BadRequest("Failed to update task status. Either the task does not exist or belongs to a different application.");
@@ -155,7 +159,7 @@ public class ApplicationController : ControllerBase
 
             if (request.Status == TaskStatusEnum.Completed)
             {
-                bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(applicationId, Stage.PreEngagement);
+                bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(applicationId, TaskStage.PreEngagement);
                 if (!stageStatusUpdated)
                 {
                     return BadRequest("Unable to determine or save the stage status for the application.");
@@ -185,6 +189,11 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            var upn = _userInformationService.GetCurrentUserUpn();
+            if (upn == null)
+                return Unauthorized();
+
+
             ValidationResponse? validationResult = await _applicationAnswersService.ValidateQuestionAnswers(questionId, request.Answer);
             if (validationResult == null)
             {
@@ -202,7 +211,7 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Failed to save the question answer. Please check your input and try again.");
             }
 
-            bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress);
+            bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, upn);
             if (!isStatusUpdated)
             {
                 return BadRequest("Failed to update task status. Either the task does not exist or belongs to a different application.");

@@ -36,7 +36,11 @@ public class TaskRepository : ITaskRepository
                     ModifiedByUpn
                 FROM [recognitionCitizen].[Task]";
 
-            return await _connection.QueryAsync<TaskItem>(query, null, _transaction);
+            var tasks = await _connection.QueryAsync<TaskItem>(query, null, _transaction);
+            foreach (var ts in tasks)
+                ts.TaskStages = await GetStagesForTask(ts.TaskId);
+            return tasks;
+                
         }
         catch (Exception ex)
         {
@@ -63,10 +67,12 @@ public class TaskRepository : ITaskRepository
                 FROM [recognitionCitizen].[Task]
                 WHERE TaskNameUrl = @taskNameUrl";
 
-            return await _connection.QueryFirstOrDefaultAsync<TaskItem>(query, new
-            {
-                taskNameUrl
-            }, _transaction);
+            var taskItem =  await _connection.QueryFirstOrDefaultAsync<TaskItem>(query, new
+            { taskNameUrl }, _transaction);
+            
+            if(taskItem != null)
+            taskItem.TaskStages = await GetStagesForTask(taskItem.TaskId);
+            return taskItem;
         }
         catch (Exception ex)
         {
@@ -128,9 +134,9 @@ public class TaskRepository : ITaskRepository
                     @CreatedByUpn,
                     @ModifiedByUpn
                 )";
-            
+
             var rowsAffected = await _connection.ExecuteAsync(query, statuses, _transaction);
-            
+
             return rowsAffected == statuses.Count();
         }
         catch (Exception ex)
@@ -140,7 +146,7 @@ public class TaskRepository : ITaskRepository
         }
     }
 
-    public async Task<bool> UpdateTaskStatus(Guid applicationId, Guid taskId, TaskStatusEnum status)
+    public async Task<bool> UpdateTaskStatus(Guid applicationId, Guid taskId, TaskStatusEnum status, string upn)
     {
         try
         {
@@ -156,8 +162,7 @@ public class TaskRepository : ITaskRepository
             {
                 applicationId,
                 taskId,
-                modifiedByUpn = "USER", // TODO: replace once auth gets added
-                status = (int)status
+                modifiedByUpn = upn, status = (int)status
             }, _transaction);
 
             return rowsAffected > 0;
@@ -168,4 +173,13 @@ public class TaskRepository : ITaskRepository
             return false;
         }
     }
+
+    private async Task<IEnumerable<TaskStage>> GetStagesForTask(Guid taskId) =>
+        await _connection.QueryAsync<TaskStage>(@"
+                SELECT  [StageId] 
+                FROM    [recognitionCitizen].[TaskStatus] 
+                WHERE   TaskId = @TaskId;",
+            new { taskId }, _transaction);
 }
+
+

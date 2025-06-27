@@ -13,7 +13,7 @@ public class StageService : IStageService
         _context = context;
     }
 
-    public async Task<bool> EvaluateAndUpsertStageStatus(Guid applicationId, Stage stage)
+    public async Task<bool> EvaluateAndUpsertStageStatus(Guid applicationId, TaskStage stage)
     {
         // Get all tasks for the specified stage
         var stageTasks = (await _context.StageRepository.GetAllStageTasksByStageId(stage))?.ToList();

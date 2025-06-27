@@ -38,6 +38,7 @@ public static class TaskMapper
         {
             TaskId = taskItem.TaskId,
             TaskName = taskItem.TaskName,
+            TaskStages = taskItem.TaskStages,
             TaskNameUrl = taskItem.TaskNameUrl,
             TaskOrderNumber = taskItem.TaskOrderNumber,
             SectionId = taskItem.SectionId
