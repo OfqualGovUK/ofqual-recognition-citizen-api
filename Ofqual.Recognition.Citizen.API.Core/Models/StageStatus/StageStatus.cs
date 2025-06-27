@@ -6,7 +6,7 @@ public class StageStatus
 {
     public Guid StageStatusId { get; set; }
     public Guid ApplicationId { get; set; }
-    public Stage StageId { get; set; }
+    public TaskStage StageId { get; set; }
     public TaskStatusEnum StatusId { get; set; }
     public DateTime StageStartDate { get; set; }
     public DateTime? StageCompletionDate { get; set; }

@@ -96,7 +96,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
 
         await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
         {
-            StageId = Stage.PreEngagement,
+            StageId = TaskStage.PreEngagement,
             TaskId = task1.TaskId,
             OrderNumber = 2,
             Enabled = true,
@@ -106,7 +106,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         });
         await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
         {
-            StageId = Stage.PreEngagement,
+            StageId = TaskStage.PreEngagement,
             TaskId = task2.TaskId,
             OrderNumber = 1,
             Enabled = true,
@@ -118,7 +118,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.StageRepository.GetFirstQuestionByStage(Stage.PreEngagement);
+        var result = await unitOfWork.StageRepository.GetFirstQuestionByStage(TaskStage.PreEngagement);
 
         // Assert
         Assert.NotNull(result);
@@ -210,7 +210,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
 
         await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
         {
-            StageId = Stage.PreEngagement,
+            StageId = TaskStage.PreEngagement,
             TaskId = task.TaskId,
             OrderNumber = 1,
             Enabled = true,
@@ -222,7 +222,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var result = await unitOfWork.StageRepository.GetStageQuestionByTaskAndQuestionUrl(Stage.PreEngagement, task.TaskNameUrl, question2.QuestionNameUrl);
+        var result = await unitOfWork.StageRepository.GetStageQuestionByTaskAndQuestionUrl(TaskStage.PreEngagement, task.TaskNameUrl, question2.QuestionNameUrl);
 
         // Assert
         Assert.NotNull(result);
@@ -256,7 +256,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var stageId = Stage.PreEngagement;
+        var stageId = TaskStage.PreEngagement;
         var now = DateTime.UtcNow;
 
         var stageStatus = await StageTestDataBuilder.CreateStageStatus(unitOfWork, new StageStatus
@@ -333,7 +333,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var stageId = Stage.PreEngagement;
+        var stageId = TaskStage.PreEngagement;
         var now = DateTime.UtcNow;
 
         await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
@@ -397,7 +397,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var stageId = Stage.PreEngagement;
+        var stageId = TaskStage.PreEngagement;
         var now = DateTime.UtcNow;
 
         var initialStatus = new StageStatus

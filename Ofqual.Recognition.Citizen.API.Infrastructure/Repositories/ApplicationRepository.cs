@@ -1,8 +1,9 @@
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
-using Ofqual.Recognition.Citizen.API.Core.Models;
-using System.Data;
-using Serilog;
 using Dapper;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Serilog;
+using System.Data;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
@@ -109,4 +110,93 @@ public class ApplicationRepository : IApplicationRepository
             throw;
         }
     }
+
+
+    /// <summary>
+    /// Checks and complete an application
+    /// </summary>
+    /// <param name="applicationId">The application to complete</param>
+    /// <param name="upn">UPN of user to complete</param>    
+    public async Task<ApplicationStatus?> CheckAndCompleteApplication(Guid applicationId, string upn)
+    {
+        try
+        {
+            //if application is already completed or non-existant, return  
+            if (await IsApplicationSubmitted(applicationId) ?? true)
+                return null;
+
+            if (await CheckApplicationForPendingTasks(applicationId) > 0) 
+                return ApplicationStatus.InProgress;
+
+            await _connection.QueryAsync(@"
+                UPDATE [recognitionCitizen].[Application];
+                SET     SubmittedDate = @SubmittedDate,
+                        ModifiedDate = @SubmittedDate,
+                        ModifiedByUpn = @UserUpn                
+                WHERE   ApplicationId = @ApplicationId;
+                SELECT  @@ROWCOUNT;", new 
+                {   
+                    SubmittedDate = DateTime.UtcNow,
+                    UserUpn = upn,
+                    ApplicationId = applicationId
+                }, _transaction);
+            return ApplicationStatus.Completed;            
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Exception raised when attempting to submit an application in ApplicationRepository::CheckAndCompleteApplication");
+            throw;
+        }        
+    }
+
+
+    /// <summary>
+    /// Check if an application has already been submitted
+    /// </summary>
+    /// <param name="applicationId">The application identifier</param>
+    /// <returns>
+    ///     true if completed, 
+    ///     false if in progress, 
+    ///     null if application or associated tasks do not exist 
+    /// </returns>
+    public async Task<bool?> IsApplicationSubmitted(Guid applicationId) =>
+        await _connection.QuerySingleOrDefaultAsync<bool?>(@"
+            SELECT CONVERT(BIT, 
+                       CASE WHEN a.SubmittedDate IS NULL
+                       THEN 0 ELSE 1 END) AS [Submitted]
+            FROM   [recognitionCitizen].[Application] AS a                            
+            WHERE  ApplicationId = @ApplicationId 
+            AND    EXISTS ( SELECT * 
+                            FROM   [recognitionCitizen].[TaskStatus] AS ts 
+                            WHERE  ts.ApplicationId = a.ApplicationId);", 
+            new { applicationId }, _transaction);
+
+    private async Task<int> CheckApplicationForPendingTasks(Guid applicationId) =>
+        await _connection.QuerySingleAsync<int>(@"
+            SELECT COUNT(*) AS [Count]
+            FROM   [recognitionCitizen].[Task] AS t           
+            JOIN   [recognitionCitizen].[TaskStatus] ts ON ts.TaskId = t.TaskId
+            WHERE  ts.[Status] <> @CompletedStatus
+            AND    ts.ApplicationId = @ApplicationId
+            AND    NOT EXISTS ( 
+                       SELECT * 
+                       FROM [recognitionCitizen].[StageTask] st 
+                       WHERE st.TaskId = t.TaskId 
+                       AND st.Enabled = 1 
+                       AND st.StageId NOT IN @ExcludedStages);",
+            new
+            {
+                completedStatus = (int)TaskStatusEnum.Completed,
+                excludedStages = new int
+                [
+                    (int)TaskStage.Information,
+                    (int)TaskStage.Declare,
+                    (int)TaskStage.Review
+                ],
+                applicationId
+            }, _transaction);
+
+    
+    
+
 }

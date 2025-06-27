@@ -47,7 +47,7 @@ public class PreEngagementControllerTests
             CurrentQuestionNameUrl = "question-a"
         };
 
-        _mockStageRepository.Setup(r => r.GetFirstQuestionByStage(Stage.PreEngagement)).ReturnsAsync(questionDto);
+        _mockStageRepository.Setup(r => r.GetFirstQuestionByStage(TaskStage.PreEngagement)).ReturnsAsync(questionDto);
 
         // Act
         var result = await _controller.GetFirstPreEngagementQuestion();
@@ -62,7 +62,7 @@ public class PreEngagementControllerTests
     public async Task GetFirstPreEngagementQuestion_Should_ReturnNotFound_WhenQuestionIsNull()
     {
         // Arrange
-        _mockStageRepository.Setup(r => r.GetFirstQuestionByStage(Stage.PreEngagement)).ReturnsAsync((StageQuestionDto?)null);
+        _mockStageRepository.Setup(r => r.GetFirstQuestionByStage(TaskStage.PreEngagement)).ReturnsAsync((StageQuestionDto?)null);
 
         // Act
         var result = await _controller.GetFirstPreEngagementQuestion();
@@ -91,7 +91,7 @@ public class PreEngagementControllerTests
             PreviousTaskNameUrl = "prev-t"
         };
 
-        _mockStageRepository.Setup(r => r.GetStageQuestionByTaskAndQuestionUrl(Stage.PreEngagement, "task-b", "question-b")).ReturnsAsync(question);
+        _mockStageRepository.Setup(r => r.GetStageQuestionByTaskAndQuestionUrl(TaskStage.PreEngagement, "task-b", "question-b")).ReturnsAsync(question);
 
         // Act
         var result = await _controller.GetPreEngagementQuestions("task-b", "question-b");
@@ -113,7 +113,7 @@ public class PreEngagementControllerTests
     public async Task GetPreEngagementQuestions_Should_ReturnBadRequest_WhenQuestionIsNull()
     {
         // Arrange
-        _mockStageRepository.Setup(r => r.GetStageQuestionByTaskAndQuestionUrl(Stage.PreEngagement, "missing-task", "missing-question"))
+        _mockStageRepository.Setup(r => r.GetStageQuestionByTaskAndQuestionUrl(TaskStage.PreEngagement, "missing-task", "missing-question"))
                          .ReturnsAsync((StageQuestionDetails?)null);
 
         // Act
