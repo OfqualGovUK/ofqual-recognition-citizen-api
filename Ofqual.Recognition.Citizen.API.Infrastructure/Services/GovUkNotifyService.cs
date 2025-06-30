@@ -23,6 +23,11 @@ public class GovUkNotifyService : IGovUkNotifyService
     {
         try 
         {
+            Dictionary<string, object> emailPersonalisation = new()
+            {
+                { "sign_in_url", _oneGovUkSignIn }
+            };
+
             await Policy
             .Handle<Exception>()
             .WaitAndRetryAsync(new[]
@@ -34,7 +39,7 @@ public class GovUkNotifyService : IGovUkNotifyService
             .ExecuteAsync(async () =>
             {
                 var client = new NotificationClient(_govUkApiKey);
-                await Task.Run(() => { EmailNotificationResponse repsonse = client.SendEmail(outboundEmailAddress, _templateId); });
+                await Task.Run(() => { EmailNotificationResponse repsonse = client.SendEmail(outboundEmailAddress, _templateId, emailPersonalisation); });
             });
 
             return true;
