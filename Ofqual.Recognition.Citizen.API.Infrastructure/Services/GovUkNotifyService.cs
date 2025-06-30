@@ -1,0 +1,49 @@
+﻿using Notify.Client;
+using Notify.Models.Responses;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
+using Polly;
+
+namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
+
+public class GovUkNotifyService : IGovUkNotifyService
+{
+    private readonly string _govUkApiKey;
+    private readonly string _templateId;
+    private readonly string _oneGovUkSignIn;
+
+    public GovUkNotifyService(GovUkNotifyConfiguration config)
+    {
+        _govUkApiKey = config.GovUkApiKey;
+        _templateId = config.TemplateId;
+        _oneGovUkSignIn = config.OneGovUkSignIn;
+    }
+
+    public async Task<bool> SendEmail(string outboundEmailAddress) 
+    {
+        try 
+        {
+            await Policy
+            .Handle<Exception>()
+            .WaitAndRetryAsync(new[]
+            {
+                TimeSpan.FromSeconds(0),
+                TimeSpan.FromSeconds(1),
+                TimeSpan.FromSeconds(1)
+            })
+            .ExecuteAsync(async () =>
+            {
+                var client = new NotificationClient(_govUkApiKey);
+                await Task.Run(() => { EmailNotificationResponse repsonse = client.SendEmail(outboundEmailAddress, _templateId); });
+            });
+
+            return true;
+        }
+        catch (Exception ex) 
+        {
+            Console.WriteLine(ex);
+
+            return false;
+        }
+    }
+}
