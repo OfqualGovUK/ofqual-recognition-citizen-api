@@ -51,7 +51,7 @@ public class ApplicationController : ControllerBase
             ApplicationDetailsDto? latestApplication = await _applicationService.GetLatestApplicationForCurrentUser();
             if (latestApplication != null)
             {
-                return latestApplication;
+                return Ok(latestApplication);
             }
 
             Application? application = await _applicationService.CreateApplicationForCurrentUser();
@@ -107,7 +107,7 @@ public class ApplicationController : ControllerBase
             var taskStatuses = await _taskStatusService.GetTaskStatusesForApplication(applicationId);
             if (taskStatuses == null)
             {
-                return BadRequest("No tasks found for the specified application.");
+                return NotFound("No tasks found for the specified application.");
             }
 
             return Ok(taskStatuses);
@@ -130,6 +130,11 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            if (request == null)
+            {
+                return BadRequest("Request body cannot be null.");
+            }
+
             bool updated = await _taskStatusService.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, StageType.PreEngagement);
             if (!updated)
             {
@@ -159,6 +164,11 @@ public class ApplicationController : ControllerBase
     {
         try
         {
+            if (request == null)
+            {
+                return BadRequest("Request body cannot be null.");
+            }
+
             ValidationResponse? validationResult = await _applicationAnswersService.ValidateQuestionAnswers(questionId, request.Answer);
             if (validationResult == null)
             {

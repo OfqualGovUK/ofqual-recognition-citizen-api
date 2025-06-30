@@ -282,7 +282,7 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetApplicationTasks_ShouldReturnBadRequest_WhenNoTasksFound()
+    public async Task GetApplicationTasks_ShouldReturnNotFound_WhenNoTasksFound()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -295,8 +295,26 @@ public class ApplicationControllerTests
         var result = await _controller.GetApplicationTasks(applicationId);
 
         // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("No tasks found for the specified application.", badRequestResult.Value);
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.Equal("No tasks found for the specified application.", notFoundResult.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetApplicationTasks_ShouldThrowException_WhenServiceThrows()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+
+        _mockTaskStatusService
+            .Setup(s => s.GetTaskStatusesForApplication(applicationId))
+            .ThrowsAsync(new Exception("Unexpected failure"));
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() =>
+            _controller.GetApplicationTasks(applicationId));
+
+        Assert.Equal("An error occurred while fetching tasks for the application. Please try again later.", exception.Message);
     }
 
     [Fact]
