@@ -4,5 +4,4 @@ public class GovUkNotifyConfiguration
 {
     public string GovUkApiKey { get; set; } = string.Empty;
     public string TemplateId { get; set; } = string.Empty;
-    public string OneGovUkSignIn { get; set; } = string.Empty;
 }

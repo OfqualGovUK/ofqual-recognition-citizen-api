@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
-using Ofqual.Recognition.Citizen.API.Attributes;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;

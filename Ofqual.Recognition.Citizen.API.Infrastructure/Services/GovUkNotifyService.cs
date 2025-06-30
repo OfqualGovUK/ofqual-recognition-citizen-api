@@ -10,26 +10,17 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
 public class GovUkNotifyService : IGovUkNotifyService
 {
-    private readonly string _govUkApiKey;
-    private readonly string _templateId;
-    private readonly string _oneGovUkSignIn;
+    private readonly GovUkNotifyConfiguration _config;
 
     public GovUkNotifyService(GovUkNotifyConfiguration config)
     {
-        _govUkApiKey = config.GovUkApiKey;
-        _templateId = config.TemplateId;
-        _oneGovUkSignIn = config.OneGovUkSignIn;
+        _config = config;
     }
 
     public async Task<bool> SendEmail(string outboundEmailAddress) 
     {
         try 
         {
-            Dictionary<string, object> emailPersonalisation = new()
-            {
-                { "sign_in_url", _oneGovUkSignIn }
-            };
-
             await Policy
             .Handle<Exception>()
             .WaitAndRetryAsync(new[]
@@ -40,9 +31,9 @@ public class GovUkNotifyService : IGovUkNotifyService
             })
             .ExecuteAsync(async () =>
             {
-                var client = new NotificationClient(_govUkApiKey);
+                var client = new NotificationClient(_config.GovUkApiKey);
 
-                await Task.Run(() => { EmailNotificationResponse repsonse = client.SendEmail(outboundEmailAddress, _templateId, emailPersonalisation); });
+                await Task.Run(() => { EmailNotificationResponse repsonse = client.SendEmail(outboundEmailAddress, _config.TemplateId); });
             });
 
             return true;
