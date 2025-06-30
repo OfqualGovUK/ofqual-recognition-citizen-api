@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Ofqual.Recognition.Citizen.API.Core.Validations;
+namespace Ofqual.Recognition.Citizen.API.Core.Attributes;
 
 public class ValidEnumValueAttribute : ValidationAttribute
 {

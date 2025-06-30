@@ -1,6 +1,8 @@
+using Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
+
 namespace Ofqual.Recognition.API.Models.JSON.Questions;
 
-public class TextInputGroup
+public class TextInputGroup : ISectionGroup
 {
     /// <summary>
     /// The heading displayed above the group of text inputs.

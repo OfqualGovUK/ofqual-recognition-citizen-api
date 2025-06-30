@@ -1,4 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.API.Models.JSON.Questions;
@@ -12,26 +13,84 @@ namespace Ofqual.Recognition.Citizen.Tests.Unit.Services;
 
 public class ApplicationAnswersServiceTests
 {
-    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-    private readonly Mock<IQuestionRepository> _mockQuestionRepository;
-    private readonly Mock<IApplicationAnswersRepository> _mockApplicationAnswersRepository;
-    private readonly Mock<IAttachmentRepository> _mockAttachmentRepository;
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
+    private readonly Mock<IQuestionRepository> _mockQuestionRepository = new();
+    private readonly Mock<IApplicationAnswersRepository> _mockApplicationAnswersRepository = new();
+    private readonly Mock<IAttachmentRepository> _mockAttachmentRepository = new();
+    private readonly Mock<ITaskRepository> _mockTaskRepository = new();
+    private readonly Mock<IUserInformationService> _mockUserInformationService = new();
     private readonly ApplicationAnswersService _applicationAnswersService;
 
     public ApplicationAnswersServiceTests()
     {
-        _mockUnitOfWork = new Mock<IUnitOfWork>();
-
-        _mockQuestionRepository = new Mock<IQuestionRepository>();
         _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
-
-        _mockApplicationAnswersRepository = new Mock<IApplicationAnswersRepository>();
         _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository).Returns(_mockApplicationAnswersRepository.Object);
-
-        _mockAttachmentRepository = new Mock<IAttachmentRepository>();
         _mockUnitOfWork.Setup(u => u.AttachmentRepository).Returns(_mockAttachmentRepository.Object);
+        _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
 
-        _applicationAnswersService = new ApplicationAnswersService(_mockUnitOfWork.Object);
+        _applicationAnswersService = new ApplicationAnswersService(
+            _mockUnitOfWork.Object,
+            _mockUserInformationService.Object
+        );
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task SubmitAnswerAndUpdateStatus_Should_Return_True_When_Answer_And_Status_Are_Successfully_Saved()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var answerJson = "{\"value\":\"test answer\"}";
+        var upn = "test@ofqual.gov.uk";
+
+        _mockUserInformationService
+            .Setup(x => x.GetCurrentUserUpn())
+            .Returns(upn);
+
+        _mockApplicationAnswersRepository
+            .Setup(x => x.UpsertQuestionAnswer(applicationId, questionId, answerJson, upn))
+            .ReturnsAsync(true);
+
+        _mockUnitOfWork.Setup(x => x.ApplicationAnswersRepository)
+            .Returns(_mockApplicationAnswersRepository.Object);
+
+        _mockTaskRepository
+            .Setup(x => x.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, upn))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _applicationAnswersService.SubmitAnswerAndUpdateStatus(applicationId, taskId, questionId, answerJson);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task SubmitAnswerAndUpdateStatus_Should_Return_False_When_Upserting_Answer_Fails()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var answerJson = "{\"value\":\"invalid answer\"}";
+        var upn = "test@ofqual.gov.uk";
+
+        _mockUserInformationService
+            .Setup(x => x.GetCurrentUserUpn())
+            .Returns(upn);
+
+        _mockApplicationAnswersRepository
+            .Setup(x => x.UpsertQuestionAnswer(applicationId, questionId, answerJson, upn))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _applicationAnswersService.SubmitAnswerAndUpdateStatus(applicationId, taskId, questionId, answerJson);
+
+        // Assert
+        Assert.False(result);
     }
 
     [Fact]
@@ -42,11 +101,20 @@ public class ApplicationAnswersServiceTests
         var applicationId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
         var answerJson = "{\"field\":\"value\"}";
+        var upn = "test@ofqual.gov.uk";
+
+        var preEngagementAnswers = new List<PreEngagementAnswerDto>
+        {
+            new() { QuestionId = questionId, AnswerJson = answerJson }
+        };
 
         var questionDetails = new QuestionDetails
         {
             QuestionId = questionId,
             TaskId = Guid.NewGuid(),
+            QuestionTypeName = "TextInputGroup",
+            CurrentQuestionNameUrl = "some-url",
+            TaskNameUrl = "task-url",
             QuestionContent = JsonSerializer.Serialize(new QuestionContent
             {
                 FormGroup = new FormGroup
@@ -54,38 +122,22 @@ public class ApplicationAnswersServiceTests
                     TextInputGroup = new TextInputGroup
                     {
                         Fields = new List<TextInputItem>
+                    {
+                        new()
                         {
-                            new TextInputItem
-                            {
-                                Name = "field",
-                                Label = "Field",
-                                Validation = new ValidationRule { Required = true }
-                            }
+                            Name = "field",
+                            Label = "Field",
+                            Validation = new ValidationRule { Required = true }
                         }
                     }
+                    }
                 }
-            }),
-            CurrentQuestionNameUrl = "question-url",
-            QuestionTypeName = "TextInputGroup",
-            TaskNameUrl = "task-url"
+            })
         };
 
-        var preEngagementAnswers = new List<PreEngagementAnswerDto>
-        {
-            new PreEngagementAnswerDto
-            {
-                QuestionId = questionId,
-                AnswerJson = answerJson
-            }
-        };
-
-        _mockQuestionRepository
-            .Setup(repo => repo.GetQuestionByQuestionId(questionId))
-            .ReturnsAsync(questionDetails);
-
-        _mockApplicationAnswersRepository
-            .Setup(repo => repo.UpsertQuestionAnswer(applicationId, questionId, answerJson))
-            .ReturnsAsync(true);
+        _mockUserInformationService.Setup(u => u.GetCurrentUserUpn()).Returns(upn);
+        _mockQuestionRepository.Setup(r => r.GetQuestionByQuestionId(questionId)).ReturnsAsync(questionDetails);
+        _mockApplicationAnswersRepository.Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, answerJson, upn)).ReturnsAsync(true);
 
         // Act
         var result = await _applicationAnswersService.SavePreEngagementAnswers(applicationId, preEngagementAnswers);
@@ -103,10 +155,18 @@ public class ApplicationAnswersServiceTests
         var questionId = Guid.NewGuid();
         var answerJson = "{}";
 
+        var preEngagementAnswers = new List<PreEngagementAnswerDto>
+        {
+            new() { QuestionId = questionId, AnswerJson = answerJson }
+        };
+
         var questionDetails = new QuestionDetails
         {
             QuestionId = questionId,
             TaskId = Guid.NewGuid(),
+            QuestionTypeName = "TextInputGroup",
+            CurrentQuestionNameUrl = "url",
+            TaskNameUrl = "task-url",
             QuestionContent = JsonSerializer.Serialize(new QuestionContent
             {
                 FormGroup = new FormGroup
@@ -114,34 +174,20 @@ public class ApplicationAnswersServiceTests
                     TextInputGroup = new TextInputGroup
                     {
                         Fields = new List<TextInputItem>
+                    {
+                        new()
                         {
-                            new TextInputItem
-                            {
-                                Name = "field",
-                                Label = "Field",
-                                Validation = new ValidationRule { Required = true }
-                            }
+                            Name = "field",
+                            Label = "Field",
+                            Validation = new ValidationRule { Required = true }
                         }
                     }
+                    }
                 }
-            }),
-            CurrentQuestionNameUrl = "question-url",
-            QuestionTypeName = "TextInputGroup",
-            TaskNameUrl = "task-url"
+            })
         };
 
-        var preEngagementAnswers = new List<PreEngagementAnswerDto>
-        {
-            new PreEngagementAnswerDto
-            {
-                QuestionId = questionId,
-                AnswerJson = answerJson
-            }
-        };
-
-        _mockQuestionRepository
-            .Setup(repo => repo.GetQuestionByQuestionId(questionId))
-            .ReturnsAsync(questionDetails);
+        _mockQuestionRepository.Setup(r => r.GetQuestionByQuestionId(questionId)).ReturnsAsync(questionDetails);
 
         // Act
         var result = await _applicationAnswersService.SavePreEngagementAnswers(applicationId, preEngagementAnswers);
@@ -158,11 +204,20 @@ public class ApplicationAnswersServiceTests
         var applicationId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
         var answerJson = "{\"field\":\"some value\"}";
+        var upn = "test@ofqual.gov.uk";
+
+        var preEngagementAnswers = new List<PreEngagementAnswerDto>
+        {
+            new() { QuestionId = questionId, AnswerJson = answerJson }
+        };
 
         var questionDetails = new QuestionDetails
         {
             QuestionId = questionId,
             TaskId = Guid.NewGuid(),
+            QuestionTypeName = "TextInputGroup",
+            CurrentQuestionNameUrl = "some-question",
+            TaskNameUrl = "some-task",
             QuestionContent = JsonSerializer.Serialize(new QuestionContent
             {
                 FormGroup = new FormGroup
@@ -170,38 +225,22 @@ public class ApplicationAnswersServiceTests
                     TextInputGroup = new TextInputGroup
                     {
                         Fields = new List<TextInputItem>
+                    {
+                        new()
                         {
-                            new TextInputItem
-                            {
-                                Name = "field",
-                                Label = "Field",
-                                Validation = new ValidationRule { Required = true }
-                            }
+                            Name = "field",
+                            Label = "Field",
+                            Validation = new ValidationRule { Required = true }
                         }
                     }
+                    }
                 }
-            }),
-            CurrentQuestionNameUrl = "question-url",
-            QuestionTypeName = "TextInputGroup",
-            TaskNameUrl = "task-url"
+            })
         };
 
-        var preEngagementAnswers = new List<PreEngagementAnswerDto>
-        {
-            new PreEngagementAnswerDto
-            {
-                QuestionId = questionId,
-                AnswerJson = answerJson
-            }
-        };
-
-        _mockQuestionRepository
-            .Setup(repo => repo.GetQuestionByQuestionId(questionId))
-            .ReturnsAsync(questionDetails);
-
-        _mockApplicationAnswersRepository
-            .Setup(repo => repo.UpsertQuestionAnswer(applicationId, questionId, answerJson))
-            .ReturnsAsync(false);
+        _mockUserInformationService.Setup(u => u.GetCurrentUserUpn()).Returns(upn);
+        _mockQuestionRepository.Setup(r => r.GetQuestionByQuestionId(questionId)).ReturnsAsync(questionDetails);
+        _mockApplicationAnswersRepository.Setup(r => r.UpsertQuestionAnswer(applicationId, questionId, answerJson, upn)).ReturnsAsync(false);
 
         // Act
         var result = await _applicationAnswersService.SavePreEngagementAnswers(applicationId, preEngagementAnswers);
@@ -212,12 +251,13 @@ public class ApplicationAnswersServiceTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetTaskAnswerReview_ShouldReturnSectionedAnswers_ForAllControlTypes()
+    public async Task GetTaskAnswerReview_ShouldReturnCombinedSection_ForAllControlTypes()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
         var questionId = Guid.NewGuid();
+        var sectionId = Guid.NewGuid();
 
         var attachments = new List<Attachment>
         {
@@ -225,15 +265,18 @@ public class ApplicationAnswersServiceTests
             new Attachment { FileName = "Alpha.pdf", FileMIMEtype = "application/pdf", CreatedByUpn = "user2", ModifiedByUpn = "user2" }
         };
 
-        var taskQuestionAnswers = new List<TaskQuestionAnswer>
+        var taskQuestionAnswers = new List<SectionTaskQuestionAnswer>
         {
-            new TaskQuestionAnswer
+            new SectionTaskQuestionAnswer
             {
+                SectionId = sectionId,
+                SectionName = "Criteria A",
+                SectionOrderNumber = 1,
                 ApplicationId = applicationId,
                 TaskId = taskId,
                 TaskName = "About You",
                 TaskNameUrl = "about-you",
-                TaskOrder = 1,
+                TaskOrderNumber = 1,
                 QuestionId = questionId,
                 QuestionNameUrl = "your-background",
                 QuestionContent = JsonSerializer.Serialize(new QuestionContent
@@ -324,16 +367,16 @@ public class ApplicationAnswersServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(5, result.Count);
+        Assert.Single(result);
 
-        var fileSection = result.FirstOrDefault(s => s.SectionHeading == "Supporting Documents");
-        Assert.NotNull(fileSection);
+        var section = result.First();
+        Assert.NotEmpty(section.QuestionAnswers);
+        Assert.Equal(6, section.QuestionAnswers.Count);
 
-        var fileAnswer = fileSection!.QuestionAnswers.FirstOrDefault();
+        var fileAnswer = section.QuestionAnswers.FirstOrDefault(a => a.QuestionText == "Files you uploaded");
         Assert.NotNull(fileAnswer);
-        Assert.Equal("Files you uploaded", fileAnswer!.QuestionText);
 
-        var fileNames = fileAnswer.AnswerValue!;
+        var fileNames = fileAnswer!.AnswerValue!;
         Assert.Equal(2, fileNames.Count);
         Assert.Equal("Alpha.pdf", fileNames[0]);
         Assert.Equal("Zeta.pdf", fileNames[1]);
@@ -600,7 +643,7 @@ public class ApplicationAnswersServiceTests
         var result = await _applicationAnswersService.ValidateQuestionAnswers(questionId, answerJson);
 
         // Assert
-        Assert.Single(result.Errors!);
+        Assert.Single(result!.Errors!);
         Assert.Equal("Enter a valid Reference code", result.Errors!.First().ErrorMessage);
     }
 
@@ -645,7 +688,7 @@ public class ApplicationAnswersServiceTests
         var result = await _applicationAnswersService.ValidateQuestionAnswers(questionId, answerJson);
 
         // Assert
-        Assert.Single(result.Errors!);
+        Assert.Single(result!.Errors!);
         Assert.Equal("Select at least 2 options for Activities", result.Errors!.First().ErrorMessage);
     }
 
@@ -699,6 +742,6 @@ public class ApplicationAnswersServiceTests
         var result = await _applicationAnswersService.ValidateQuestionAnswers(questionId, answerJson);
 
         // Assert
-        Assert.Empty(result.Errors!);
+        Assert.Empty(result!.Errors!);
     }
 }

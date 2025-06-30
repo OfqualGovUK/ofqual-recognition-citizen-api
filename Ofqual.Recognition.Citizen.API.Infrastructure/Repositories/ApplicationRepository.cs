@@ -17,12 +17,10 @@ public class ApplicationRepository : IApplicationRepository
         _transaction = transaction;
     }
 
-    public async Task<Application?> CreateApplication(string oid, string displayName, string upn)
+    public async Task<Application?> CreateApplication(Guid userId, string upn)
     {
         try
         {
-            User user = await CreateUser(oid, displayName, upn);
-
             const string query = @"
                 INSERT INTO [recognitionCitizen].[Application] (
                     OwnerUserId,
@@ -38,14 +36,14 @@ public class ApplicationRepository : IApplicationRepository
 
             return await _connection.QuerySingleAsync<Application>(query, new
             {
-                OwnerUserId = user.UserId,
+                OwnerUserId = userId,
                 CreatedByUpn = upn,
                 ModifiedByUpn = upn
             }, _transaction);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Exception raised when trying to create an application in ApplicationRepository::CreateApplication");
+            Log.Error(ex, "Failed to create application for userId: {UserId}", userId);
             return null;
         }
     }
@@ -55,58 +53,54 @@ public class ApplicationRepository : IApplicationRepository
         try
         {
             const string query = @"
-                SELECT TOP 1 * FROM [recognitionCitizen].[Application] AS app
+                SELECT TOP 1 
+                    app.ApplicationId,
+                    app.OwnerUserId,
+                    app.SubmittedDate,
+                    app.ApplicationReleaseDate,
+                    app.OrganisationId,
+                    app.CreatedDate,
+                    app.ModifiedDate,
+                    app.CreatedByUpn,
+                    app.ModifiedByUpn
+                FROM [recognitionCitizen].[Application] AS app
                 INNER JOIN [recognitionCitizen].[RecognitionCitizenUser] ON app.OwnerUserId = UserId
                 WHERE B2CId = @oid
-                ORDER BY app.CreatedDate DESC
-            ";
+                ORDER BY app.CreatedDate DESC";
 
-            return await _connection.QuerySingleAsync<Application>(query, new
-            {
-                oid
-            }, _transaction);
+            return await _connection.QuerySingleOrDefaultAsync<Application>(query, new { oid }, _transaction);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Exception raised when trying to retrieve an application in ApplicationRepository::GetLatestApplication");
+            Log.Error(ex, "Failed to retrieve latest application for OID: {Oid}", oid);
             return null;
         }
     }
 
-    private async Task<User> CreateUser(string oid, string displayName, string emailAddress)
+    public async Task<Application?> GetApplicationById(Guid applicationId)
     {
         try
         {
             const string query = @"
-                INSERT INTO [recognitionCitizen].[RecognitionCitizenUser] (
-                    B2CId,
-                    EmailAddress,
-                    DisplayName,
-                    CreatedByUpn,
-                    ModifiedByUpn
-                ) 
-                OUTPUT INSERTED.* 
-                VALUES (
-                    @B2CId,
-                    @EmailAddress,
-                    @DisplayName,
-                    @CreatedByUpn,
-                    @ModifiedByUpn
-                )";
+                SELECT 
+                    app.ApplicationId,
+                    app.OwnerUserId,
+                    app.SubmittedDate,
+                    app.ApplicationReleaseDate,
+                    app.OrganisationId,
+                    app.CreatedDate,
+                    app.ModifiedDate,
+                    app.CreatedByUpn,
+                    app.ModifiedByUpn
+                FROM [recognitionCitizen].[Application] AS app
+                WHERE app.ApplicationId = @applicationId";
 
-            return await _connection.QuerySingleAsync<User>(query, new
-            {
-                B2CId = oid,
-                EmailAddress = emailAddress,
-                DisplayName = displayName,
-                CreatedByUpn = emailAddress,
-                ModifiedByUpn = emailAddress,
-            }, _transaction);
+            return await _connection.QuerySingleOrDefaultAsync<Application>(query, new { applicationId }, _transaction);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Exception raised when trying to create a user in ApplicationRepository::CreateUser");
-            throw;
+            Log.Error(ex, "Failed to retrieve application with ID: {ApplicationId}", applicationId);
+            return null;
         }
     }
 }

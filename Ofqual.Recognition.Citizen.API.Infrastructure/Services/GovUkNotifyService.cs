@@ -3,6 +3,8 @@ using Notify.Models.Responses;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Polly;
+using Serilog;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -48,6 +50,7 @@ public class GovUkNotifyService : IGovUkNotifyService
         catch (Exception ex) 
         {
             Console.WriteLine(ex);
+            Log.Warning("Gov UK Notify email was not sent successfully");
 
             return false;
         }

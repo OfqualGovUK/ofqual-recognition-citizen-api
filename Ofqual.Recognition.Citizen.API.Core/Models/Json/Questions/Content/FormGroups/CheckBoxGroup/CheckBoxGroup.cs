@@ -2,7 +2,7 @@ using Ofqual.Recognition.Citizen.API.Core.Models.Json.Interfaces;
 
 namespace Ofqual.Recognition.API.Models.JSON.Questions;
 
-public class CheckBoxGroup : IValidatable
+public class CheckBoxGroup : IValidatable, ISectionGroup
 {
     /// <summary>
     /// The heading shown above the checkboxes.

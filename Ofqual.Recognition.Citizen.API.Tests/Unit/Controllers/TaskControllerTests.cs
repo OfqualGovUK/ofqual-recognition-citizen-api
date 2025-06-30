@@ -2,7 +2,6 @@ using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Controllers;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 using Moq;
@@ -11,24 +10,15 @@ namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 
 public class TaskControllerTests
 {
-    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-    private readonly Mock<ITaskRepository> _mockTaskRepository;
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
+    private readonly Mock<ITaskRepository> _mockTaskRepository = new();
     private readonly TaskController _controller;
 
     public TaskControllerTests()
     {
-        _mockUnitOfWork = new Mock<IUnitOfWork>();
-
-        _mockTaskRepository = new Mock<ITaskRepository>();
         _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
-        
-        _controller = new TaskController(_mockUnitOfWork.Object)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext()
-            }
-        };
+
+        _controller = new TaskController(_mockUnitOfWork.Object);
     }
 
     [Fact]

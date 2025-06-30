@@ -28,6 +28,9 @@ The main application settings are defined in `appsettings.json` and can be tailo
 
 ```json
 {
+  "FeatureFlag": {
+    "CheckUser": true
+  },
   "LogzIo": {
     "Environment": "",
     "Uri": ""
@@ -35,6 +38,14 @@ The main application settings are defined in `appsettings.json` and can be tailo
   "AntiVirus": {
     "BaseUri": "",
     "AuthToken": ""
+  },
+  "AzureAdB2C": {
+    "Instance": "",
+    "Domain": "",
+    "TenantId": "",
+    "ClientId": "",
+    "SignUpSignInPolicyId": "",
+    "SignedOutCallbackPath": ""
   },
   "ConnectionStrings": {
     "OfqualODS": "",
@@ -44,6 +55,11 @@ The main application settings are defined in `appsettings.json` and can be tailo
 ```
 
 ### Setting Details
+
+- **`FeatureFlag:CheckUser`**  
+  A **boolean** flag used to control whether the system attempts to retrieve application data for the current user.  
+  When set to `true`, the system will check for an existing user and retrieve their latest application if available.  
+  When set to `false`, the system will skip this check and treat the user as not eligible for application retrieval or creation.
 
 - **`LogzIo:Environment`**  
   Identifies the current environment in the logs (e.g., `DEV`, `PREPROD`, `PROD`). This helps differentiate log entries across deployments.
@@ -56,6 +72,24 @@ The main application settings are defined in `appsettings.json` and can be tailo
 
 - **`AntiVirus:AuthToken`**
   The bearer token used to authenticate with the anti-virus scanning service.
+
+- **`AzureAdB2C:Instance`**  
+  The URL of the B2C service used to authenticate.
+
+- **`AzureAdB2C:Domain`**  
+  The domain we will be authenticating under.
+
+- **`AzureAdB2C:TenantId`**  
+  The unique identifier for your Azure AD B2C tenant.
+
+- **`AzureAdB2C:ClientId`**  
+  The application (client) ID registered in Azure AD B2C.
+
+- **`AzureAdB2C:SignUpSignInPolicyId`**  
+  The policy name for the typical Sign up/Sign in flow.
+
+- **`AzureAdB2C:SignedOutCallbackPath`**  
+  The callback path when signing out of Azure B2C, typically set to `/signout-callback-oidc`.
 
 - **`ConnectionStrings:OfqualODS`**  
   Connection string for accessing the Ofqual ODS (Organisational Data Service) database.
