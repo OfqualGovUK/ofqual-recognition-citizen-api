@@ -1,6 +1,7 @@
 ﻿using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Ofqual.Recognition.Citizen.API.Core.Helpers;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -36,7 +37,10 @@ public class StageService : IStageService
         }
 
         // Get all answers for the application. Default to an empty list if none found
-        var answers = (await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId))?.ToList() ?? new List<SectionTaskQuestionAnswer>();
+        var answers = (await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId)
+               ?? new List<SectionTaskQuestionAnswer>())
+              .Where(a => !string.IsNullOrWhiteSpace(a.Answer) && !JsonHelper.IsEmptyJsonObject(a.Answer))
+              .ToList();
 
         // Group questions by TaskId they belong to
         var questionsByTask = questions

@@ -636,39 +636,4 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
         return new ValidationResponse { Errors = errors };
     }
-
-    //public async Task<List<ApplicationReviewSectionDto>> GetAllApplicationAnswerReview(Guid applicationId)
-    //{
-    //    var allQuestionAnswers = await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId);
-
-    //    var questionTaskPairs = allQuestionAnswers.Select(a => new { a.QuestionId, a.TaskId}).Distinct().ToList();
-
-    //    var reviewSections = new List<ApplicationReviewSectionDto>();
-
-    //    int sectionOrder = 1;
-
-    //    foreach (var item in allQuestionAnswers)
-    //    {
-    //        item.;
-    //    }
-
-    //    foreach (var pair in questionTaskPairs)
-    //    {
-    //        var taskSections = await GetTaskAnswerReview(applicationId, pair.TaskId);
-
-            
-    //        foreach (var section in taskSections)
-    //        {
-    //            reviewSections.Add(new ApplicationReviewSectionDto
-    //            {
-    //                SectionId = Guid.NewGuid(),
-    //                SectionName = section.SectionHeading ?? "Section",
-    //                SectionOrderNumber = sectionOrder++,
-    //                Answer = allQuestionAnswers
-    //            });
-    //        }
-    //    }
-
-    //    return reviewSections;
-    //}
 }

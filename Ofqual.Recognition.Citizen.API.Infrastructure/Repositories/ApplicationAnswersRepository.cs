@@ -23,8 +23,7 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
         {
             const string query = @"
                 SELECT
-                    AA.ApplicationId,
-                    AA.QuestionId,
+                    Q.QuestionId,
                     AA.Answer,
                     Q.TaskId,
                     Q.QuestionContent,
@@ -35,12 +34,12 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
                     S.SectionId,
                     S.SectionName,
                     S.OrderNumber AS SectionOrderNumber
-                FROM [recognitionCitizen].[ApplicationAnswers] AA
-                INNER JOIN [recognitionCitizen].[Question] Q ON AA.QuestionId = Q.QuestionId
+                FROM [recognitionCitizen].[Question] Q
                 INNER JOIN [recognitionCitizen].[Task] T ON Q.TaskId = T.TaskId
                 INNER JOIN [recognitionCitizen].[Section] S ON T.SectionId = S.SectionId
-                WHERE AA.ApplicationId = @applicationId
-                ORDER BY S.OrderNumber, T.OrderNumber, Q.OrderNumber";
+                LEFT JOIN [recognitionCitizen].[ApplicationAnswers] AA 
+                ON AA.QuestionId = Q.QuestionId AND AA.ApplicationId = @applicationId
+                ORDER BY S.OrderNumber, T.OrderNumber, Q.OrderNumber;";
 
             return await _connection.QueryAsync<SectionTaskQuestionAnswer>(query, new
             {

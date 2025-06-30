@@ -202,7 +202,6 @@ public class ApplicationController : ControllerBase
             {
                 return NotFound("No question answers found for the specified task and application.");
             }
-            await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
 
             return Ok(reviewAnswers);
         }
@@ -238,4 +237,14 @@ public class ApplicationController : ControllerBase
             throw new Exception("An error occurred while fetching the question answer. Please try again later.");
         }
     }
+
+    [HttpGet("{applicationId}/tasks/answers")]
+    [CheckApplicationId(queryParam: "applicationId")]
+    public async Task<ActionResult<List<TaskReviewGroupDto>>> GetAllApplicationAnswersRICHTEST(Guid applicationId)
+    {
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        return Ok(result);
+    }
+
 }
