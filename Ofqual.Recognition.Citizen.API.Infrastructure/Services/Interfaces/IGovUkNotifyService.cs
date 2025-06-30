@@ -1,6 +1,6 @@
 ﻿namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
-public class IGovUkNotifyService
+public interface IGovUkNotifyService
 {
-    Task<bool> SendEmail(string userEmailAddress);
+    public Task<bool> SendEmail(string userEmailAddress);
 }

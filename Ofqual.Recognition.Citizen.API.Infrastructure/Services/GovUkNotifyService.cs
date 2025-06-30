@@ -39,6 +39,7 @@ public class GovUkNotifyService : IGovUkNotifyService
             .ExecuteAsync(async () =>
             {
                 var client = new NotificationClient(_govUkApiKey);
+
                 await Task.Run(() => { EmailNotificationResponse repsonse = client.SendEmail(outboundEmailAddress, _templateId, emailPersonalisation); });
             });
 

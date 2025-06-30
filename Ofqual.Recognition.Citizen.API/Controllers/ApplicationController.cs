@@ -8,6 +8,7 @@ using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using Ofqual.Recognition.Citizen.API.Attributes;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -26,11 +27,20 @@ public class ApplicationController : ControllerBase
     private readonly IFeatureFlagService _featureFlagService;
     private readonly IApplicationAnswersService _applicationAnswersService;
     private readonly IUserInformationService _userInformationService;
+    private readonly IGovUkNotifyService _govUkNotifyService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ApplicationController"/>.
     /// </summary>
-    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService, IStageService stageService, IUserInformationService userInformationService, IFeatureFlagService featureFlagService)
+    public ApplicationController(
+        IUnitOfWork context,
+        ITaskStatusService taskStatusService,
+        IApplicationAnswersService applicationAnswersService,
+        IStageService stageService,
+        IUserInformationService userInformationService,
+        IFeatureFlagService featureFlagService,
+        IGovUkNotifyService govUkNotifyService
+        )
     {
         _context = context;
         _taskStatusService = taskStatusService;
@@ -38,6 +48,7 @@ public class ApplicationController : ControllerBase
         _stageService = stageService;
         _userInformationService = userInformationService;
         _featureFlagService = featureFlagService;
+        _govUkNotifyService = govUkNotifyService;
     }
 
     /// <summary>
@@ -72,6 +83,20 @@ public class ApplicationController : ControllerBase
             if (application == null)
             {
                 return BadRequest("Application could not be created.");
+            }
+
+            try 
+            {
+                bool emailSent = await _govUkNotifyService.SendEmail(upn);
+
+                if (!emailSent)
+                {
+                    Log.Warning("Gov UK Notify email was not sent successfully for ApplicationId={ApplicationId}", application.ApplicationId);
+                }
+            } 
+            catch (Exception ex) 
+            {
+                Log.Error(ex, "Error sending Gov.UK Notify email for ApplicationId={ApplicationId}", application.ApplicationId);
             }
 
             bool taskStatusesCreated = await _taskStatusService.DetermineAndCreateTaskStatuses(application.ApplicationId, PreEngagementAnswers);
