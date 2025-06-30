@@ -1,6 +1,6 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
-using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
+using Ofqual.Recognition.Citizen.API.Core.Models;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 

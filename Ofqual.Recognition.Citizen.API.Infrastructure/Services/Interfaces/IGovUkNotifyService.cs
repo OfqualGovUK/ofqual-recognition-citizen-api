@@ -2,5 +2,5 @@
 
 public interface IGovUkNotifyService
 {
-    public Task<bool> SendEmail(string userEmailAddress);
+    public Task<bool> SendEmailAccountCreation();
 }

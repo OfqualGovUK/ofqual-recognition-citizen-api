@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -25,10 +24,8 @@ public class ApplicationController : ControllerBase
     private readonly ITaskStatusService _taskStatusService;
     private readonly IStageService _stageService;
     private readonly IApplicationAnswersService _applicationAnswersService;
-    private readonly IUserInformationService _userInformationService;
     private readonly IGovUkNotifyService _govUkNotifyService;
     private readonly IApplicationService _applicationService;
-    private readonly IFeatureFlagService _featureFlagService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ApplicationController"/>.
@@ -38,22 +35,16 @@ public class ApplicationController : ControllerBase
         ITaskStatusService taskStatusService,
         IApplicationAnswersService applicationAnswersService,
         IStageService stageService,
-        IUserInformationService userInformationService,
-        IFeatureFlagService featureFlagService,
         IGovUkNotifyService govUkNotifyService,
-        IApplicationService applicationService,
-        IUserInformationService userInformation
+        IApplicationService applicationService
         )
     {
         _context = context;
         _taskStatusService = taskStatusService;
         _applicationAnswersService = applicationAnswersService;
         _stageService = stageService;
-        _userInformationService = userInformationService;
-        _featureFlagService = featureFlagService;
         _govUkNotifyService = govUkNotifyService;
         _applicationService = applicationService;
-        _userInformationService = userInformation;
     }
 
     /// <summary>
@@ -100,11 +91,9 @@ public class ApplicationController : ControllerBase
             }
 
             ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
-
             _context.Commit();
 
-            string userUpn = _userInformationService.GetCurrentUserUpn();
-            bool emailSent = await _govUkNotifyService.SendEmail(userUpn);
+            await _govUkNotifyService.SendEmailAccountCreation();
 
             return Ok(applicationDetailsDto);
         }

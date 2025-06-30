@@ -3,5 +3,5 @@
 public class GovUkNotifyConfiguration
 {
     public string GovUkApiKey { get; set; } = string.Empty;
-    public string TemplateId { get; set; } = string.Empty;
+    public GovUkNotifyTemplateIds? TemplateIds { get; set; }
 }
