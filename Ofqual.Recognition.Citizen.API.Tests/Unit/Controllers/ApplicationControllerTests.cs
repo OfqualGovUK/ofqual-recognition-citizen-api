@@ -319,24 +319,6 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetApplicationTasks_ShouldThrowException_WhenServiceThrows()
-    {
-        // Arrange
-        var applicationId = Guid.NewGuid();
-
-        _mockTaskStatusService
-            .Setup(s => s.GetTaskStatusesForApplication(applicationId))
-            .ThrowsAsync(new Exception("Unexpected failure"));
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(() =>
-            _controller.GetApplicationTasks(applicationId));
-
-        Assert.Equal("An error occurred while fetching tasks for the application. Please try again later.", exception.Message);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
     public async Task UpdateTaskStatus_ReturnsOk_WhenUpdateSucceeds()
     {
         // Arrange

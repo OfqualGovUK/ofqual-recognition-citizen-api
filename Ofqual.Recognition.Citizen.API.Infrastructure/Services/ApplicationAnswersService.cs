@@ -90,6 +90,16 @@ public class ApplicationAnswersService : IApplicationAnswersService
             {
                 var taskAnswers = await GetTaskAnswerReview(applicationId, taskGroup.Key.TaskId);
                 sectionTasks.AddRange(taskAnswers);
+
+                var taskName = taskGroup.FirstOrDefault()?.TaskName;
+
+                foreach (var item in sectionTasks)
+                {
+                    if (item.SectionHeading == null)
+                    {
+                        item.SectionHeading = taskName;
+                    }
+                }
             }
 
             result.Add(new TaskReviewSectionDto
@@ -98,7 +108,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 TaskGroups = sectionTasks
             });
         }
-
+                
         return result;
     }
 
