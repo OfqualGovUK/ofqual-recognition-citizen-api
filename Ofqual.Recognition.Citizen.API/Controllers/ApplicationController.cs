@@ -24,17 +24,26 @@ public class ApplicationController : ControllerBase
     private readonly ITaskStatusService _taskStatusService;
     private readonly IStageService _stageService;
     private readonly IApplicationAnswersService _applicationAnswersService;
+    private readonly IGovUkNotifyService _govUkNotifyService;
     private readonly IApplicationService _applicationService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="ApplicationController"/>.
     /// </summary>
-    public ApplicationController(IUnitOfWork context, ITaskStatusService taskStatusService, IApplicationAnswersService applicationAnswersService, IStageService stageService, IApplicationService applicationService)
+    public ApplicationController(
+        IUnitOfWork context,
+        ITaskStatusService taskStatusService,
+        IApplicationAnswersService applicationAnswersService,
+        IStageService stageService,
+        IGovUkNotifyService govUkNotifyService,
+        IApplicationService applicationService
+        )
     {
         _context = context;
         _taskStatusService = taskStatusService;
         _applicationAnswersService = applicationAnswersService;
         _stageService = stageService;
+        _govUkNotifyService = govUkNotifyService;
         _applicationService = applicationService;
     }
 
@@ -82,8 +91,10 @@ public class ApplicationController : ControllerBase
             }
 
             ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
-
             _context.Commit();
+
+            await _govUkNotifyService.SendEmailAccountCreation();
+
             return Ok(applicationDetailsDto);
         }
         catch (Exception ex)

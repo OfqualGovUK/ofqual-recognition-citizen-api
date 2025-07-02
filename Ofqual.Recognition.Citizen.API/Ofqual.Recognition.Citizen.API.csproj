@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="CorrelationId" Version="3.0.1" />
+    <PackageReference Include="GovukNotify" Version="7.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.17" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
     <PackageReference Include="Microsoft.Identity.Web" Version="3.9.3" />

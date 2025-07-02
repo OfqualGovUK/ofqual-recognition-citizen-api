@@ -47,6 +47,12 @@ The main application settings are defined in `appsettings.json` and can be tailo
     "SignUpSignInPolicyId": "",
     "SignedOutCallbackPath": ""
   },
+  "GovUkNotify": {
+    "ApiKey": "",
+    "TemplateIds": {
+      "AccountCreation": ""
+    }
+  },
   "ConnectionStrings": {
     "OfqualODS": "",
     "AzureBlobStorage": ""
@@ -90,6 +96,15 @@ The main application settings are defined in `appsettings.json` and can be tailo
 
 - **`AzureAdB2C:SignedOutCallbackPath`**  
   The callback path when signing out of Azure B2C, typically set to `/signout-callback-oidc`.
+
+- **`GovUkNotify:ApiKey`**  
+  The API key for the GovUK Notify library to function.
+
+- **`GovUkNotify:TemplateIds`**  
+  The collection of TemplateIds used for sending out GovUK Notify emails.
+
+- **`GovUkNotify:TemplateIds:AccountCreation`**  
+  The specific TemplateId used for GovUK Notify account creation emails.
 
 - **`ConnectionStrings:OfqualODS`**  
   Connection string for accessing the Ofqual ODS (Organisational Data Service) database.

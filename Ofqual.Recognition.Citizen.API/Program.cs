@@ -72,6 +72,12 @@ builder.Services.AddTransient<IUserInformationService, UserInformationService>()
 builder.Services.AddTransient<IApplicationService, ApplicationService>();
 builder.Services.AddTransient<IAttachmentService, AttachmentService>();
 
+// Register Gov UK Notify service
+builder.Services.Configure<GovUkNotifyConfiguration>(builder.Configuration.GetSection("GovUkNotify"));
+builder.Services.AddSingleton<GovUkNotifyConfiguration>(sp =>
+    sp.GetRequiredService<IOptions<GovUkNotifyConfiguration>>().Value);
+builder.Services.AddScoped<IGovUkNotifyService, GovUkNotifyService>();
+
 // Register AntiVirus service
 builder.Services.Configure<AntiVirusConfiguration>(builder.Configuration.GetSection("AntiVirus"));
 builder.Services.AddSingleton<AntiVirusConfiguration>(sp =>
