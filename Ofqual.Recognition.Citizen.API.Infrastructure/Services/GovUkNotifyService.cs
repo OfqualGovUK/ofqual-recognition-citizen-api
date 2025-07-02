@@ -30,17 +30,6 @@ public class GovUkNotifyService : IGovUkNotifyService
         return await SendEmail(userUpn, _config.TemplateIds.AccountCreation);
     }
 
-    public async Task<bool> SendEmailRequestPreEngagement()
-    {
-        if (string.IsNullOrEmpty(_config.TemplateIds.RequestPreEngagement))
-        {
-            Log.Error("Gov UK Notify template ID for request pre-engagement is not configured.");
-            return false;
-        }
-        string userUpn = _userInformationService.GetCurrentUserUpn();
-        return await SendEmail(userUpn, _config.TemplateIds.RequestPreEngagement);
-    }
-
     private async Task<bool> SendEmail(string outboundEmailAddress, string templateId, Dictionary<string, object>? personalisation = null)
     {
         try

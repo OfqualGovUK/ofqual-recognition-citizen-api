@@ -3,5 +3,4 @@
 public interface IGovUkNotifyService
 {
     public Task<bool> SendEmailAccountCreation();
-    public Task<bool> SendEmailRequestPreEngagement();
 }
