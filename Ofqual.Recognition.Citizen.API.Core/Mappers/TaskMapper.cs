@@ -21,6 +21,7 @@ public static class TaskMapper
                     {
                         TaskId = ts.TaskId,
                         TaskName = ts.TaskName,
+                        HintText = ts.HintText,
                         Status = ts.Status,
                         FirstQuestionUrl = $"{ts.TaskNameUrl}/{ts.QuestionNameUrl}"
                     })

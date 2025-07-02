@@ -197,7 +197,7 @@ public class TaskStatusServiceTests
         Assert.NotNull(result);
         var dtoList = result.ToList();
         Assert.Contains(dtoList.SelectMany(s => s.Tasks),
-            t => t.TaskId == declarationTaskId && t.Hint == "You must complete all sections first");
+            t => t.TaskId == declarationTaskId && t.HintText == "You must complete all sections first");
     }
 
     [Fact]
@@ -257,7 +257,7 @@ public class TaskStatusServiceTests
         Assert.NotNull(result);
         var task = result.SelectMany(r => r.Tasks).FirstOrDefault(t => t.TaskId == declarationTaskId);
         Assert.NotNull(task);
-        Assert.Equal("Not Yet Released", task!.Hint);
+        Assert.Equal("Not Yet Released", task!.HintText);
     }
 
     [Fact]

@@ -68,7 +68,7 @@ public class TaskStatusService : ITaskStatusService
             {
                 if (declarationTaskIds.Contains(task.TaskId) && task.Status == StatusType.CannotStartYet)
                 {
-                    task.Hint = isSubmitted
+                    task.HintText = isSubmitted
                         ? "Not Yet Released"
                         : "You must complete all sections first";
                 }
@@ -102,8 +102,8 @@ public class TaskStatusService : ITaskStatusService
             .ToDictionary(g => g.Key, g => g.Select(a => a.QuestionId).ToList());
 
         var declarationTasks = (await _context.StageRepository.GetAllStageTasksByStageId(StageType.Declaration))
-                                ?.Select(dt => dt.TaskId)
-                                .ToHashSet() ?? new HashSet<Guid>();
+            ?.Select(dt => dt.TaskId)
+            .ToHashSet() ?? new HashSet<Guid>();
 
         var upn = _userInformationService.GetCurrentUserUpn();
 

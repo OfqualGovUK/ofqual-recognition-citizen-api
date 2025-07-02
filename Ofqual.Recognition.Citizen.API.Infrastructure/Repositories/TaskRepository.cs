@@ -87,6 +87,7 @@ public class TaskRepository : ITaskRepository
                     T.TaskId,
                     T.TaskNameUrl,
                     T.TaskName,
+                    T.HintText,
                     T.OrderNumber AS TaskOrderNumber,
                     TS.TaskStatusId,
                     TS.Status,

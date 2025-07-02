@@ -11,6 +11,6 @@ public class TaskItemStatusDto : ITaskItemStatus
     public Guid TaskId { get; set; }
     public required string TaskName { get; set; }
     public StatusType Status { get; set; }
-    public string? Hint { get; set; }
+    public string? HintText { get; set; }
     public required string FirstQuestionUrl { get; set; }
 }
