@@ -19,7 +19,7 @@ public class TaskStatusService : ITaskStatusService
         _stageService = stageService;
     }
 
-    public async Task<bool> UpdateTaskAndStageStatus(Guid applicationId, Guid taskId, TaskStatusEnum status)
+    public async Task<bool> UpdateTaskAndStageStatus(Guid applicationId, Guid taskId, StatusType status)
     {
         string upn = _userInformationService.GetCurrentUserUpn();
 
@@ -29,7 +29,7 @@ public class TaskStatusService : ITaskStatusService
             return false;
         }
 
-        if (status == TaskStatusEnum.Completed)
+        if (status == StatusType.Completed)
         {
             bool stageStatusUpdated = await _stageService.EvaluateAndUpsertAllStageStatus(applicationId);
             if (!stageStatusUpdated)
@@ -66,7 +66,7 @@ public class TaskStatusService : ITaskStatusService
         {
             foreach (var task in section.Tasks)
             {
-                if (declarationTaskIds.Contains(task.TaskId) && task.Status == TaskStatusEnum.CannotStartYet)
+                if (declarationTaskIds.Contains(task.TaskId) && task.Status == StatusType.CannotStartYet)
                 {
                     task.Hint = isSubmitted
                         ? "Not Yet Released"
@@ -109,11 +109,11 @@ public class TaskStatusService : ITaskStatusService
 
         var newTaskStatuses = tasks.Select(task =>
         {
-            TaskStatusEnum status;
+            StatusType status;
 
             if (declarationTaskIds.Contains(task.TaskId))
             {
-                status = TaskStatusEnum.CannotStartYet;
+                status = StatusType.CannotStartYet;
             }
             else
             {
@@ -123,22 +123,22 @@ public class TaskStatusService : ITaskStatusService
 
                 if (taskQuestions.Count == 0)
                 {
-                    status = TaskStatusEnum.NotStarted;
+                    status = StatusType.NotStarted;
                 }
                 else
                 {
                     var answeredCount = taskQuestions.Count(q => answeredQuestionIds.Contains(q.QuestionId));
                     if (answeredCount == 0)
                     {
-                        status = TaskStatusEnum.NotStarted;
+                        status = StatusType.NotStarted;
                     }
                     else if (answeredCount == taskQuestions.Count)
                     {
-                        status = TaskStatusEnum.Completed;
+                        status = StatusType.Completed;
                     }
                     else
                     {
-                        status = TaskStatusEnum.InProgress;
+                        status = StatusType.InProgress;
                     }
                 }
             }

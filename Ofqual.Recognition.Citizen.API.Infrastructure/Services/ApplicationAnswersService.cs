@@ -31,7 +31,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             return false;
         }
 
-        bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, upn);
+        bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, StatusType.InProgress, upn);
         if (!isStatusUpdated)
         {
             return false;

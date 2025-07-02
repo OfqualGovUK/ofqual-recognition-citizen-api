@@ -140,7 +140,7 @@ public class TaskRepository : ITaskRepository
         }
     }
 
-    public async Task<bool> UpdateTaskStatus(Guid applicationId, Guid taskId, TaskStatusEnum status, string upn)
+    public async Task<bool> UpdateTaskStatus(Guid applicationId, Guid taskId, StatusType status, string upn)
     {
         try
         {

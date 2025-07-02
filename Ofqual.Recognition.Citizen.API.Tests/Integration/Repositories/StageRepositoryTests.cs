@@ -274,7 +274,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         {
             ApplicationId = application.ApplicationId,
             StageId = stageId,
-            StatusId = TaskStatusEnum.InProgress,
+            StatusId = StatusType.InProgress,
             StageStartDate = now,
             StageCompletionDate = now.AddDays(2),
             CreatedByUpn = "test@ofqual.gov.uk",
@@ -292,7 +292,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.NotNull(result);
         Assert.Equal(application.ApplicationId, result.ApplicationId);
         Assert.Equal(stageId, result.StageId);
-        Assert.Equal(TaskStatusEnum.InProgress, result.StatusId);
+        Assert.Equal(StatusType.InProgress, result.StatusId);
         TestAssertHelpers.AssertDateTimeAlmostEqual(stageStatus.StageStartDate, result.StageStartDate);
         TestAssertHelpers.AssertDateTimeAlmostEqual(stageStatus.StageCompletionDate!.Value, result.StageCompletionDate!.Value);
         Assert.False(string.IsNullOrWhiteSpace(result.Status));
@@ -427,7 +427,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         {
             ApplicationId = application.ApplicationId,
             StageId = stageId,
-            StatusId = TaskStatusEnum.NotStarted,
+            StatusId = StatusType.NotStarted,
             StageStartDate = now,
             StageCompletionDate = null,
             CreatedByUpn = "test@ofqual.gov.uk",
@@ -445,7 +445,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
 
         var insertedResult = await unitOfWork.StageRepository.GetStageStatus(application.ApplicationId, stageId);
         Assert.NotNull(insertedResult);
-        Assert.Equal(TaskStatusEnum.NotStarted, insertedResult!.StatusId);
+        Assert.Equal(StatusType.NotStarted, insertedResult!.StatusId);
         Assert.Null(insertedResult.StageCompletionDate);
         TestAssertHelpers.AssertDateTimeAlmostEqual(now, insertedResult.StageStartDate);
 
@@ -454,7 +454,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         {
             ApplicationId = application.ApplicationId,
             StageId = stageId,
-            StatusId = TaskStatusEnum.Completed,
+            StatusId = StatusType.Completed,
             StageStartDate = now,
             StageCompletionDate = now.AddDays(1),
             CreatedByUpn = "ignored@ofqual.gov.uk",
@@ -471,7 +471,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
 
         var updatedResult = await unitOfWork.StageRepository.GetStageStatus(application.ApplicationId, stageId);
         Assert.NotNull(updatedResult);
-        Assert.Equal(TaskStatusEnum.Completed, updatedResult!.StatusId);
+        Assert.Equal(StatusType.Completed, updatedResult!.StatusId);
         Assert.Equal(now.AddDays(1).Date, updatedResult.StageCompletionDate?.Date);
         TestAssertHelpers.AssertDateTimeAlmostEqual(now, updatedResult.StageStartDate);
 

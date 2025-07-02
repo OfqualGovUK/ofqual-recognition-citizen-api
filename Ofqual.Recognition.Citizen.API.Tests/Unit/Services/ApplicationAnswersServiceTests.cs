@@ -57,7 +57,7 @@ public class ApplicationAnswersServiceTests
             .Returns(_mockApplicationAnswersRepository.Object);
 
         _mockTaskRepository
-            .Setup(x => x.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, upn))
+            .Setup(x => x.UpdateTaskStatus(applicationId, taskId, StatusType.InProgress, upn))
             .ReturnsAsync(true);
 
         // Act

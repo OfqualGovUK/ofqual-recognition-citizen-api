@@ -11,7 +11,7 @@ public class TaskItemStatus : ITaskItemStatus, IDataMetadata
     public Guid TaskStatusId { get; set; }
     public Guid ApplicationId { get; set; }
     public Guid TaskId { get; set; }
-    public TaskStatusEnum Status { get; set; }
+    public StatusType Status { get; set; }
     public required string CreatedByUpn { get; set; }
     public string? ModifiedByUpn { get; set; }
     public DateTime CreatedDate { get; set; }

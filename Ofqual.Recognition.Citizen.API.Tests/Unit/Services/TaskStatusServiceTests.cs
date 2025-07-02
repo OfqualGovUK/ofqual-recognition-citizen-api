@@ -48,7 +48,7 @@ public class TaskStatusServiceTests
             .Returns(upn);
 
         _mockTaskRepository
-            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.Completed, upn))
+            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, StatusType.Completed, upn))
             .ReturnsAsync(true);
 
         _mockStageService
@@ -56,7 +56,7 @@ public class TaskStatusServiceTests
             .ReturnsAsync(true);
 
         // Act
-        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.Completed);
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, StatusType.Completed);
 
         // Assert
         Assert.True(result);
@@ -76,11 +76,11 @@ public class TaskStatusServiceTests
             .Returns(upn);
 
         _mockTaskRepository
-            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, upn))
+            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, StatusType.InProgress, upn))
             .ReturnsAsync(true);
 
         // Act
-        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.InProgress);
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, StatusType.InProgress);
 
         // Assert
         Assert.True(result);
@@ -101,11 +101,11 @@ public class TaskStatusServiceTests
             .Returns(upn);
 
         _mockTaskRepository
-            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.Completed, upn))
+            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, StatusType.Completed, upn))
             .ReturnsAsync(false);
 
         // Act
-        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.Completed);
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, StatusType.Completed);
 
         // Assert
         Assert.False(result);
@@ -126,7 +126,7 @@ public class TaskStatusServiceTests
             .Returns(upn);
 
         _mockTaskRepository
-            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.Completed, upn))
+            .Setup(r => r.UpdateTaskStatus(applicationId, taskId, StatusType.Completed, upn))
             .ReturnsAsync(true);
 
         _mockStageService
@@ -134,7 +134,7 @@ public class TaskStatusServiceTests
             .ReturnsAsync(false);
 
         // Act
-        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, TaskStatusEnum.Completed);
+        var result = await _service.UpdateTaskAndStageStatus(applicationId, taskId, StatusType.Completed);
 
         // Assert
         Assert.False(result);
@@ -160,7 +160,7 @@ public class TaskStatusServiceTests
             TaskNameUrl = "declaration-task",
             TaskOrderNumber = 1,
             TaskStatusId = Guid.NewGuid(),
-            Status = TaskStatusEnum.CannotStartYet,
+            Status = StatusType.CannotStartYet,
             QuestionNameUrl = "q1"
         }
     };
@@ -220,7 +220,7 @@ public class TaskStatusServiceTests
                 TaskNameUrl = "declaration-task",
                 TaskOrderNumber = 1,
                 TaskStatusId = Guid.NewGuid(),
-                Status = TaskStatusEnum.CannotStartYet,
+                Status = StatusType.CannotStartYet,
                 QuestionNameUrl = "q1"
             }
         };
@@ -299,7 +299,7 @@ public class TaskStatusServiceTests
                 TaskNameUrl = "task-a",
                 TaskOrderNumber = 1,
                 TaskStatusId = Guid.NewGuid(),
-                Status = TaskStatusEnum.NotStarted,
+                Status = StatusType.NotStarted,
                 QuestionNameUrl = "q1"
             }
             });
@@ -456,8 +456,8 @@ public class TaskStatusServiceTests
 
         _mockTaskRepository.Verify(r => r.CreateTaskStatuses(It.Is<IEnumerable<TaskItemStatus>>(statuses =>
             statuses.Count() == 2 &&
-            statuses.Any(s => s.TaskId == normalTaskId && s.Status == TaskStatusEnum.Completed) &&
-            statuses.Any(s => s.TaskId == declarationTaskId && s.Status == TaskStatusEnum.CannotStartYet)
+            statuses.Any(s => s.TaskId == normalTaskId && s.Status == StatusType.Completed) &&
+            statuses.Any(s => s.TaskId == declarationTaskId && s.Status == StatusType.CannotStartYet)
         )), Times.Once);
     }
 }

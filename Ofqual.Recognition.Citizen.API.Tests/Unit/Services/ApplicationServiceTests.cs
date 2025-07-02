@@ -105,7 +105,7 @@ public class ApplicationServiceTests
                 StageId = StageType.Declaration,
                 StageName = "Declaration Stage",
                 Status = "In Progress",
-                StatusId = TaskStatusEnum.InProgress,
+                StatusId = StatusType.InProgress,
                 StageStartDate = DateTime.UtcNow
             });
 
@@ -117,7 +117,7 @@ public class ApplicationServiceTests
                 StageId = StageType.MainApplication,
                 StageName = "Main Application",
                 Status = "Not Started",
-                StatusId = TaskStatusEnum.NotStarted,
+                StatusId = StatusType.NotStarted,
                 StageStartDate = DateTime.UtcNow
             });
 
@@ -164,7 +164,7 @@ public class ApplicationServiceTests
                 StageId = StageType.Declaration,
                 StageName = "Declaration Stage",
                 Status = "Completed",
-                StatusId = TaskStatusEnum.Completed,
+                StatusId = StatusType.Completed,
                 StageStartDate = DateTime.UtcNow,
                 StageCompletionDate = DateTime.UtcNow
             });
@@ -177,7 +177,7 @@ public class ApplicationServiceTests
                 StageId = StageType.MainApplication,
                 StageName = "Main Application",
                 Status = "Completed",
-                StatusId = TaskStatusEnum.Completed,
+                StatusId = StatusType.Completed,
                 StageStartDate = DateTime.UtcNow,
                 StageCompletionDate = DateTime.UtcNow
             });

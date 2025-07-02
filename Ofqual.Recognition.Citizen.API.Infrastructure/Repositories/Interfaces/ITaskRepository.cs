@@ -10,5 +10,5 @@ public interface ITaskRepository
     public Task<TaskItem?> GetTaskByTaskNameUrl(string taskNameUrl);
     public Task<IEnumerable<TaskItemStatusSection>> GetTaskStatusesByApplicationId(Guid applicationId);
     public Task<bool> CreateTaskStatuses(IEnumerable<TaskItemStatus> statuses);
-    public Task<bool> UpdateTaskStatus(Guid applicationId, Guid taskId, TaskStatusEnum status, string upn);
+    public Task<bool> UpdateTaskStatus(Guid applicationId, Guid taskId, StatusType status, string upn);
 }

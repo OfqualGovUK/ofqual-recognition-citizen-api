@@ -36,8 +36,8 @@ public class ApplicationService : IApplicationService
         StageStatusView? declarationStage = await _context.StageRepository.GetStageStatus(applicationId, StageType.Declaration);
         StageStatusView? mainApplicationStage = await _context.StageRepository.GetStageStatus(applicationId, StageType.MainApplication);
 
-        bool declarationComplete = declarationStage?.StatusId == TaskStatusEnum.Completed;
-        bool mainApplicationComplete = mainApplicationStage?.StatusId == TaskStatusEnum.Completed;
+        bool declarationComplete = declarationStage?.StatusId == StatusType.Completed;
+        bool mainApplicationComplete = mainApplicationStage?.StatusId == StatusType.Completed;
 
         if (declarationComplete && mainApplicationComplete)
         {

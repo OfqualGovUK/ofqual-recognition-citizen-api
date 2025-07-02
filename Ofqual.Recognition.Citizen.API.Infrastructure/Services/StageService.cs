@@ -81,19 +81,19 @@ public class StageService : IStageService
         int answeredCount = totalStageQuestions.Count(q => answeredQuestionIds.Contains(q.QuestionId));
 
         // Determine the new status
-        TaskStatusEnum newStatus;
+        StatusType newStatus;
 
         if (answeredCount == 0)
         {
-            newStatus = TaskStatusEnum.NotStarted;
+            newStatus = StatusType.NotStarted;
         }
         else if (answeredCount == totalStageQuestions.Count)
         {
-            newStatus = TaskStatusEnum.Completed;
+            newStatus = StatusType.Completed;
         }
         else
         {
-            newStatus = TaskStatusEnum.InProgress;
+            newStatus = StatusType.InProgress;
         }
 
         // Check the existing stage status for the application
@@ -114,7 +114,7 @@ public class StageService : IStageService
             StageId = stage,
             StatusId = newStatus,
             StageStartDate = existingStatus?.StageStartDate ?? now,
-            StageCompletionDate = newStatus == TaskStatusEnum.Completed ? now : null,
+            StageCompletionDate = newStatus == StatusType.Completed ? now : null,
             CreatedByUpn = upn,
             ModifiedByUpn = upn
         };

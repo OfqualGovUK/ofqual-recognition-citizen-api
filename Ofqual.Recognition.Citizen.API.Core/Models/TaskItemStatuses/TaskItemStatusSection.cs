@@ -21,7 +21,7 @@ public class TaskItemStatusSection : ITaskItemStatus, ISection
 
     // Task Status Table
     public Guid TaskStatusId { get; set; }
-    public TaskStatusEnum Status { get; set; }
+    public StatusType Status { get; set; }
 
     // Question Table
     public required string QuestionNameUrl { get; set; }

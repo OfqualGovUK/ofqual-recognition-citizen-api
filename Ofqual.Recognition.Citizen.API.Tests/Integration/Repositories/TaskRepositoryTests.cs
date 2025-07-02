@@ -143,7 +143,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
             TaskStatusId = Guid.NewGuid(),
             ApplicationId = application.ApplicationId,
             TaskId = task.TaskId,
-            Status = TaskStatusEnum.NotStarted,
+            Status = StatusType.NotStarted,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -277,7 +277,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
                 TaskStatusId = Guid.NewGuid(),
                 ApplicationId = application.ApplicationId,
                 TaskId = task1.TaskId,
-                Status = TaskStatusEnum.NotStarted,
+                Status = StatusType.NotStarted,
                 CreatedByUpn = "test@ofqual.gov.uk",
                 ModifiedByUpn = "test@ofqual.gov.uk"
             },
@@ -286,7 +286,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
                 TaskStatusId = Guid.NewGuid(),
                 ApplicationId = application.ApplicationId,
                 TaskId = task2.TaskId,
-                Status = TaskStatusEnum.NotStarted,
+                Status = StatusType.NotStarted,
                 CreatedByUpn = "test@ofqual.gov.uk",
                 ModifiedByUpn = "test@ofqual.gov.uk"
             }
@@ -306,7 +306,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
             Assert.Contains(item.TaskId, statuses.Select(s => s.TaskId));
             Assert.False(string.IsNullOrWhiteSpace(item.TaskNameUrl));
             Assert.False(string.IsNullOrWhiteSpace(item.QuestionNameUrl));
-            Assert.Equal(TaskStatusEnum.NotStarted, item.Status);
+            Assert.Equal(StatusType.NotStarted, item.Status);
         }
 
         // Clean up test container
@@ -391,7 +391,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
             TaskStatusId = Guid.NewGuid(),
             ApplicationId = application.ApplicationId,
             TaskId = task.TaskId,
-            Status = TaskStatusEnum.NotStarted,
+            Status = StatusType.NotStarted,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -400,7 +400,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var success = await unitOfWork.TaskRepository.UpdateTaskStatus(application.ApplicationId, task.TaskId, TaskStatusEnum.Completed, application.CreatedByUpn);
+        var success = await unitOfWork.TaskRepository.UpdateTaskStatus(application.ApplicationId, task.TaskId, StatusType.Completed, application.CreatedByUpn);
 
         // Assert
         Assert.True(success);
@@ -409,7 +409,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.Single(taskStatuses);
 
         var updated = taskStatuses[0];
-        Assert.Equal(TaskStatusEnum.Completed, updated.Status);
+        Assert.Equal(StatusType.Completed, updated.Status);
 
         // Clean up test container
         await _fixture.DisposeAsync();

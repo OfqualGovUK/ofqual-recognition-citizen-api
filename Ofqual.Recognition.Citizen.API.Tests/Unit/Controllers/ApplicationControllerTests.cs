@@ -238,14 +238,14 @@ public class ApplicationControllerTests
                     {
                         TaskId = Guid.NewGuid(),
                         TaskName = "Task 1",
-                        Status = TaskStatusEnum.Completed,
+                        Status = StatusType.Completed,
                         FirstQuestionUrl = "path/first-question"
                     },
                     new TaskItemStatusDto
                     {
                         TaskId = Guid.NewGuid(),
                         TaskName = "Task 2",
-                        Status = TaskStatusEnum.InProgress,
+                        Status = StatusType.InProgress,
                         FirstQuestionUrl = "path/second-question"
                     }
                 }
@@ -259,7 +259,7 @@ public class ApplicationControllerTests
                     {
                         TaskId = Guid.NewGuid(),
                         TaskName = "Task 3",
-                        Status = TaskStatusEnum.NotStarted,
+                        Status = StatusType.NotStarted,
                         FirstQuestionUrl = "path/third-question"
                     }
                 }
@@ -326,7 +326,7 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
-        var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
+        var request = new UpdateTaskStatusDto { Status = StatusType.Completed };
 
         var applicationDto = new ApplicationDetailsDto
         {
@@ -362,7 +362,7 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
-        var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
+        var request = new UpdateTaskStatusDto { Status = StatusType.Completed };
 
         var applicationDto = new ApplicationDetailsDto
         {
@@ -415,7 +415,7 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
-        var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
+        var request = new UpdateTaskStatusDto { Status = StatusType.Completed };
 
         _mockTaskStatusService
             .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status))
@@ -437,7 +437,7 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
-        var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
+        var request = new UpdateTaskStatusDto { Status = StatusType.Completed };
 
         _mockTaskStatusService
             .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status))
@@ -463,7 +463,7 @@ public class ApplicationControllerTests
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
-        var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.InProgress };
+        var request = new UpdateTaskStatusDto { Status = StatusType.InProgress };
 
         _mockTaskStatusService
             .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status))

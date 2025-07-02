@@ -8,6 +8,6 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// </summary>
 public class UpdateTaskStatusDto
 {
-    [ValidEnumValue(typeof(TaskStatusEnum), ErrorMessage = "The status provided is not valid.")]
-    public TaskStatusEnum Status { get; set; }
+    [ValidEnumValue(typeof(StatusType), ErrorMessage = "The status provided is not valid.")]
+    public StatusType Status { get; set; }
 }

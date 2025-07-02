@@ -175,7 +175,7 @@ public class StageServiceTests
         {
             ApplicationId = applicationId,
             StageId = StageType.PreEngagement,
-            StatusId = TaskStatusEnum.InProgress,
+            StatusId = StatusType.InProgress,
             StageStartDate = DateTime.UtcNow.AddDays(-1),
             StageCompletionDate = DateTime.UtcNow,
             StageName = "Stage Name",
@@ -317,7 +317,7 @@ public class StageServiceTests
         {
             ApplicationId = applicationId,
             StageId = StageType.PreEngagement,
-            StatusId = TaskStatusEnum.Completed,
+            StatusId = StatusType.Completed,
             StageStartDate = DateTime.UtcNow.AddDays(-1),
             StageCompletionDate = DateTime.UtcNow,
             StageName = "Stage name",
@@ -456,6 +456,6 @@ public class StageServiceTests
         Assert.True(result);
         _mockStageRepository.Verify(r => r.UpsertStageStatusRecord(It.IsAny<StageStatus>()), Times.Once);
         Assert.NotNull(stageStatus);
-        Assert.Equal(TaskStatusEnum.Completed, stageStatus.StatusId);
+        Assert.Equal(StatusType.Completed, stageStatus.StatusId);
     }
 }
