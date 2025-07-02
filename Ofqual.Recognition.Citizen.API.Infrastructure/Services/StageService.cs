@@ -15,6 +15,29 @@ public class StageService : IStageService
         _userInformationService = userInformationService;
     }
 
+    public async Task<bool> EvaluateAndUpsertAllStageStatus(Guid applicationId)
+    {
+        bool preEngagementUpdated = await EvaluateAndUpsertStageStatus(applicationId, StageType.PreEngagement);
+        if (!preEngagementUpdated)
+        {
+            return false;
+        }
+
+        bool mainApplicationUpdated = await EvaluateAndUpsertStageStatus(applicationId, StageType.MainApplication);
+        if (!mainApplicationUpdated)
+        {
+            return false;
+        }
+
+        bool declarationUpdated = await EvaluateAndUpsertStageStatus(applicationId, StageType.Declaration);
+        if (!declarationUpdated)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     public async Task<bool> EvaluateAndUpsertStageStatus(Guid applicationId, StageType stage)
     {
         // Get all tasks for the specified stage

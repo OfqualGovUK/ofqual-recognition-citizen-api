@@ -19,7 +19,7 @@ public class TaskStatusService : ITaskStatusService
         _stageService = stageService;
     }
 
-    public async Task<bool> UpdateTaskAndStageStatus(Guid applicationId, Guid taskId, TaskStatusEnum status, StageType stageToUpdate)
+    public async Task<bool> UpdateTaskAndStageStatus(Guid applicationId, Guid taskId, TaskStatusEnum status)
     {
         string upn = _userInformationService.GetCurrentUserUpn();
 
@@ -31,7 +31,7 @@ public class TaskStatusService : ITaskStatusService
 
         if (status == TaskStatusEnum.Completed)
         {
-            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(applicationId, stageToUpdate);
+            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertAllStageStatus(applicationId);
             if (!stageStatusUpdated)
             {
                 return false;
@@ -56,10 +56,7 @@ public class TaskStatusService : ITaskStatusService
         }
 
         var declarationTasks = await _context.StageRepository.GetAllStageTasksByStageId(StageType.Declaration) ?? Enumerable.Empty<StageTaskView>();
-        var informationTasks = await _context.StageRepository.GetAllStageTasksByStageId(StageType.Information) ?? Enumerable.Empty<StageTaskView>();
-
         var declarationTaskIds = new HashSet<Guid>(declarationTasks.Select(t => t.TaskId));
-        var informationTaskIds = new HashSet<Guid>(informationTasks.Select(t => t.TaskId));
 
         var sectionDtos = TaskMapper.ToDto(taskStatuses);
 
@@ -74,10 +71,6 @@ public class TaskStatusService : ITaskStatusService
                     task.Hint = isSubmitted
                         ? "Not Yet Released"
                         : "You must complete all sections first";
-                }
-                else if (informationTaskIds.Contains(task.TaskId))
-                {
-                    task.Hint = "Learn more about the application before you apply";
                 }
             }
         }

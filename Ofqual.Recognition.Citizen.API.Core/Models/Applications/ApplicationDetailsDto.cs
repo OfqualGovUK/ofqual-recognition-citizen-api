@@ -9,4 +9,5 @@ public class ApplicationDetailsDto : IApplication
 {
     public Guid ApplicationId { get; set; }
     public Guid OwnerUserId { get; set; }
+    public bool Submitted { get; set; }
 }

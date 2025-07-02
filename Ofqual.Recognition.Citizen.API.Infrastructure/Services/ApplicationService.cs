@@ -1,6 +1,7 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -15,6 +16,41 @@ public class ApplicationService : IApplicationService
         _context = context;
         _featureFlagService = featureFlagService;
         _userInformationService = userInformationService;
+    }
+
+    public async Task<ApplicationDetailsDto?> CheckAndSubmitApplication(Guid applicationId)
+    {
+        string upn = _userInformationService.GetCurrentUserUpn();
+
+        var application = await _context.ApplicationRepository.GetApplicationById(applicationId);
+        if (application == null)
+        {
+            return null;
+        }
+
+        if (application.SubmittedDate.HasValue)
+        {
+            return ApplicationMapper.ToDto(application);
+        }
+
+        StageStatusView? declarationStage = await _context.StageRepository.GetStageStatus(applicationId, StageType.Declaration);
+        StageStatusView? mainApplicationStage = await _context.StageRepository.GetStageStatus(applicationId, StageType.MainApplication);
+
+        bool declarationComplete = declarationStage?.StatusId == TaskStatusEnum.Completed;
+        bool mainApplicationComplete = mainApplicationStage?.StatusId == TaskStatusEnum.Completed;
+
+        if (declarationComplete && mainApplicationComplete)
+        {
+            bool updated = await _context.ApplicationRepository.UpdateApplicationSubmittedDate(applicationId, upn);
+            if (!updated)
+            {
+                return null;
+            }
+
+            application.SubmittedDate = DateTime.UtcNow;
+        }
+
+        return ApplicationMapper.ToDto(application);
     }
 
     public async Task<ApplicationDetailsDto?> GetLatestApplicationForCurrentUser()
@@ -65,7 +101,7 @@ public class ApplicationService : IApplicationService
         {
             return applicationId == application.ApplicationId;
         }
-        
+
         return false;
     }
 }

@@ -26,6 +26,141 @@ public class StageServiceTests
 
         _stageService = new StageService(_mockUnitOfWork.Object, _mockUserInformationService.Object);
     }
+    
+    [Theory]
+    [Trait("Category", "Unit")]
+    [InlineData(StageType.PreEngagement)]
+    [InlineData(StageType.MainApplication)]
+    [InlineData(StageType.Declaration)]
+    public async Task EvaluateAndUpsertAllStageStatus_ReturnsFalse_WhenAnyStageFails(StageType failingStage)
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+
+        _mockStageRepository
+            .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<StageType>()))
+            .ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = Guid.NewGuid() } });
+
+        _mockQuestionRepository
+            .Setup(r => r.GetAllQuestions())
+            .ReturnsAsync(new List<Question>
+            {
+            new Question
+            {
+                QuestionId = Guid.NewGuid(),
+                TaskId = Guid.NewGuid(),
+                QuestionOrderNumber = 1,
+                QuestionTypeId = Guid.NewGuid(),
+                QuestionContent = "Content",
+                QuestionNameUrl = "question-url",
+                CreatedDate = DateTime.UtcNow,
+                ModifiedDate = DateTime.UtcNow,
+                CreatedByUpn = "tester@domain.com"
+            }
+            });
+
+        _mockApplicationAnswersRepository
+            .Setup(r => r.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(new List<SectionTaskQuestionAnswer>
+            {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = Guid.NewGuid(),
+                SectionName = "Section",
+                SectionOrderNumber = 1,
+                TaskId = Guid.NewGuid(),
+                TaskName = "Task",
+                TaskNameUrl = "task-url",
+                TaskOrderNumber = 1,
+                QuestionId = Guid.NewGuid(),
+                QuestionContent = "Content",
+                QuestionNameUrl = "question-url",
+                ApplicationId = applicationId
+            }
+            });
+
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, It.IsAny<StageType>()))
+            .ReturnsAsync((StageStatusView?)null);
+
+        _mockStageRepository
+            .Setup(r => r.UpsertStageStatusRecord(It.IsAny<StageStatus>()))
+            .ReturnsAsync(true);
+
+        _mockStageRepository
+            .Setup(r => r.GetAllStageTasksByStageId(failingStage))
+            .ReturnsAsync(new List<StageTaskView>());
+
+        // Act
+        var result = await _stageService.EvaluateAndUpsertAllStageStatus(applicationId);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task EvaluateAndUpsertAllStageStatus_ReturnsTrue_WhenAllStagesSucceed()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+
+        _mockStageRepository
+            .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<StageType>()))
+            .ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = Guid.NewGuid() } });
+
+        _mockQuestionRepository
+            .Setup(r => r.GetAllQuestions())
+            .ReturnsAsync(new List<Question>
+            {
+            new Question
+            {
+                QuestionId = Guid.NewGuid(),
+                TaskId = Guid.NewGuid(),
+                QuestionOrderNumber = 1,
+                QuestionTypeId = Guid.NewGuid(),
+                QuestionContent = "Content",
+                QuestionNameUrl = "question-url",
+                CreatedDate = DateTime.UtcNow,
+                ModifiedDate = DateTime.UtcNow,
+                CreatedByUpn = "tester@domain.com"
+            }
+            });
+
+        _mockApplicationAnswersRepository
+            .Setup(r => r.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(new List<SectionTaskQuestionAnswer>
+            {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = Guid.NewGuid(),
+                SectionName = "Section",
+                SectionOrderNumber = 1,
+                TaskId = Guid.NewGuid(),
+                TaskName = "Task",
+                TaskNameUrl = "task-url",
+                TaskOrderNumber = 1,
+                QuestionId = Guid.NewGuid(),
+                QuestionContent = "Content",
+                QuestionNameUrl = "question-url",
+                ApplicationId = applicationId
+            }
+            });
+
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, It.IsAny<StageType>()))
+            .ReturnsAsync((StageStatusView?)null);
+
+        _mockStageRepository
+            .Setup(r => r.UpsertStageStatusRecord(It.IsAny<StageStatus>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _stageService.EvaluateAndUpsertAllStageStatus(applicationId);
+
+        // Assert
+        Assert.True(result);
+    }
 
     [Fact]
     [Trait("Category", "Unit")]

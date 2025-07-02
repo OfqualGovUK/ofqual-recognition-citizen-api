@@ -3,7 +3,6 @@ using Ofqual.Recognition.Citizen.API.Core.Attributes;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
-using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
@@ -84,7 +83,7 @@ public class ApplicationController : ControllerBase
                 }
             }
 
-            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(application.ApplicationId, StageType.PreEngagement);
+            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertAllStageStatus(application.ApplicationId);
             if (!stageStatusUpdated)
             {
                 return BadRequest("Unable to determine or save the stage status for the application.");
@@ -137,7 +136,7 @@ public class ApplicationController : ControllerBase
     /// <param name="taskId">The task ID.</param>
     [HttpPost("{applicationId}/tasks/{taskId}")]
     [CheckApplicationId(queryParam: "applicationId")]
-    public async Task<IActionResult> UpdateTaskStatus(Guid applicationId, Guid taskId, [FromBody] UpdateTaskStatusDto request)
+    public async Task<ActionResult<ApplicationDetailsDto>> UpdateTaskStatus(Guid applicationId, Guid taskId, [FromBody] UpdateTaskStatusDto request)
     {
         try
         {
@@ -146,14 +145,20 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Request body cannot be null.");
             }
 
-            bool updated = await _taskStatusService.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, StageType.PreEngagement);
+            bool updated = await _taskStatusService.UpdateTaskAndStageStatus(applicationId, taskId, request.Status);
             if (!updated)
             {
                 return BadRequest("Unable to update task or stage status. Please try again.");
             }
 
+            ApplicationDetailsDto? application = await _applicationService.CheckAndSubmitApplication(applicationId);
+            if (application == null)
+            {
+                return BadRequest("Unable to determine application submission status.");
+            }
+
             _context.Commit();
-            return Ok();
+            return Ok(application);
         }
         catch (Exception ex)
         {

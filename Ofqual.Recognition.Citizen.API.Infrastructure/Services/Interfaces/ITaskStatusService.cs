@@ -5,7 +5,7 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 
 public interface ITaskStatusService
 {
-    public Task<bool> UpdateTaskAndStageStatus(Guid applicationId, Guid taskId, TaskStatusEnum status, StageType stageToUpdate);
+    public Task<bool> UpdateTaskAndStageStatus(Guid applicationId, Guid taskId, TaskStatusEnum status);
     public Task<IEnumerable<TaskItemStatusSectionDto>?> GetTaskStatusesForApplication(Guid applicationId);
     public Task<bool> DetermineAndCreateTaskStatuses(Guid applicationId, IEnumerable<PreEngagementAnswerDto>? answers);
 }

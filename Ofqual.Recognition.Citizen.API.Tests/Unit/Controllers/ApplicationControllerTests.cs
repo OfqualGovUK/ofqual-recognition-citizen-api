@@ -152,7 +152,7 @@ public class ApplicationControllerTests
             .ReturnsAsync(true);
         _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, answers))
             .ReturnsAsync(true);
-        _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(app.ApplicationId, StageType.PreEngagement))
+        _mockStageService.Setup(x => x.EvaluateAndUpsertAllStageStatus(app.ApplicationId))
             .ReturnsAsync(false);
 
         // Act
@@ -192,7 +192,7 @@ public class ApplicationControllerTests
             .ReturnsAsync(true);
         _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, answers))
             .ReturnsAsync(true);
-        _mockStageService.Setup(x => x.EvaluateAndUpsertStageStatus(app.ApplicationId, StageType.PreEngagement))
+        _mockStageService.Setup(x => x.EvaluateAndUpsertAllStageStatus(app.ApplicationId))
             .ReturnsAsync(true);
 
         // Act
@@ -321,28 +321,96 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task UpdateTaskStatus_ReturnsOk_WhenUpdateSucceeds()
+    public async Task UpdateTaskStatus_ReturnsOkWithApplication_WhenSubmissionIsTrue()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
         var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
 
+        var applicationDto = new ApplicationDetailsDto
+        {
+            ApplicationId = applicationId,
+            OwnerUserId = Guid.NewGuid(),
+            Submitted = true
+        };
+
         _mockTaskStatusService
-            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, StageType.PreEngagement))
+            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status))
             .ReturnsAsync(true);
+
+        _mockApplicationService
+            .Setup(s => s.CheckAndSubmitApplication(applicationId))
+            .ReturnsAsync(applicationDto);
 
         // Act
         var result = await _controller.UpdateTaskStatus(applicationId, taskId, request);
 
         // Assert
-        Assert.IsType<OkResult>(result);
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedDto = Assert.IsType<ApplicationDetailsDto>(okResult.Value);
+        Assert.Equal(applicationDto.ApplicationId, returnedDto.ApplicationId);
+        Assert.True(returnedDto.Submitted);
+
         _mockUnitOfWork.Verify(u => u.Commit(), Times.Once);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task UpdateTaskStatus_ReturnsBadRequest_WhenUpdateFails()
+    public async Task UpdateTaskStatus_ReturnsOkWithApplication_WhenSubmissionIsFalse()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
+
+        var applicationDto = new ApplicationDetailsDto
+        {
+            ApplicationId = applicationId,
+            OwnerUserId = Guid.NewGuid(),
+            Submitted = false
+        };
+
+        _mockTaskStatusService
+            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status))
+            .ReturnsAsync(true);
+
+        _mockApplicationService
+            .Setup(s => s.CheckAndSubmitApplication(applicationId))
+            .ReturnsAsync(applicationDto);
+
+        // Act
+        var result = await _controller.UpdateTaskStatus(applicationId, taskId, request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedDto = Assert.IsType<ApplicationDetailsDto>(okResult.Value);
+        Assert.Equal(applicationDto.ApplicationId, returnedDto.ApplicationId);
+        Assert.False(returnedDto.Submitted);
+
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Once);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UpdateTaskStatus_ReturnsBadRequest_WhenRequestIsNull()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+
+        // Act
+        var result = await _controller.UpdateTaskStatus(applicationId, taskId, null!);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Request body cannot be null.", badRequest.Value);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UpdateTaskStatus_ReturnsBadRequest_WhenTaskUpdateFails()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -350,15 +418,41 @@ public class ApplicationControllerTests
         var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
 
         _mockTaskStatusService
-            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, StageType.PreEngagement))
+            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status))
             .ReturnsAsync(false);
 
         // Act
         var result = await _controller.UpdateTaskStatus(applicationId, taskId, request);
 
         // Assert
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Equal("Unable to update task or stage status. Please try again.", badRequest.Value);
+        _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task UpdateTaskStatus_ReturnsBadRequest_WhenApplicationServiceReturnsNull()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.Completed };
+
+        _mockTaskStatusService
+            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status))
+            .ReturnsAsync(true);
+
+        _mockApplicationService
+            .Setup(s => s.CheckAndSubmitApplication(applicationId))
+            .ReturnsAsync((ApplicationDetailsDto?)null);
+
+        // Act
+        var result = await _controller.UpdateTaskStatus(applicationId, taskId, request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Unable to determine application submission status.", badRequest.Value);
         _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
     }
 
@@ -372,7 +466,7 @@ public class ApplicationControllerTests
         var request = new UpdateTaskStatusDto { Status = TaskStatusEnum.InProgress };
 
         _mockTaskStatusService
-            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, StageType.PreEngagement))
+            .Setup(s => s.UpdateTaskAndStageStatus(applicationId, taskId, request.Status))
             .ThrowsAsync(new Exception("Unexpected error"));
 
         // Act & Assert
