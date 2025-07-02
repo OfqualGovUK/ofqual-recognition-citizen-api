@@ -68,12 +68,6 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Application could not be created.");
             }
 
-            bool taskStatusesCreated = await _taskStatusService.DetermineAndCreateTaskStatuses(application.ApplicationId, PreEngagementAnswers);
-            if (!taskStatusesCreated)
-            {
-                return BadRequest("Failed to create task statuses for the new application.");
-            }
-
             if (PreEngagementAnswers != null && PreEngagementAnswers.Any())
             {
                 bool isPreEngagementAnswersInserted = await _applicationAnswersService.SavePreEngagementAnswers(application.ApplicationId, PreEngagementAnswers);
@@ -83,6 +77,12 @@ public class ApplicationController : ControllerBase
                 }
             }
 
+            bool taskStatusesCreated = await _taskStatusService.DetermineAndCreateTaskStatuses(application.ApplicationId);
+            if (!taskStatusesCreated)
+            {
+                return BadRequest("Failed to create task statuses for the new application.");
+            }
+
             bool stageStatusUpdated = await _stageService.EvaluateAndUpsertAllStageStatus(application.ApplicationId);
             if (!stageStatusUpdated)
             {
@@ -90,7 +90,7 @@ public class ApplicationController : ControllerBase
             }
 
             await _govUkNotifyService.SendEmailAccountCreation();
-            
+
             ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
 
             _context.Commit();

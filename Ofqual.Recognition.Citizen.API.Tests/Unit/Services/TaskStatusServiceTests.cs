@@ -13,7 +13,7 @@ public class TaskStatusServiceTests
 {
     private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
     private readonly Mock<ITaskRepository> _mockTaskRepository = new();
-    private readonly Mock<IQuestionRepository> _mockQuestionRepository = new();
+    private readonly Mock<IApplicationAnswersRepository> _mockApplicationAnswersRepository = new();
     private readonly Mock<IApplicationRepository> _mockApplicationRepository = new();
     private readonly Mock<IStageRepository> _mockStageRepository = new();
     private readonly Mock<IUserInformationService> _mockUserInformationService = new();
@@ -23,7 +23,7 @@ public class TaskStatusServiceTests
     public TaskStatusServiceTests()
     {
         _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
-        _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
+        _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository).Returns(_mockApplicationAnswersRepository.Object);
         _mockUnitOfWork.Setup(u => u.StageRepository).Returns(_mockStageRepository.Object);
         _mockUnitOfWork.Setup(u => u.ApplicationRepository).Returns(_mockApplicationRepository.Object);
 
@@ -290,18 +290,18 @@ public class TaskStatusServiceTests
             .ReturnsAsync(new List<TaskItemStatusSection>
             {
             new TaskItemStatusSection
-            {
-                SectionId = Guid.NewGuid(),
-                SectionName = "Section A",
-                SectionOrderNumber = 1,
-                TaskId = Guid.NewGuid(),
-                TaskName = "Task A",
-                TaskNameUrl = "task-a",
-                TaskOrderNumber = 1,
-                TaskStatusId = Guid.NewGuid(),
-                Status = StatusType.NotStarted,
-                QuestionNameUrl = "q1"
-            }
+                {
+                    SectionId = Guid.NewGuid(),
+                    SectionName = "Section A",
+                    SectionOrderNumber = 1,
+                    TaskId = Guid.NewGuid(),
+                    TaskName = "Task A",
+                    TaskNameUrl = "task-a",
+                    TaskOrderNumber = 1,
+                    TaskStatusId = Guid.NewGuid(),
+                    Status = StatusType.NotStarted,
+                    QuestionNameUrl = "q1"
+                }
             });
 
         _mockApplicationRepository
@@ -325,7 +325,7 @@ public class TaskStatusServiceTests
             .ReturnsAsync((IEnumerable<TaskItem>?)null!);
 
         // Act
-        var result = await _service.DetermineAndCreateTaskStatuses(Guid.NewGuid(), null);
+        var result = await _service.DetermineAndCreateTaskStatuses(Guid.NewGuid());
 
         // Assert
         Assert.False(result);
@@ -333,9 +333,10 @@ public class TaskStatusServiceTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task DetermineAndCreateTaskStatuses_ReturnsFalse_WhenNoQuestions()
+    public async Task DetermineAndCreateTaskStatuses_ReturnsFalse_WhenNoAnswers()
     {
         // Arrange
+        var appId = Guid.NewGuid();
         var taskId = Guid.NewGuid();
 
         _mockTaskRepository
@@ -343,33 +344,28 @@ public class TaskStatusServiceTests
             .ReturnsAsync(new List<TaskItem>
             {
             new TaskItem
-            {
-                TaskId = taskId,
-                TaskName = "Example Task",
-                TaskNameUrl = "example-task",
-                TaskOrderNumber = 1,
-                SectionId = Guid.NewGuid(),
-                CreatedDate = DateTime.UtcNow,
-                ModifiedDate = DateTime.UtcNow,
-                CreatedByUpn = "test@ofqual.gov.uk"
-            }
+                {
+                    TaskId = taskId,
+                    TaskName = "Example Task",
+                    TaskNameUrl = "example-task",
+                    TaskOrderNumber = 1,
+                    SectionId = Guid.NewGuid(),
+                    CreatedDate = DateTime.UtcNow,
+                    ModifiedDate = DateTime.UtcNow,
+                    CreatedByUpn = "test@ofqual.gov.uk"
+                }
             });
 
-        _mockQuestionRepository
-            .Setup(r => r.GetAllQuestions())
-            .ReturnsAsync((IEnumerable<Question>?)null!);
-
-        _mockStageRepository
-            .Setup(r => r.GetAllStageTasksByStageId(StageType.Declaration))
-            .ReturnsAsync(new List<StageTaskView>());
+        _mockApplicationAnswersRepository
+            .Setup(r => r.GetAllApplicationAnswers(appId))
+            .ReturnsAsync((IEnumerable<SectionTaskQuestionAnswer>?)null!);
 
         // Act
-        var result = await _service.DetermineAndCreateTaskStatuses(Guid.NewGuid(), null);
+        var result = await _service.DetermineAndCreateTaskStatuses(appId);
 
         // Assert
         Assert.False(result);
     }
-
     [Fact]
     [Trait("Category", "Unit")]
     public async Task DetermineAndCreateTaskStatuses_ReturnsTrue_AndCreatesStatusesCorrectly()
@@ -386,43 +382,48 @@ public class TaskStatusServiceTests
             .ReturnsAsync(new List<TaskItem>
             {
             new TaskItem
-            {
-                TaskId = normalTaskId,
-                TaskName = "Task A",
-                TaskNameUrl = "task-a",
-                TaskOrderNumber = 1,
-                SectionId = Guid.NewGuid(),
-                CreatedDate = now,
-                ModifiedDate = now,
-                CreatedByUpn = "test@ofqual.gov.uk"
-            },
+                {
+                    TaskId = normalTaskId,
+                    TaskName = "Task A",
+                    TaskNameUrl = "task-a",
+                    TaskOrderNumber = 1,
+                    SectionId = Guid.NewGuid(),
+                    CreatedDate = now,
+                    ModifiedDate = now,
+                    CreatedByUpn = "test@ofqual.gov.uk"
+                },
             new TaskItem
-            {
-                TaskId = declarationTaskId,
-                TaskName = "Declaration",
-                TaskNameUrl = "declaration",
-                TaskOrderNumber = 2,
-                SectionId = Guid.NewGuid(),
-                CreatedDate = now,
-                ModifiedDate = now,
-                CreatedByUpn = "test@ofqual.gov.uk"
-            }
+                {
+                    TaskId = declarationTaskId,
+                    TaskName = "Declaration",
+                    TaskNameUrl = "declaration",
+                    TaskOrderNumber = 2,
+                    SectionId = Guid.NewGuid(),
+                    CreatedDate = now,
+                    ModifiedDate = now,
+                    CreatedByUpn = "test@ofqual.gov.uk"
+                }
             });
 
-        _mockQuestionRepository
-            .Setup(r => r.GetAllQuestions())
-            .ReturnsAsync(new List<Question>
+        _mockApplicationAnswersRepository
+            .Setup(r => r.GetAllApplicationAnswers(appId))
+            .ReturnsAsync(new List<SectionTaskQuestionAnswer>
             {
-            new Question
-            {
-                QuestionId = questionId,
-                TaskId = normalTaskId,
-                QuestionContent = "What is A?",
-                QuestionNameUrl = "question-a",
-                QuestionOrderNumber = 1,
-                QuestionTypeId = Guid.NewGuid(),
-                CreatedByUpn = "test@ofqual.gov.uk"
-            }
+            new SectionTaskQuestionAnswer
+                {
+                    ApplicationId = appId,
+                    QuestionId = questionId,
+                    Answer = "{\"some\":\"data\"}",
+                    TaskId = normalTaskId,
+                    QuestionContent = "What is A?",
+                    QuestionNameUrl = "question-a",
+                    TaskName = "Task A",
+                    TaskNameUrl = "task-a",
+                    TaskOrderNumber = 1,
+                    SectionId = Guid.NewGuid(),
+                    SectionName = "Section A",
+                    SectionOrderNumber = 1
+                }
             });
 
         _mockStageRepository
@@ -439,17 +440,12 @@ public class TaskStatusServiceTests
             }
             });
 
-        var answers = new List<PreEngagementAnswerDto>
-        {
-            new PreEngagementAnswerDto { QuestionId = questionId, AnswerJson = "{\"some\":\"data\"}" }
-        };
-
         _mockTaskRepository
             .Setup(r => r.CreateTaskStatuses(It.IsAny<IEnumerable<TaskItemStatus>>()))
             .ReturnsAsync(true);
 
         // Act
-        var result = await _service.DetermineAndCreateTaskStatuses(appId, answers);
+        var result = await _service.DetermineAndCreateTaskStatuses(appId);
 
         // Assert
         Assert.True(result);

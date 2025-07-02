@@ -40,66 +40,48 @@ public class StageService : IStageService
 
     public async Task<bool> EvaluateAndUpsertStageStatus(Guid applicationId, StageType stage)
     {
-        // Get all tasks for the specified stage
         var stageTasks = (await _context.StageRepository.GetAllStageTasksByStageId(stage))?.ToList();
-
-        // If no tasks are found, return false
         if (stageTasks == null || !stageTasks.Any())
         {
             return false;
         }
 
-        // Get all questions related to the tasks
-        var questions = (await _context.QuestionRepository.GetAllQuestions())?.ToList();
-
-        // If no questions are found, return false
-        if (questions == null || !questions.Any())
+        var allTaskStatuses = (await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId))?.ToList();
+        if (allTaskStatuses == null || !allTaskStatuses.Any())
         {
             return false;
         }
 
-        // Get all answers for the application. Default to an empty list if none found
-        var answers = (await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId))?.ToList() ?? new List<SectionTaskQuestionAnswer>();
-
-        // Group questions by TaskId they belong to
-        var questionsByTask = questions
-            .GroupBy(q => q.TaskId)
-            .ToDictionary(g => g.Key, g => g.ToList());
-
-        // Create a HashSet of answered question IDs for quick lookup
-        var answeredQuestionIds = answers
-            .Select(a => a.QuestionId)
-            .ToHashSet();
-
-        // Filter and flatten the questions for the current stage tasks
-        var totalStageQuestions = stageTasks
-            .Where(t => questionsByTask.ContainsKey(t.TaskId))
-            .SelectMany(t => questionsByTask[t.TaskId])
+        var stageTaskIds = stageTasks.Select(t => t.TaskId).ToHashSet();
+        var relevantTaskStatuses = allTaskStatuses
+            .Where(ts => stageTaskIds.Contains(ts.TaskId))
             .ToList();
 
-        // Count how many questions have been answered
-        int answeredCount = totalStageQuestions.Count(q => answeredQuestionIds.Contains(q.QuestionId));
+        if (!relevantTaskStatuses.Any())
+        {
+            return false;
+        }
 
-        // Determine the new status
         StatusType newStatus;
 
-        if (answeredCount == 0)
+        if (relevantTaskStatuses.Any(ts => ts.Status == StatusType.InProgress))
         {
-            newStatus = StatusType.NotStarted;
+            newStatus = StatusType.InProgress;
         }
-        else if (answeredCount == totalStageQuestions.Count)
+        else if (relevantTaskStatuses.All(ts => ts.Status == StatusType.Completed))
         {
             newStatus = StatusType.Completed;
+        }
+        else if (relevantTaskStatuses.All(ts => ts.Status == StatusType.NotStarted))
+        {
+            newStatus = StatusType.NotStarted;
         }
         else
         {
             newStatus = StatusType.InProgress;
         }
 
-        // Check the existing stage status for the application
         StageStatusView? existingStatus = await _context.StageRepository.GetStageStatus(applicationId, stage);
-
-        // If the status hasn't changed it skips the update
         if (existingStatus != null && existingStatus.StatusId == newStatus)
         {
             return true;
@@ -119,7 +101,6 @@ public class StageService : IStageService
             ModifiedByUpn = upn
         };
 
-        // If the stage status already exists, update it; otherwise, insert a new record
         await _context.StageRepository.UpsertStageStatusRecord(stageStatus);
 
         return true;

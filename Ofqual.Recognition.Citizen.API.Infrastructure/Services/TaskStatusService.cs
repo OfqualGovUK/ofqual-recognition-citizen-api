@@ -78,7 +78,7 @@ public class TaskStatusService : ITaskStatusService
         return sectionDtos;
     }
 
-    public async Task<bool> DetermineAndCreateTaskStatuses(Guid applicationId, IEnumerable<PreEngagementAnswerDto>? answers)
+    public async Task<bool> DetermineAndCreateTaskStatuses(Guid applicationId)
     {
         var tasks = (await _context.TaskRepository.GetAllTask())?.ToList();
         if (tasks == null || !tasks.Any())
@@ -86,53 +86,49 @@ public class TaskStatusService : ITaskStatusService
             return false;
         }
 
-        var questions = (await _context.QuestionRepository.GetAllQuestions())?.ToList();
-        if (questions == null || !questions.Any())
+        var answers = (await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId))?.ToList();
+        if (answers == null || !answers.Any())
         {
             return false;
         }
 
-        var declarationTasks = (await _context.StageRepository.GetAllStageTasksByStageId(StageType.Declaration))?.ToList() ?? Enumerable.Empty<StageTaskView>();
-        var declarationTaskIds = declarationTasks.Select(dt => dt.TaskId).ToHashSet();
-
-        var questionsByTask = questions
-            .GroupBy(q => q.TaskId)
-            .ToDictionary(g => g.Key, g => g.ToList());
-
-        var answeredQuestionIds = answers?
-            .Where(a => !string.IsNullOrWhiteSpace(a.AnswerJson) && !JsonHelper.IsEmptyJsonObject(a.AnswerJson))
+        var answeredQuestionIds = answers
+            .Where(a => !string.IsNullOrWhiteSpace(a.Answer) && !JsonHelper.IsEmptyJsonObject(a.Answer))
             .Select(a => a.QuestionId)
-            .ToHashSet() ?? new HashSet<Guid>();
+            .ToHashSet();
 
-        var now = DateTime.UtcNow;
-        string upn = _userInformationService.GetCurrentUserUpn();
+        var questionsByTask = answers
+            .GroupBy(a => a.TaskId)
+            .ToDictionary(g => g.Key, g => g.Select(a => a.QuestionId).ToList());
+
+        var declarationTasks = (await _context.StageRepository.GetAllStageTasksByStageId(StageType.Declaration))
+                                ?.Select(dt => dt.TaskId)
+                                .ToHashSet() ?? new HashSet<Guid>();
+
+        var upn = _userInformationService.GetCurrentUserUpn();
 
         var newTaskStatuses = tasks.Select(task =>
         {
             StatusType status;
 
-            if (declarationTaskIds.Contains(task.TaskId))
+            if (declarationTasks.Contains(task.TaskId))
             {
                 status = StatusType.CannotStartYet;
             }
             else
             {
-                var taskQuestions = questionsByTask.TryGetValue(task.TaskId, out var qList)
-                    ? qList
-                    : new List<Question>();
-
-                if (taskQuestions.Count == 0)
+                if (!questionsByTask.TryGetValue(task.TaskId, out var questionIds) || questionIds.Count == 0)
                 {
                     status = StatusType.NotStarted;
                 }
                 else
                 {
-                    var answeredCount = taskQuestions.Count(q => answeredQuestionIds.Contains(q.QuestionId));
+                    var answeredCount = questionIds.Count(qId => answeredQuestionIds.Contains(qId));
                     if (answeredCount == 0)
                     {
                         status = StatusType.NotStarted;
                     }
-                    else if (answeredCount == taskQuestions.Count)
+                    else if (answeredCount == questionIds.Count)
                     {
                         status = StatusType.Completed;
                     }

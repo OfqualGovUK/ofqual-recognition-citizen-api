@@ -76,7 +76,7 @@ public class ApplicationControllerTests
             .ReturnsAsync((ApplicationDetailsDto?)null);
         _mockApplicationService.Setup(x => x.CreateApplicationForCurrentUser())
             .ReturnsAsync(app);
-        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, null))
+        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId))
             .ReturnsAsync(false);
 
         // Act
@@ -111,7 +111,7 @@ public class ApplicationControllerTests
             .ReturnsAsync((ApplicationDetailsDto?)null);
         _mockApplicationService.Setup(x => x.CreateApplicationForCurrentUser())
             .ReturnsAsync(app);
-        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, answers))
+        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId))
             .ReturnsAsync(true);
         _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, answers))
             .ReturnsAsync(false);
@@ -148,7 +148,7 @@ public class ApplicationControllerTests
             .ReturnsAsync((ApplicationDetailsDto?)null);
         _mockApplicationService.Setup(x => x.CreateApplicationForCurrentUser())
             .ReturnsAsync(app);
-        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, answers))
+        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId))
             .ReturnsAsync(true);
         _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, answers))
             .ReturnsAsync(true);
@@ -188,7 +188,7 @@ public class ApplicationControllerTests
             .ReturnsAsync((ApplicationDetailsDto?)null);
         _mockApplicationService.Setup(x => x.CreateApplicationForCurrentUser())
             .ReturnsAsync(app);
-        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId, answers))
+        _mockTaskStatusService.Setup(x => x.DetermineAndCreateTaskStatuses(app.ApplicationId))
             .ReturnsAsync(true);
         _mockApplicationAnswersService.Setup(x => x.SavePreEngagementAnswers(app.ApplicationId, answers))
             .ReturnsAsync(true);

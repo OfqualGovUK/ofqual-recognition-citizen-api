@@ -75,7 +75,7 @@ public class TaskRepository : ITaskRepository
         }
     }
 
-    public async Task<IEnumerable<TaskItemStatusSection>> GetTaskStatusesByApplicationId(Guid applicationId)
+    public async Task<IEnumerable<TaskItemStatusSection>?> GetTaskStatusesByApplicationId(Guid applicationId)
     {
         try
         {
