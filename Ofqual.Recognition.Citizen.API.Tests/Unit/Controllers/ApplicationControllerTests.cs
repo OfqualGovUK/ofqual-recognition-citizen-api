@@ -20,6 +20,7 @@ public class ApplicationControllerTests
     private readonly Mock<ITaskStatusService> _mockTaskStatusService = new();
     private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService = new();
     private readonly Mock<IStageService> _mockStageService = new();
+    private readonly Mock<IGovUkNotifyService> _mockGovUkNotifyService = new();
     private readonly Mock<IApplicationService> _mockApplicationService = new();
 
     public ApplicationControllerTests()
@@ -33,6 +34,7 @@ public class ApplicationControllerTests
             _mockTaskStatusService.Object,
             _mockApplicationAnswersService.Object,
             _mockStageService.Object,
+            _mockGovUkNotifyService.Object,
             _mockApplicationService.Object
         );
     }
