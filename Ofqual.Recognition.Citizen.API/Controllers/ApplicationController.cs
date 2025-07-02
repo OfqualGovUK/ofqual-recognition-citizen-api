@@ -89,11 +89,11 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Unable to determine or save the stage status for the application.");
             }
 
-            ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
-            _context.Commit();
-
             await _govUkNotifyService.SendEmailAccountCreation();
+            
+            ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
 
+            _context.Commit();
             return Ok(applicationDetailsDto);
         }
         catch (Exception ex)

@@ -331,7 +331,6 @@ public class ApplicationControllerTests
         var applicationDto = new ApplicationDetailsDto
         {
             ApplicationId = applicationId,
-            OwnerUserId = Guid.NewGuid(),
             Submitted = true
         };
 
@@ -367,7 +366,6 @@ public class ApplicationControllerTests
         var applicationDto = new ApplicationDetailsDto
         {
             ApplicationId = applicationId,
-            OwnerUserId = Guid.NewGuid(),
             Submitted = false
         };
 
