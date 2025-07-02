@@ -68,6 +68,10 @@ public class StageService : IStageService
         {
             newStatus = StatusType.InProgress;
         }
+        else if (relevantTaskStatuses.All(ts => ts.Status == StatusType.NotStarted))
+        {
+            newStatus = StatusType.NotStarted;
+        }
         else if (relevantTaskStatuses.All(ts => ts.Status == StatusType.Completed))
         {
             newStatus = StatusType.Completed;
@@ -78,7 +82,7 @@ public class StageService : IStageService
         }
         else
         {
-            newStatus = StatusType.NotStarted;
+            newStatus = StatusType.InProgress;
         }
 
         StageStatusView? existingStatus = await _context.StageRepository.GetStageStatus(applicationId, stage);
