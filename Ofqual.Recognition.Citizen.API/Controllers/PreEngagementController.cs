@@ -5,6 +5,8 @@ using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Ofqual.Recognition.Citizen.API.Controllers;
 
@@ -17,11 +19,15 @@ public class PreEngagementController : Controller
 {
     private readonly IUnitOfWork _context;
     public readonly IApplicationAnswersService _applicationAnswersService;
+    public readonly IGovUkNotifyService _govUkNotifyService;
+    public readonly IUserInformationService _userInformationService;
 
-    public PreEngagementController(IUnitOfWork context, IApplicationAnswersService applicationAnswersService)
+    public PreEngagementController(IUnitOfWork context, IApplicationAnswersService applicationAnswersService, IGovUkNotifyService govUkNotifyService, IUserInformationService userInformationService)
     {
         _context = context;
         _applicationAnswersService = applicationAnswersService;
+        _govUkNotifyService = govUkNotifyService;
+        _userInformationService = userInformationService;
     }
 
     /// <summary>
@@ -104,5 +110,26 @@ public class PreEngagementController : Controller
             Log.Error(ex, "Something went wrong while trying to validate your answer for QuestionId: {QuestionId}.", questionId);
             throw new Exception("An unexpected error occurred while validating the answer. Please try again shortly.");
         }
+    }
+
+    /// <summary>
+    /// Requests an email to be sent to the user with instructions on how to proceed with pre-engagement tasks.
+    /// </summary>
+    /// <returns>
+    /// On success, returns a 200 OK response with a success message.
+    /// </returns>
+    [HttpGet("request-instruction")]
+    public async Task<ActionResult> RequestInstruction()
+    {
+        var userEmailAddress = _userInformationService.GetCurrentUserUpn();
+
+        if (string.IsNullOrEmpty(userEmailAddress))
+        {
+            return BadRequest("Email address not found.");
+        }
+
+        await _govUkNotifyService.SendEmailRequestPreEngagement();
+
+        return Ok($"Success: Email has been sent to {userEmailAddress}");
     }
 }

@@ -16,6 +16,8 @@ public class PreEngagementControllerTests
     private readonly Mock<IStageRepository> _mockStageRepository = new();
     private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService = new();
     private readonly PreEngagementController _controller;
+    public readonly Mock<IGovUkNotifyService> _mockGovUkNotifyService = new();
+    public readonly Mock<IUserInformationService> _mockUserInformationService = new();
 
     public PreEngagementControllerTests()
     {
@@ -23,7 +25,9 @@ public class PreEngagementControllerTests
 
         _controller = new PreEngagementController(
             _mockUnitOfWork.Object,
-            _mockApplicationAnswersService.Object
+            _mockApplicationAnswersService.Object,
+            _mockGovUkNotifyService.Object,
+            _mockUserInformationService.Object
         );
     }
 
