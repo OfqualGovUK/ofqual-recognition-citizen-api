@@ -2,5 +2,6 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 public class GovUkNotifyTemplateIds
 {
-    public string AccountCreation { get; set; } = string.Empty;
+    public required string AccountCreation { get; set; }
+    public required string ApplicationSubmitted { get; set; }
 }

@@ -1,6 +1,6 @@
 namespace Ofqual.Recognition.Citizen.API.Core.Enums;
 
-public enum TaskStatusEnum 
+public enum StatusType 
 {
     Completed = 1,
     InProgress = 2,

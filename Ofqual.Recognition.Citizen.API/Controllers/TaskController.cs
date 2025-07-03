@@ -1,5 +1,5 @@
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
-using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
@@ -19,13 +19,15 @@ namespace Ofqual.Recognition.Citizen.API.Controllers;
 public class TaskController : ControllerBase
 {
     private readonly IUnitOfWork _context;
+    private readonly ITaskService _taskService;
 
     /// <summary>
     /// Initialises a new instance of <see cref="TaskController"/>.
     /// </summary>
-    public TaskController(IUnitOfWork context)
+    public TaskController(IUnitOfWork context, ITaskService taskService)
     {
         _context = context;
+        _taskService = taskService;
     }
 
     /// <summary>
@@ -38,13 +40,11 @@ public class TaskController : ControllerBase
     {
         try
         {
-            TaskItem? taskItem = await _context.TaskRepository.GetTaskByTaskNameUrl(taskNameUrl);
-            if (taskItem == null)
+            TaskItemDto? taskItemDto = await _taskService.GetTaskWithStatusByUrl(taskNameUrl);
+            if (taskItemDto == null)
             {
                 return BadRequest($"No task found with URL: {taskNameUrl}");
             }
-
-            TaskItemDto taskItemDto = TaskMapper.ToDto(taskItem);
 
             return Ok(taskItemDto);
         }

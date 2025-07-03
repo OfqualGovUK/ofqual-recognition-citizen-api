@@ -21,26 +21,12 @@ public static class TaskMapper
                     {
                         TaskId = ts.TaskId,
                         TaskName = ts.TaskName,
+                        HintText = ts.HintText,
                         Status = ts.Status,
                         FirstQuestionUrl = $"{ts.TaskNameUrl}/{ts.QuestionNameUrl}"
                     })
                     .ToList()
             })
             .ToList();
-    }
-
-    /// <summary>
-    /// Maps a <see cref="TaskItem"/> data model to a <see cref="TaskItemDto"/>.
-    /// </summary>
-    public static TaskItemDto ToDto(TaskItem taskItem)
-    {
-        return new TaskItemDto
-        {
-            TaskId = taskItem.TaskId,
-            TaskName = taskItem.TaskName,
-            TaskNameUrl = taskItem.TaskNameUrl,
-            TaskOrderNumber = taskItem.TaskOrderNumber,
-            SectionId = taskItem.SectionId
-        };
     }
 }

@@ -11,6 +11,8 @@ public class TaskItem : ITaskItem, IDataMetadata
     public required string TaskName { get; set; }
     public required string TaskNameUrl { get; set; }
     public int TaskOrderNumber { get; set; }
+    public string? HintText { get; set; }
+    public bool ReviewFlag { get; set; }
     public Guid SectionId { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime ModifiedDate { get; set; }

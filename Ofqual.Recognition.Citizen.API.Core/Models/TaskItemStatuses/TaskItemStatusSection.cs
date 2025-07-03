@@ -18,10 +18,11 @@ public class TaskItemStatusSection : ITaskItemStatus, ISection
     public required string TaskName { get; set; }
     public required string TaskNameUrl { get; set; }
     public int TaskOrderNumber { get; set; }
+    public string? HintText { get; set; }
 
     // Task Status Table
     public Guid TaskStatusId { get; set; }
-    public TaskStatusEnum Status { get; set; }
+    public StatusType Status { get; set; }
 
     // Question Table
     public required string QuestionNameUrl { get; set; }

@@ -65,6 +65,7 @@ builder.Services.AddHttpContextAccessor();
 // Register application services
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ITaskStatusService, TaskStatusService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IApplicationAnswersService, ApplicationAnswersService>();
 builder.Services.AddScoped<IStageService, StageService>();
 builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();

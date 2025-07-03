@@ -6,6 +6,7 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure;
 public interface IUnitOfWork : IDisposable
 {
     public ITaskRepository TaskRepository { get; }
+    public ITaskStatusRepository TaskStatusRepository { get; }
     public IApplicationRepository ApplicationRepository { get; }
     public IQuestionRepository QuestionRepository { get; }
     public IStageRepository StageRepository { get; }

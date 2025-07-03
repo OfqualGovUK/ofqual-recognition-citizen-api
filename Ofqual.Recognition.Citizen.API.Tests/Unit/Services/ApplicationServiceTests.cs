@@ -3,6 +3,7 @@ using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Xunit;
 using Moq;
 
@@ -13,17 +14,202 @@ public class ApplicationServiceTests
     private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
     private readonly Mock<IApplicationRepository> _mockApplicationRepository = new();
     private readonly Mock<IUserRepository> _mockUserRepository = new();
+    private readonly Mock<IStageRepository> _mockStageRepository = new();
     private readonly Mock<IFeatureFlagService> _mockFeatureFlagService = new();
     private readonly Mock<IUserInformationService> _mockUserInformationService = new();
-
+    private readonly Mock<IGovUkNotifyService> _mockGovUkNotifyService = new();
     private readonly ApplicationService _service;
 
     public ApplicationServiceTests()
     {
         _mockUnitOfWork.SetupGet(x => x.ApplicationRepository).Returns(_mockApplicationRepository.Object);
         _mockUnitOfWork.SetupGet(x => x.UserRepository).Returns(_mockUserRepository.Object);
+        _mockUnitOfWork.SetupGet(x => x.StageRepository).Returns(_mockStageRepository.Object);
 
-        _service = new ApplicationService(_mockUnitOfWork.Object, _mockFeatureFlagService.Object, _mockUserInformationService.Object);
+        _service = new ApplicationService(_mockUnitOfWork.Object, _mockFeatureFlagService.Object, _mockUserInformationService.Object, _mockGovUkNotifyService.Object);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task CheckAndSubmitApplication_ReturnsNull_WhenApplicationNotFound()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        _mockApplicationRepository
+            .Setup(r => r.GetApplicationById(applicationId))
+            .ReturnsAsync((Application?)null);
+
+        // Act
+        var result = await _service.CheckAndSubmitApplication(applicationId);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task CheckAndSubmitApplication_ReturnsDto_WhenAlreadySubmitted()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+
+        var application = new Application
+        {
+            ApplicationId = applicationId,
+            OwnerUserId = Guid.NewGuid(),
+            SubmittedDate = DateTime.UtcNow,
+            CreatedByUpn = "user@ofqual.gov.uk",
+            ModifiedByUpn = "user@ofqual.gov.uk",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        };
+
+        _mockApplicationRepository
+            .Setup(r => r.GetApplicationById(applicationId))
+            .ReturnsAsync(application);
+
+        // Act
+        var result = await _service.CheckAndSubmitApplication(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result!.Submitted);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task CheckAndSubmitApplication_ReturnsDto_WithSubmittedFalse_WhenStagesNotCompleted()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+
+        var application = new Application
+        {
+            ApplicationId = applicationId,
+            OwnerUserId = Guid.NewGuid(),
+            SubmittedDate = null,
+            CreatedByUpn = "user@ofqual.gov.uk",
+            ModifiedByUpn = "user@ofqual.gov.uk",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        };
+
+        _mockApplicationRepository
+            .Setup(r => r.GetApplicationById(applicationId))
+            .ReturnsAsync(application);
+
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, StageType.Declaration))
+            .ReturnsAsync(new StageStatusView
+            {
+                ApplicationId = applicationId,
+                StageId = StageType.Declaration,
+                StageName = "Declaration Stage",
+                Status = "In Progress",
+                StatusId = StatusType.InProgress,
+                StageStartDate = DateTime.UtcNow
+            });
+
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, StageType.MainApplication))
+            .ReturnsAsync(new StageStatusView
+            {
+                ApplicationId = applicationId,
+                StageId = StageType.MainApplication,
+                StageName = "Main Application",
+                Status = "Not Started",
+                StatusId = StatusType.NotStarted,
+                StageStartDate = DateTime.UtcNow
+            });
+
+        // Act
+        var result = await _service.CheckAndSubmitApplication(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.False(result!.Submitted);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task CheckAndSubmitApplication_MarksSubmitted_WhenStagesCompleted()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var upn = "user@ofqual.gov.uk";
+
+        var application = new Application
+        {
+            ApplicationId = applicationId,
+            OwnerUserId = Guid.NewGuid(),
+            SubmittedDate = null,
+            CreatedByUpn = upn,
+            ModifiedByUpn = upn,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        };
+
+        _mockUserInformationService
+            .Setup(s => s.GetCurrentUserUpn())
+            .Returns(upn);
+
+        _mockApplicationRepository
+            .Setup(r => r.GetApplicationById(applicationId))
+            .ReturnsAsync(application);
+
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, StageType.PreEngagement))
+            .ReturnsAsync(new StageStatusView
+            {
+                ApplicationId = applicationId,
+                StageId = StageType.PreEngagement,
+                StageName = "Pre-Engagement Stage",
+                Status = "Completed",
+                StatusId = StatusType.Completed,
+                StageStartDate = DateTime.UtcNow,
+                StageCompletionDate = DateTime.UtcNow
+            });
+
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, StageType.Declaration))
+            .ReturnsAsync(new StageStatusView
+            {
+                ApplicationId = applicationId,
+                StageId = StageType.Declaration,
+                StageName = "Declaration Stage",
+                Status = "Completed",
+                StatusId = StatusType.Completed,
+                StageStartDate = DateTime.UtcNow,
+                StageCompletionDate = DateTime.UtcNow
+            });
+
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, StageType.MainApplication))
+            .ReturnsAsync(new StageStatusView
+            {
+                ApplicationId = applicationId,
+                StageId = StageType.MainApplication,
+                StageName = "Main Application",
+                Status = "Completed",
+                StatusId = StatusType.Completed,
+                StageStartDate = DateTime.UtcNow,
+                StageCompletionDate = DateTime.UtcNow
+            });
+
+        _mockApplicationRepository
+            .Setup(r => r.UpdateApplicationSubmittedDate(applicationId, upn))
+            .ReturnsAsync(true);
+
+        _mockGovUkNotifyService
+            .Setup(s => s.SendEmailApplicationSubmitted())
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _service.CheckAndSubmitApplication(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result!.Submitted);
     }
 
     [Fact]

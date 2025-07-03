@@ -2,6 +2,6 @@
 
 public class GovUkNotifyConfiguration
 {
-    public string ApiKey { get; set; } = string.Empty;
-    public GovUkNotifyTemplateIds? TemplateIds { get; set; }
+    public required string ApiKey { get; set; }
+    public required GovUkNotifyTemplateIds TemplateIds { get; set; }
 }

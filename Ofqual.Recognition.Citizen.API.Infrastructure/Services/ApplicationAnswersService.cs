@@ -14,11 +14,13 @@ public class ApplicationAnswersService : IApplicationAnswersService
 {
     private readonly IUnitOfWork _context;
     private readonly IUserInformationService _userInformationService;
+    private readonly IStageService _stageService;
 
-    public ApplicationAnswersService(IUnitOfWork context, IUserInformationService userInformationService)
+    public ApplicationAnswersService(IUnitOfWork context, IUserInformationService userInformationService, IStageService stageService)
     {
         _context = context;
         _userInformationService = userInformationService;
+        _stageService = stageService;
     }
 
     public async Task<bool> SubmitAnswerAndUpdateStatus(Guid applicationId, Guid taskId, Guid questionId, string answerJson)
@@ -31,8 +33,14 @@ public class ApplicationAnswersService : IApplicationAnswersService
             return false;
         }
 
-        bool isStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, TaskStatusEnum.InProgress, upn);
+        bool isStatusUpdated = await _context.TaskStatusRepository.UpdateTaskStatus(applicationId, taskId, StatusType.InProgress, upn);
         if (!isStatusUpdated)
+        {
+            return false;
+        }
+
+        bool stageStatusUpdated = await _stageService.EvaluateAndUpsertAllStageStatus(applicationId);
+        if (!stageStatusUpdated)
         {
             return false;
         }

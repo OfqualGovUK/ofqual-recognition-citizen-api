@@ -19,19 +19,19 @@ public class TaskStatusService : ITaskStatusService
         _stageService = stageService;
     }
 
-    public async Task<bool> UpdateTaskAndStageStatus(Guid applicationId, Guid taskId, TaskStatusEnum status, StageType stageToUpdate)
+    public async Task<bool> UpdateTaskAndStageStatus(Guid applicationId, Guid taskId, StatusType status)
     {
         string upn = _userInformationService.GetCurrentUserUpn();
 
-        bool taskStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, status, upn);
+        bool taskStatusUpdated = await _context.TaskStatusRepository.UpdateTaskStatus(applicationId, taskId, status, upn);
         if (!taskStatusUpdated)
         {
             return false;
         }
 
-        if (status == TaskStatusEnum.Completed)
+        if (status == StatusType.Completed)
         {
-            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(applicationId, stageToUpdate);
+            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertAllStageStatus(applicationId);
             if (!stageStatusUpdated)
             {
                 return false;
@@ -43,41 +43,39 @@ public class TaskStatusService : ITaskStatusService
 
     public async Task<IEnumerable<TaskItemStatusSectionDto>?> GetTaskStatusesForApplication(Guid applicationId)
     {
-        var taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
+        var taskStatuses = await _context.TaskStatusRepository.GetTaskStatusesByApplicationId(applicationId);
         if (taskStatuses == null || !taskStatuses.Any())
         {
             return null;
         }
 
-        var application = await _context.ApplicationRepository.GetApplicationById(applicationId);
+        Application? application = await _context.ApplicationRepository.GetApplicationById(applicationId);
         if (application == null)
         {
             return null;
         }
 
         var declarationTasks = await _context.StageRepository.GetAllStageTasksByStageId(StageType.Declaration) ?? Enumerable.Empty<StageTaskView>();
-        var informationTasks = await _context.StageRepository.GetAllStageTasksByStageId(StageType.Information) ?? Enumerable.Empty<StageTaskView>();
-
         var declarationTaskIds = new HashSet<Guid>(declarationTasks.Select(t => t.TaskId));
-        var informationTaskIds = new HashSet<Guid>(informationTasks.Select(t => t.TaskId));
 
         var sectionDtos = TaskMapper.ToDto(taskStatuses);
 
-        bool isSubmitted = application.SubmittedDate.HasValue && application.SubmittedDate.Value <= DateTime.UtcNow;
+        StageStatusView? preEngagementStage = await _context.StageRepository.GetStageStatus(applicationId, StageType.PreEngagement);
+        StageStatusView? mainApplicationStage = await _context.StageRepository.GetStageStatus(applicationId, StageType.MainApplication);
+
+        bool bothStagesCompleted =
+            preEngagementStage?.StatusId == StatusType.Completed &&
+            mainApplicationStage?.StatusId == StatusType.Completed;
 
         foreach (var section in sectionDtos)
         {
             foreach (var task in section.Tasks)
             {
-                if (declarationTaskIds.Contains(task.TaskId) && task.Status == TaskStatusEnum.CannotStartYet)
+                if (declarationTaskIds.Contains(task.TaskId) && task.Status == StatusType.CannotStartYet)
                 {
-                    task.Hint = isSubmitted
+                    task.HintText = bothStagesCompleted
                         ? "Not Yet Released"
                         : "You must complete all sections first";
-                }
-                else if (informationTaskIds.Contains(task.TaskId))
-                {
-                    task.Hint = "Learn more about the application before you apply";
                 }
             }
         }
@@ -85,7 +83,7 @@ public class TaskStatusService : ITaskStatusService
         return sectionDtos;
     }
 
-    public async Task<bool> DetermineAndCreateTaskStatuses(Guid applicationId, IEnumerable<PreEngagementAnswerDto>? answers)
+    public async Task<bool> DetermineAndCreateTaskStatuses(Guid applicationId)
     {
         var tasks = (await _context.TaskRepository.GetAllTask())?.ToList();
         if (tasks == null || !tasks.Any())
@@ -93,59 +91,55 @@ public class TaskStatusService : ITaskStatusService
             return false;
         }
 
-        var questions = (await _context.QuestionRepository.GetAllQuestions())?.ToList();
-        if (questions == null || !questions.Any())
+        var answers = (await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId))?.ToList();
+        if (answers == null || !answers.Any())
         {
             return false;
         }
 
-        var declarationTasks = (await _context.StageRepository.GetAllStageTasksByStageId(StageType.Declaration))?.ToList() ?? Enumerable.Empty<StageTaskView>();
-        var declarationTaskIds = declarationTasks.Select(dt => dt.TaskId).ToHashSet();
-
-        var questionsByTask = questions
-            .GroupBy(q => q.TaskId)
-            .ToDictionary(g => g.Key, g => g.ToList());
-
-        var answeredQuestionIds = answers?
-            .Where(a => !string.IsNullOrWhiteSpace(a.AnswerJson) && !JsonHelper.IsEmptyJsonObject(a.AnswerJson))
+        var answeredQuestionIds = answers
+            .Where(a => !string.IsNullOrWhiteSpace(a.Answer) && !JsonHelper.IsEmptyJsonObject(a.Answer))
             .Select(a => a.QuestionId)
+            .ToHashSet();
+
+        var questionsByTask = answers
+            .GroupBy(a => a.TaskId)
+            .ToDictionary(g => g.Key, g => g.Select(a => a.QuestionId).ToList());
+
+        var declarationTasks = (await _context.StageRepository.GetAllStageTasksByStageId(StageType.Declaration))
+            ?.Select(dt => dt.TaskId)
             .ToHashSet() ?? new HashSet<Guid>();
 
-        var now = DateTime.UtcNow;
-        string upn = _userInformationService.GetCurrentUserUpn();
+        var upn = _userInformationService.GetCurrentUserUpn();
 
         var newTaskStatuses = tasks.Select(task =>
         {
-            TaskStatusEnum status;
+            StatusType status;
 
-            if (declarationTaskIds.Contains(task.TaskId))
+            if (declarationTasks.Contains(task.TaskId))
             {
-                status = TaskStatusEnum.CannotStartYet;
+                status = StatusType.CannotStartYet;
             }
             else
             {
-                var taskQuestions = questionsByTask.TryGetValue(task.TaskId, out var qList)
-                    ? qList
-                    : new List<Question>();
-
-                if (taskQuestions.Count == 0)
+                if (!questionsByTask.TryGetValue(task.TaskId, out var questionIds) || questionIds.Count == 0)
                 {
-                    status = TaskStatusEnum.NotStarted;
+                    status = StatusType.NotStarted;
                 }
                 else
                 {
-                    var answeredCount = taskQuestions.Count(q => answeredQuestionIds.Contains(q.QuestionId));
+                    var answeredCount = questionIds.Count(qId => answeredQuestionIds.Contains(qId));
                     if (answeredCount == 0)
                     {
-                        status = TaskStatusEnum.NotStarted;
+                        status = StatusType.NotStarted;
                     }
-                    else if (answeredCount == taskQuestions.Count)
+                    else if (answeredCount == questionIds.Count)
                     {
-                        status = TaskStatusEnum.Completed;
+                        status = StatusType.Completed;
                     }
                     else
                     {
-                        status = TaskStatusEnum.InProgress;
+                        status = StatusType.InProgress;
                     }
                 }
             }
@@ -160,6 +154,6 @@ public class TaskStatusService : ITaskStatusService
             };
         });
 
-        return await _context.TaskRepository.CreateTaskStatuses(newTaskStatuses);
+        return await _context.TaskStatusRepository.CreateTaskStatuses(newTaskStatuses);
     }
 }

@@ -11,7 +11,8 @@ public static class ApplicationMapper
     {
         return new ApplicationDetailsDto
         {
-            ApplicationId = application.ApplicationId
+            ApplicationId = application.ApplicationId,
+            Submitted = application.SubmittedDate.HasValue
         };
     }
 }

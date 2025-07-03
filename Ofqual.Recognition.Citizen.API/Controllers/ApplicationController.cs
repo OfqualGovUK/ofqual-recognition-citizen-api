@@ -3,7 +3,6 @@ using Ofqual.Recognition.Citizen.API.Core.Attributes;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
-using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
@@ -69,12 +68,6 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Application could not be created.");
             }
 
-            bool taskStatusesCreated = await _taskStatusService.DetermineAndCreateTaskStatuses(application.ApplicationId, PreEngagementAnswers);
-            if (!taskStatusesCreated)
-            {
-                return BadRequest("Failed to create task statuses for the new application.");
-            }
-
             if (PreEngagementAnswers != null && PreEngagementAnswers.Any())
             {
                 bool isPreEngagementAnswersInserted = await _applicationAnswersService.SavePreEngagementAnswers(application.ApplicationId, PreEngagementAnswers);
@@ -84,17 +77,23 @@ public class ApplicationController : ControllerBase
                 }
             }
 
-            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertStageStatus(application.ApplicationId, StageType.PreEngagement);
+            bool taskStatusesCreated = await _taskStatusService.DetermineAndCreateTaskStatuses(application.ApplicationId);
+            if (!taskStatusesCreated)
+            {
+                return BadRequest("Failed to create task statuses for the new application.");
+            }
+
+            bool stageStatusUpdated = await _stageService.EvaluateAndUpsertAllStageStatus(application.ApplicationId);
             if (!stageStatusUpdated)
             {
                 return BadRequest("Unable to determine or save the stage status for the application.");
             }
 
-            ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
-            _context.Commit();
-
             await _govUkNotifyService.SendEmailAccountCreation();
 
+            ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
+
+            _context.Commit();
             return Ok(applicationDetailsDto);
         }
         catch (Exception ex)
@@ -146,14 +145,14 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Request body cannot be null.");
             }
 
-            bool updated = await _taskStatusService.UpdateTaskAndStageStatus(applicationId, taskId, request.Status, StageType.PreEngagement);
+            bool updated = await _taskStatusService.UpdateTaskAndStageStatus(applicationId, taskId, request.Status);
             if (!updated)
             {
                 return BadRequest("Unable to update task or stage status. Please try again.");
             }
 
             _context.Commit();
-            return Ok();
+            return NoContent();
         }
         catch (Exception ex)
         {
@@ -256,6 +255,31 @@ public class ApplicationController : ControllerBase
         {
             Log.Error(ex, "An error occurred while retrieving the answer for QuestionId: {QuestionId} and ApplicationId: {ApplicationId}.", questionId, applicationId);
             throw new Exception("An error occurred while fetching the question answer. Please try again later.");
+        }
+    }
+
+    /// <summary>
+    /// Submits the specified application.
+    /// </summary>
+    /// <param name="applicationId">The application ID.</param>
+    [HttpPost("{applicationId}/submit")]
+    public async Task<ActionResult<ApplicationDetailsDto>> SubmitApplication(Guid applicationId)
+    {
+        try
+        {
+            ApplicationDetailsDto? application = await _applicationService.CheckAndSubmitApplication(applicationId);
+            if (application == null)
+            {
+                return BadRequest("Unable to submit application. Required stages may be incomplete.");
+            }
+
+            _context.Commit();
+            return Ok(application);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while submitting application {ApplicationId}.", applicationId);
+            throw new Exception("An error occurred while submitting the application. Please try again later.");
         }
     }
 }

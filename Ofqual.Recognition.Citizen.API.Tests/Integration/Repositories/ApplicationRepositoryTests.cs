@@ -150,4 +150,58 @@ public class ApplicationRepositoryTests : IClassFixture<SqlTestFixture>
         // Clean up test container
         await _fixture.DisposeAsync();
     }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task UpdateApplicationSubmittedDate_Should_Update_SubmittedDate()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
+        {
+            UserId = Guid.NewGuid(),
+            B2CId = Guid.NewGuid(),
+            EmailAddress = "test@ofqual.gov.uk",
+            DisplayName = "Test User",
+            CreatedByUpn = "test@ofqual.gov.uk",
+            ModifiedByUpn = "test@ofqual.gov.uk",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        });
+
+        var app = await ApplicationTestDataBuilder.CreateTestApplication(unitOfWork, new Application
+        {
+            ApplicationId = Guid.NewGuid(),
+            OwnerUserId = user.UserId,
+            SubmittedDate = null,
+            CreatedByUpn = user.CreatedByUpn,
+            ModifiedByUpn = user.ModifiedByUpn,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow
+        });
+
+        unitOfWork.Commit();
+
+        string newUpn = "submitter@ofqual.gov.uk";
+
+        // Act
+        var updated = await unitOfWork.ApplicationRepository.UpdateApplicationSubmittedDate(app.ApplicationId, newUpn);
+        unitOfWork.Commit();
+
+        // Assert
+        Assert.True(updated);
+
+        var updatedApp = await unitOfWork.ApplicationRepository.GetApplicationById(app.ApplicationId);
+        Assert.NotNull(updatedApp);
+        Assert.NotNull(updatedApp!.SubmittedDate);
+        Assert.True(updatedApp.SubmittedDate <= DateTime.UtcNow);
+        Assert.True(updatedApp.ModifiedDate <= DateTime.UtcNow);
+        Assert.Equal(newUpn, updatedApp.ModifiedByUpn);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
 }

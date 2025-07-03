@@ -48,6 +48,33 @@ public class ApplicationRepository : IApplicationRepository
         }
     }
 
+    public async Task<bool> UpdateApplicationSubmittedDate(Guid applicationId, string modifiedByUpn)
+    {
+        try
+        {
+            const string query = @"
+                UPDATE [recognitionCitizen].[Application]
+                SET 
+                    SubmittedDate = GETDATE(),
+                    ModifiedDate = GETDATE(),
+                    ModifiedByUpn = @ModifiedByUpn
+                WHERE ApplicationId = @ApplicationId";
+
+            var rowsAffected = await _connection.ExecuteAsync(query, new
+            {
+                ApplicationId = applicationId,
+                ModifiedByUpn = modifiedByUpn
+            }, _transaction);
+
+            return rowsAffected > 0;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to set SubmittedDate for ApplicationId: {ApplicationId}", applicationId);
+            return false;
+        }
+    }
+
     public async Task<Application?> GetLatestApplication(string oid)
     {
         try

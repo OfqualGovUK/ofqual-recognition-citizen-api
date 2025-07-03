@@ -4,5 +4,5 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
 public interface ITaskItemStatus : ITaskItem
 {
-    public TaskStatusEnum Status { get; set; }
+    public StatusType Status { get; set; }
 }

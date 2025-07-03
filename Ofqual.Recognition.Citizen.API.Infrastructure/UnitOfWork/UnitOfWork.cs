@@ -10,6 +10,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     private IDbTransaction _transaction;
 
     public ITaskRepository TaskRepository { get; private set; }
+    public ITaskStatusRepository TaskStatusRepository { get; private set; }
     public IApplicationRepository ApplicationRepository { get; private set; }
     public IQuestionRepository QuestionRepository { get; private set; }
     public IStageRepository StageRepository { get; private set; }
@@ -32,6 +33,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     private void InitialiseRepositories()
     {
         TaskRepository = new TaskRepository(_connection, _transaction);
+        TaskStatusRepository = new TaskStatusRepository(_connection, _transaction);
         ApplicationRepository = new ApplicationRepository(_connection, _transaction);
         QuestionRepository = new QuestionRepository(_connection, _transaction);
         StageRepository = new StageRepository(_connection, _transaction);

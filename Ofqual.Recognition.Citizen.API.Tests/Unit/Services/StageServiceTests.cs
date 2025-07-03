@@ -12,7 +12,7 @@ namespace Ofqual.Recognition.Citizen.Tests.Unit.Services;
 public class StageServiceTests
 {
     private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
-    private readonly Mock<IQuestionRepository> _mockQuestionRepository = new();
+    private readonly Mock<ITaskStatusRepository> _mockTaskStatusRepository = new();
     private readonly Mock<IApplicationAnswersRepository> _mockApplicationAnswersRepository = new();
     private readonly Mock<IStageRepository> _mockStageRepository = new();
     private readonly Mock<IUserInformationService> _mockUserInformationService = new();
@@ -20,60 +20,150 @@ public class StageServiceTests
 
     public StageServiceTests()
     {
-        _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
+        _mockUnitOfWork.Setup(u => u.TaskStatusRepository).Returns(_mockTaskStatusRepository.Object);
         _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository).Returns(_mockApplicationAnswersRepository.Object);
         _mockUnitOfWork.Setup(u => u.StageRepository).Returns(_mockStageRepository.Object);
 
         _stageService = new StageService(_mockUnitOfWork.Object, _mockUserInformationService.Object);
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Unit")]
-    public async Task UpsertStageStatusRecord_ReturnsFalse_WhenNoStageTasks()
+    [InlineData(StageType.PreEngagement)]
+    [InlineData(StageType.MainApplication)]
+    [InlineData(StageType.Declaration)]
+    public async Task EvaluateAndUpsertAllStageStatus_ReturnsFalse_WhenAnyStageFails(StageType failingStage)
     {
         // Arrange
         var applicationId = Guid.NewGuid();
-        var stageTasks = new List<StageTaskView>(); // No tasks for the stage
-        var questions = new List<Question>(); // No questions available
-        var answers = new List<SectionTaskQuestionAnswer>(); // No answers available
-        var stageStatus = new StageStatusView
-        {
-            ApplicationId = applicationId,
-            StageId = StageType.PreEngagement,
-            StatusId = TaskStatusEnum.InProgress,
-            StageStartDate = DateTime.UtcNow.AddDays(-1),
-            StageCompletionDate = DateTime.UtcNow,
-            StageName = "Stage Name",
-            Status = "In Progress"
-        };
+
+        _mockStageRepository
+            .Setup(r => r.GetAllStageTasksByStageId(failingStage))
+            .ReturnsAsync(new List<StageTaskView>());
+
+        _mockStageRepository
+            .Setup(r => r.GetAllStageTasksByStageId(It.Is<StageType>(s => s != failingStage)))
+            .ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = Guid.NewGuid() } });
+
+        _mockTaskStatusRepository
+            .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
+            .ReturnsAsync(new List<TaskItemStatusSection>
+            {
+            new TaskItemStatusSection
+                {
+                    TaskId = Guid.NewGuid(),
+                    Status = StatusType.Completed,
+                    SectionId = Guid.NewGuid(),
+                    SectionName = "Section",
+                    SectionOrderNumber = 1,
+                    TaskName = "Task",
+                    TaskNameUrl = "task-url",
+                    TaskOrderNumber = 1,
+                    TaskStatusId = Guid.NewGuid(),
+                    QuestionNameUrl = "question-url"
+                }
+            });
+
+        // Act
+        var result = await _stageService.EvaluateAndUpsertAllStageStatus(applicationId);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task EvaluateAndUpsertAllStageStatus_ReturnsTrue_WhenAllStagesSucceed()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId1 = Guid.NewGuid();
+        var taskId2 = Guid.NewGuid();
+        var taskId3 = Guid.NewGuid();
+
+        _mockStageRepository
+            .Setup(r => r.GetAllStageTasksByStageId(StageType.PreEngagement))
+            .ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = taskId1 } });
+
+        _mockStageRepository
+            .Setup(r => r.GetAllStageTasksByStageId(StageType.MainApplication))
+            .ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = taskId2 } });
+
+        _mockStageRepository
+            .Setup(r => r.GetAllStageTasksByStageId(StageType.Declaration))
+            .ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = taskId3 } });
+
+        _mockTaskStatusRepository
+            .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
+            .ReturnsAsync(new List<TaskItemStatusSection>
+            {
+            new TaskItemStatusSection
+                {
+                    TaskId = taskId1,
+                    Status = StatusType.Completed,
+                    SectionId = Guid.NewGuid(),
+                    SectionName = "Section",
+                    SectionOrderNumber = 1,
+                    TaskName = "Task1",
+                    TaskNameUrl = "task1-url",
+                    TaskOrderNumber = 1,
+                    TaskStatusId = Guid.NewGuid(),
+                    QuestionNameUrl = "question1-url"
+                },
+            new TaskItemStatusSection
+                {
+                    TaskId = taskId2,
+                    Status = StatusType.Completed,
+                    SectionId = Guid.NewGuid(),
+                    SectionName = "Section",
+                    SectionOrderNumber = 1,
+                    TaskName = "Task2",
+                    TaskNameUrl = "task2-url",
+                    TaskOrderNumber = 1,
+                    TaskStatusId = Guid.NewGuid(),
+                    QuestionNameUrl = "question2-url"
+                },
+            new TaskItemStatusSection
+                {
+                    TaskId = taskId3,
+                    Status = StatusType.Completed,
+                    SectionId = Guid.NewGuid(),
+                    SectionName = "Section",
+                    SectionOrderNumber = 1,
+                    TaskName = "Task3",
+                    TaskNameUrl = "task3-url",
+                    TaskOrderNumber = 1,
+                    TaskStatusId = Guid.NewGuid(),
+                    QuestionNameUrl = "question3-url"
+                }
+            });
+
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, It.IsAny<StageType>()))
+            .ReturnsAsync((StageStatusView?)null);
+
+        _mockStageRepository
+            .Setup(r => r.UpsertStageStatusRecord(It.IsAny<StageStatus>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _stageService.EvaluateAndUpsertAllStageStatus(applicationId);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task EvaluateAndUpsertStageStatus_ReturnsFalse_WhenNoStageTasks()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var stageTasks = new List<StageTaskView>();
 
         _mockStageRepository.Setup(r => r.GetAllStageTasksByStageId(StageType.PreEngagement))
             .ReturnsAsync(stageTasks);
 
-        _mockQuestionRepository.Setup(r => r.GetAllQuestions())
-            .ReturnsAsync(questions);
-
-        _mockApplicationAnswersRepository.Setup(r => r.GetAllApplicationAnswers(applicationId))
-            .ReturnsAsync(answers);
-
-        _mockStageRepository.Setup(r => r.GetStageStatus(applicationId, StageType.PreEngagement))
-            .ReturnsAsync(stageStatus);
-
-        // Act
-        var result = await _stageService.EvaluateAndUpsertStageStatus(Guid.NewGuid(), StageType.PreEngagement);
-
-        // Assert
-        Assert.False(result);
-        _mockStageRepository.Verify(r => r.UpsertStageStatusRecord(It.IsAny<StageStatus>()), Times.Never);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public async Task ReturnsFalse_WhenApplicationIdIsEmpty()
-    {
-        // Arrange
-        var applicationId = Guid.Empty;
-
         // Act
         var result = await _stageService.EvaluateAndUpsertStageStatus(applicationId, StageType.PreEngagement);
 
@@ -84,234 +174,108 @@ public class StageServiceTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task EvaluateAndUpsertStageStatus_ReturnsFalse_WhenNoQuestions()
-    {
-        // Arrange
-        _mockStageRepository
-            .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<StageType>()))
-            .ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = Guid.NewGuid() } });
-
-        _mockQuestionRepository
-            .Setup(r => r.GetAllQuestions())
-            .ReturnsAsync((IEnumerable<Question>?)null!);
-
-        // Act
-        var result = await _stageService.EvaluateAndUpsertStageStatus(Guid.NewGuid(), StageType.PreEngagement);
-
-        // Assert
-        Assert.False(result);
-    }
-
-    [Fact]
-    [Trait("Category", "Unit")]
-    public async Task DoesNotUpsertStatus_WhenStatusIsUnchanged()
+    public async Task EvaluateAndUpsertStageStatus_ReturnsFalse_WhenNoTaskStatuses()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
-        var sectionId1 = Guid.NewGuid();
-        var sectionId2 = Guid.NewGuid();
-        var taskId1 = Guid.NewGuid();
-        var taskId2 = Guid.NewGuid();
-        var questionId1 = Guid.NewGuid();
-        var questionId2 = Guid.NewGuid();
-
-        var stageTasks = new List<StageTaskView>
-            {
-                new StageTaskView { TaskId = taskId1, StageId = StageType.PreEngagement, OrderNumber = 1 },
-                new StageTaskView { TaskId = taskId2, StageId = StageType.PreEngagement, OrderNumber = 2 }
-            };
-
-        var questions = new List<Question>
-            {
-                new Question
-                {
-                    QuestionId = questionId1,
-                    TaskId = taskId1,
-                    QuestionContent = "What is A?",
-                    QuestionNameUrl = "question-a",
-                    QuestionOrderNumber = 1,
-                    QuestionTypeId = Guid.NewGuid(),
-                    CreatedByUpn = "test@ofqual.gov.uk"
-                },
-                new Question
-                {
-                    QuestionId = questionId2,
-                    TaskId = taskId2,
-                    QuestionContent = "What is A?",
-                    QuestionNameUrl = "question-a",
-                    QuestionOrderNumber = 1,
-                    QuestionTypeId = Guid.NewGuid(),
-                    CreatedByUpn = "test@ofqual.gov.uk"
-                }
-            };
-
-        var answers = new List<SectionTaskQuestionAnswer>
-            {
-                new SectionTaskQuestionAnswer
-                {
-                    SectionId = sectionId1,
-                    SectionName = "Criteria A",
-                    SectionOrderNumber = 1,
-                    TaskId  = taskId1,
-                    TaskName = "Task A",
-                    TaskNameUrl = "task-a",
-                    TaskOrderNumber = 1,
-                    QuestionId = questionId1,
-                    QuestionContent = "What is A?",
-                    QuestionNameUrl = "question-a",
-                    Answer = "{\"some\":\"data\"}",
-                    ApplicationId = applicationId
-                },
-                new SectionTaskQuestionAnswer {
-                    SectionId = sectionId2,
-                    SectionName = "Criteria A",
-                    SectionOrderNumber = 1,
-                    TaskId  = taskId2,
-                    TaskName = "Task A",
-                    TaskNameUrl = "task-a",
-                    TaskOrderNumber = 1,
-                    QuestionId = questionId2,
-                    QuestionContent = "What is A?",
-                    QuestionNameUrl = "question-a",
-                    Answer = "{\"some\":\"data\"}",
-                    ApplicationId = applicationId
-                }
-            };
-
-        var stageStatus = new StageStatusView
-        {
-            ApplicationId = applicationId,
-            StageId = StageType.PreEngagement,
-            StatusId = TaskStatusEnum.Completed,
-            StageStartDate = DateTime.UtcNow.AddDays(-1),
-            StageCompletionDate = DateTime.UtcNow,
-            StageName = "Stage name",
-            Status = "Completed"
-        };
 
         _mockStageRepository
             .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<StageType>()))
-            .ReturnsAsync(stageTasks);
+            .ReturnsAsync(new List<StageTaskView>
+            {
+            new StageTaskView { TaskId = Guid.NewGuid() }
+            });
 
-        _mockQuestionRepository
-            .Setup(r => r.GetAllQuestions())
-            .ReturnsAsync(questions);
-
-        _mockApplicationAnswersRepository
-            .Setup(r => r.GetAllApplicationAnswers(applicationId))
-            .ReturnsAsync(answers);
-
-        // Mock: The existing stage status has been set to Completed
-        _mockStageRepository.Setup(r => r.GetStageStatus(applicationId, It.IsAny<StageType>()))
-            .ReturnsAsync(stageStatus);
+        _mockTaskStatusRepository
+            .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
+            .ReturnsAsync((IEnumerable<TaskItemStatusSection>?)null);
 
         // Act
-        // Evaluate the attempt to Upsert the stage status
         var result = await _stageService.EvaluateAndUpsertStageStatus(applicationId, StageType.PreEngagement);
 
         // Assert
-        // The result should be true, but no Upsert should occur since the status is unchanged
+        Assert.False(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task EvaluateAndUpsertStageStatus_DoesNotUpsert_WhenStatusIsUnchanged()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId1 = Guid.NewGuid();
+        var taskId2 = Guid.NewGuid();
+
+        _mockStageRepository
+            .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<StageType>()))
+            .ReturnsAsync(new List<StageTaskView>
+            {
+                new StageTaskView { TaskId = taskId1 },
+                new StageTaskView { TaskId = taskId2 }
+            });
+
+        _mockTaskStatusRepository
+            .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
+            .ReturnsAsync(new List<TaskItemStatusSection>
+            {
+                new TaskItemStatusSection { TaskId = taskId1, Status = StatusType.Completed, SectionId = Guid.NewGuid(), SectionName = "S", SectionOrderNumber = 1, TaskName = "T", TaskNameUrl = "t", TaskOrderNumber = 1, TaskStatusId = Guid.NewGuid(), QuestionNameUrl = "q" },
+                new TaskItemStatusSection { TaskId = taskId2, Status = StatusType.Completed, SectionId = Guid.NewGuid(), SectionName = "S", SectionOrderNumber = 1, TaskName = "T", TaskNameUrl = "t", TaskOrderNumber = 1, TaskStatusId = Guid.NewGuid(), QuestionNameUrl = "q" }
+            });
+
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, It.IsAny<StageType>()))
+            .ReturnsAsync(new StageStatusView
+            {
+                ApplicationId = applicationId,
+                StageId = StageType.PreEngagement,
+                StatusId = StatusType.Completed,
+                StageStartDate = DateTime.UtcNow.AddDays(-1),
+                StageCompletionDate = DateTime.UtcNow,
+                StageName = "Stage",
+                Status = "Completed"
+            });
+
+        // Act
+        var result = await _stageService.EvaluateAndUpsertStageStatus(applicationId, StageType.PreEngagement);
+
+        // Assert
         Assert.True(result);
-        // Verify that UpsertStageStatusRecord was never called
         _mockStageRepository.Verify(r => r.UpsertStageStatusRecord(It.IsAny<StageStatus>()), Times.Never);
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task UpsertStatus_WhenAllTasks_MarkedCompleted()
+    public async Task EvaluateAndUpsertStageStatus_Upserts_WhenAllTasksCompleted()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
-        var sectionId1 = Guid.NewGuid();
-        var sectionId2 = Guid.NewGuid();
         var taskId1 = Guid.NewGuid();
         var taskId2 = Guid.NewGuid();
-        var questionId1 = Guid.NewGuid();
-        var questionId2 = Guid.NewGuid();
-
-        var stageTasks = new List<StageTaskView>
-            {
-                new StageTaskView { TaskId = taskId1, StageId = StageType.PreEngagement, OrderNumber = 1 },
-                new StageTaskView { TaskId = taskId2, StageId = StageType.PreEngagement, OrderNumber = 2 }
-            };
-
-        var questions = new List<Question>
-            {
-                new Question
-                {
-                    QuestionId = questionId1,
-                    TaskId = taskId1,
-                    QuestionContent = "What is A?",
-                    QuestionNameUrl = "question-a",
-                    QuestionOrderNumber = 1,
-                    QuestionTypeId = Guid.NewGuid(),
-                    CreatedByUpn = "test@ofqual.gov.uk"
-                },
-                new Question
-                {
-                    QuestionId = questionId2,
-                    TaskId = taskId2,
-                    QuestionContent = "What is A?",
-                    QuestionNameUrl = "question-a",
-                    QuestionOrderNumber = 1,
-                    QuestionTypeId = Guid.NewGuid(),
-                    CreatedByUpn = "test@ofqual.gov.uk"
-                }
-            };
-
-        var answers = new List<SectionTaskQuestionAnswer>
-            {
-                new SectionTaskQuestionAnswer
-                {
-                    SectionId = sectionId1,
-                    SectionName = "Criteria A",
-                    SectionOrderNumber = 1,
-                    TaskId  = taskId1,
-                    TaskName = "Task A",
-                    TaskNameUrl = "task-a",
-                    TaskOrderNumber = 1,
-                    QuestionId = questionId1,
-                    QuestionContent = "What is A?",
-                    QuestionNameUrl = "question-a",
-                    Answer = "{\"some\":\"data\"}",
-                    ApplicationId = applicationId
-                },
-                new SectionTaskQuestionAnswer {
-                    SectionId = sectionId2,
-                    SectionName = "Criteria A",
-                    SectionOrderNumber = 1,
-                    TaskId  = taskId2,
-                    TaskName = "Task A",
-                    TaskNameUrl = "task-a",
-                    TaskOrderNumber = 1,
-                    QuestionId = questionId2,
-                    QuestionContent = "What is A?",
-                    QuestionNameUrl = "question-a",
-                    Answer = "{\"some\":\"data\"}",
-                    ApplicationId = applicationId
-                }
-            };
 
         _mockStageRepository
             .Setup(r => r.GetAllStageTasksByStageId(It.IsAny<StageType>()))
-            .ReturnsAsync(stageTasks);
+            .ReturnsAsync(new List<StageTaskView>
+            {
+                new StageTaskView { TaskId = taskId1 },
+                new StageTaskView { TaskId = taskId2 }
+            });
 
-        _mockQuestionRepository
-            .Setup(r => r.GetAllQuestions())
-            .ReturnsAsync(questions);
+        _mockTaskStatusRepository
+            .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
+            .ReturnsAsync(new List<TaskItemStatusSection>
+            {
+                new TaskItemStatusSection { TaskId = taskId1, Status = StatusType.Completed, SectionId = Guid.NewGuid(), SectionName = "S", SectionOrderNumber = 1, TaskName = "T", TaskNameUrl = "t", TaskOrderNumber = 1, TaskStatusId = Guid.NewGuid(), QuestionNameUrl = "q" },
+                new TaskItemStatusSection { TaskId = taskId2, Status = StatusType.Completed, SectionId = Guid.NewGuid(), SectionName = "S", SectionOrderNumber = 1, TaskName = "T", TaskNameUrl = "t", TaskOrderNumber = 1, TaskStatusId = Guid.NewGuid(), QuestionNameUrl = "q" }
+            });
 
-        _mockApplicationAnswersRepository
-            .Setup(r => r.GetAllApplicationAnswers(applicationId))
-            .ReturnsAsync(answers);
-
-        _mockStageRepository.Setup(r => r.GetStageStatus(applicationId, It.IsAny<StageType>()))
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, It.IsAny<StageType>()))
             .ReturnsAsync((StageStatusView?)null);
 
-        StageStatus stageStatus = null!
-        ;
+        StageStatus? capturedStatus = null;
         _mockStageRepository
             .Setup(r => r.UpsertStageStatusRecord(It.IsAny<StageStatus>()))
-            .Callback<StageStatus>(status => stageStatus = status)
+            .Callback<StageStatus>(status => capturedStatus = status)
             .ReturnsAsync(true);
 
         // Act
@@ -320,7 +284,7 @@ public class StageServiceTests
         // Assert
         Assert.True(result);
         _mockStageRepository.Verify(r => r.UpsertStageStatusRecord(It.IsAny<StageStatus>()), Times.Once);
-        Assert.NotNull(stageStatus);
-        Assert.Equal(TaskStatusEnum.Completed, stageStatus.StatusId);
+        Assert.NotNull(capturedStatus);
+        Assert.Equal(StatusType.Completed, capturedStatus!.StatusId);
     }
 }
