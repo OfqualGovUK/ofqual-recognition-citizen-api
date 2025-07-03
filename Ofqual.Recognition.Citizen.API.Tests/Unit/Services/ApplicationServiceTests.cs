@@ -158,6 +158,19 @@ public class ApplicationServiceTests
             .ReturnsAsync(application);
 
         _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, StageType.PreEngagement))
+            .ReturnsAsync(new StageStatusView
+            {
+                ApplicationId = applicationId,
+                StageId = StageType.PreEngagement,
+                StageName = "Pre-Engagement Stage",
+                Status = "Completed",
+                StatusId = StatusType.Completed,
+                StageStartDate = DateTime.UtcNow,
+                StageCompletionDate = DateTime.UtcNow
+            });
+
+        _mockStageRepository
             .Setup(r => r.GetStageStatus(applicationId, StageType.Declaration))
             .ReturnsAsync(new StageStatusView
             {
@@ -185,6 +198,10 @@ public class ApplicationServiceTests
 
         _mockApplicationRepository
             .Setup(r => r.UpdateApplicationSubmittedDate(applicationId, upn))
+            .ReturnsAsync(true);
+
+        _mockGovUkNotifyService
+            .Setup(s => s.SendEmailApplicationSubmitted())
             .ReturnsAsync(true);
 
         // Act

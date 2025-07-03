@@ -24,24 +24,29 @@ public class ApplicationService : IApplicationService
     {
         string upn = _userInformationService.GetCurrentUserUpn();
 
-        var application = await _context.ApplicationRepository.GetApplicationById(applicationId);
+        Application? application = await _context.ApplicationRepository.GetApplicationById(applicationId);
         if (application == null)
         {
             return null;
         }
 
+        ApplicationDetailsDto applicationDetailsDto = ApplicationMapper.ToDto(application);
+
         if (application.SubmittedDate.HasValue)
         {
-            return ApplicationMapper.ToDto(application);
+            return applicationDetailsDto;
         }
 
+        StageStatusView? preEngagementStage = await _context.StageRepository.GetStageStatus(applicationId, StageType.PreEngagement);
         StageStatusView? declarationStage = await _context.StageRepository.GetStageStatus(applicationId, StageType.Declaration);
         StageStatusView? mainApplicationStage = await _context.StageRepository.GetStageStatus(applicationId, StageType.MainApplication);
 
-        bool declarationComplete = declarationStage?.StatusId == StatusType.Completed;
-        bool mainApplicationComplete = mainApplicationStage?.StatusId == StatusType.Completed;
+        bool allStagesCompleted =
+            preEngagementStage?.StatusId == StatusType.Completed &&
+            declarationStage?.StatusId == StatusType.Completed &&
+            mainApplicationStage?.StatusId == StatusType.Completed;
 
-        if (declarationComplete && mainApplicationComplete)
+        if (allStagesCompleted)
         {
             bool updated = await _context.ApplicationRepository.UpdateApplicationSubmittedDate(applicationId, upn);
             if (!updated)
@@ -49,12 +54,12 @@ public class ApplicationService : IApplicationService
                 return null;
             }
 
-            application.SubmittedDate = DateTime.UtcNow;
+            applicationDetailsDto.Submitted = true;
         }
 
         await _govUkNotifyService.SendEmailApplicationSubmitted();
 
-        return ApplicationMapper.ToDto(application);
+        return applicationDetailsDto;
     }
 
     public async Task<ApplicationDetailsDto?> GetLatestApplicationForCurrentUser()
