@@ -17,6 +17,7 @@ public class ApplicationServiceTests
     private readonly Mock<IStageRepository> _mockStageRepository = new();
     private readonly Mock<IFeatureFlagService> _mockFeatureFlagService = new();
     private readonly Mock<IUserInformationService> _mockUserInformationService = new();
+    private readonly Mock<IGovUkNotifyService> _mockGovUkNotifyService = new();
     private readonly ApplicationService _service;
 
     public ApplicationServiceTests()
@@ -25,7 +26,7 @@ public class ApplicationServiceTests
         _mockUnitOfWork.SetupGet(x => x.UserRepository).Returns(_mockUserRepository.Object);
         _mockUnitOfWork.SetupGet(x => x.StageRepository).Returns(_mockStageRepository.Object);
 
-        _service = new ApplicationService(_mockUnitOfWork.Object, _mockFeatureFlagService.Object, _mockUserInformationService.Object);
+        _service = new ApplicationService(_mockUnitOfWork.Object, _mockFeatureFlagService.Object, _mockUserInformationService.Object, _mockGovUkNotifyService.Object);
     }
 
     [Fact]

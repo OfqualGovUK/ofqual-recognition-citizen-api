@@ -49,7 +49,7 @@ public class TaskStatusService : ITaskStatusService
             return null;
         }
 
-        var application = await _context.ApplicationRepository.GetApplicationById(applicationId);
+        Application? application = await _context.ApplicationRepository.GetApplicationById(applicationId);
         if (application == null)
         {
             return null;
@@ -60,7 +60,12 @@ public class TaskStatusService : ITaskStatusService
 
         var sectionDtos = TaskMapper.ToDto(taskStatuses);
 
-        bool isSubmitted = application.SubmittedDate.HasValue && application.SubmittedDate.Value <= DateTime.UtcNow;
+        StageStatusView? preEngagementStage = await _context.StageRepository.GetStageStatus(applicationId, StageType.PreEngagement);
+        StageStatusView? mainApplicationStage = await _context.StageRepository.GetStageStatus(applicationId, StageType.MainApplication);
+
+        bool bothStagesCompleted =
+            preEngagementStage?.StatusId == StatusType.Completed &&
+            mainApplicationStage?.StatusId == StatusType.Completed;
 
         foreach (var section in sectionDtos)
         {
@@ -68,7 +73,7 @@ public class TaskStatusService : ITaskStatusService
             {
                 if (declarationTaskIds.Contains(task.TaskId) && task.Status == StatusType.CannotStartYet)
                 {
-                    task.HintText = isSubmitted
+                    task.HintText = bothStagesCompleted
                         ? "Not Yet Released"
                         : "You must complete all sections first";
                 }

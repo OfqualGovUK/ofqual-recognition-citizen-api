@@ -10,12 +10,14 @@ public class ApplicationService : IApplicationService
     private readonly IUnitOfWork _context;
     private readonly IFeatureFlagService _featureFlagService;
     private readonly IUserInformationService _userInformationService;
+    private readonly IGovUkNotifyService _govUkNotifyService;
 
-    public ApplicationService(IUnitOfWork context, IFeatureFlagService featureFlagService, IUserInformationService userInformationService)
+    public ApplicationService(IUnitOfWork context, IFeatureFlagService featureFlagService, IUserInformationService userInformationService, IGovUkNotifyService govUkNotifyService)
     {
         _context = context;
         _featureFlagService = featureFlagService;
         _userInformationService = userInformationService;
+        _govUkNotifyService = govUkNotifyService;
     }
 
     public async Task<ApplicationDetailsDto?> CheckAndSubmitApplication(Guid applicationId)
@@ -49,6 +51,8 @@ public class ApplicationService : IApplicationService
 
             application.SubmittedDate = DateTime.UtcNow;
         }
+
+        await _govUkNotifyService.SendEmailApplicationSubmitted();
 
         return ApplicationMapper.ToDto(application);
     }

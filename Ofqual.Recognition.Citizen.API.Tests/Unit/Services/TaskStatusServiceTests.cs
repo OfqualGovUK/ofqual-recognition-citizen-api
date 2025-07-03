@@ -202,7 +202,7 @@ public class TaskStatusServiceTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task GetTaskStatusesForApplication_ShouldReturnNotYetReleasedHint_IfSubmitted()
+    public async Task GetTaskStatusesForApplication_ShouldReturnNotYetReleasedHint_IfBothStagesCompleted()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -229,7 +229,6 @@ public class TaskStatusServiceTests
         {
             ApplicationId = applicationId,
             OwnerUserId = Guid.NewGuid(),
-            SubmittedDate = DateTime.UtcNow.AddDays(-1),
             ApplicationReleaseDate = DateTime.UtcNow.AddDays(2),
             OrganisationId = Guid.NewGuid(),
             CreatedDate = DateTime.UtcNow,
@@ -248,7 +247,36 @@ public class TaskStatusServiceTests
 
         _mockStageRepository
             .Setup(r => r.GetAllStageTasksByStageId(StageType.Declaration))
-            .ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = declarationTaskId } });
+            .ReturnsAsync(new List<StageTaskView>
+            {
+                new StageTaskView { TaskId = declarationTaskId }
+            });
+
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, StageType.PreEngagement))
+            .ReturnsAsync(new StageStatusView
+            {
+                ApplicationId = applicationId,
+                StageId = StageType.PreEngagement,
+                StageName = "Pre-Engagement",
+                StatusId = StatusType.Completed,
+                Status = "Completed",
+                StageStartDate = DateTime.UtcNow.AddDays(-10),
+                StageCompletionDate = DateTime.UtcNow.AddDays(-5)
+            });
+
+        _mockStageRepository
+            .Setup(r => r.GetStageStatus(applicationId, StageType.MainApplication))
+            .ReturnsAsync(new StageStatusView
+            {
+                ApplicationId = applicationId,
+                StageId = StageType.MainApplication,
+                StageName = "Main Application",
+                StatusId = StatusType.Completed,
+                Status = "Completed",
+                StageStartDate = DateTime.UtcNow.AddDays(-5),
+                StageCompletionDate = DateTime.UtcNow.AddDays(-1)
+            });
 
         // Act
         var result = await _service.GetTaskStatusesForApplication(applicationId);

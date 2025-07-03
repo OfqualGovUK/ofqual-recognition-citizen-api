@@ -23,6 +23,12 @@ public class GovUkNotifyService : IGovUkNotifyService
         return await SendEmail(userUpn, _config.TemplateIds.AccountCreation);
     }
 
+    public async Task<bool> SendEmailApplicationSubmitted()
+    {
+        string userUpn = _userInformationService.GetCurrentUserUpn();
+        return await SendEmail(userUpn, _config.TemplateIds.ApplicationSubmitted);
+    }
+
     private async Task<bool> SendEmail(string outboundEmailAddress, string templateId, Dictionary<string, object>? personalisation = null)
     {
         try
@@ -43,7 +49,7 @@ public class GovUkNotifyService : IGovUkNotifyService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Gov UK Notify email was not sent successfully");
+            Log.Error(ex, "Gov UK Notify email with templateId {TemplateId} was not sent successfully", templateId);
             return false;
         }
     }
