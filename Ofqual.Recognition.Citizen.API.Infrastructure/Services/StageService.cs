@@ -46,7 +46,7 @@ public class StageService : IStageService
             return false;
         }
 
-        var allTaskStatuses = (await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId))?.ToList();
+        var allTaskStatuses = (await _context.TaskStatusRepository.GetTaskStatusesByApplicationId(applicationId))?.ToList();
         if (allTaskStatuses == null || !allTaskStatuses.Any())
         {
             return false;

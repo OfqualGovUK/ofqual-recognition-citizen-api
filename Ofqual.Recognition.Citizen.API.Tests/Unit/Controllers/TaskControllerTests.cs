@@ -1,7 +1,8 @@
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Controllers;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 using Moq;
@@ -11,14 +12,12 @@ namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 public class TaskControllerTests
 {
     private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
-    private readonly Mock<ITaskRepository> _mockTaskRepository = new();
+    private readonly Mock<ITaskService> _mockTaskService = new();
     private readonly TaskController _controller;
 
     public TaskControllerTests()
     {
-        _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
-
-        _controller = new TaskController(_mockUnitOfWork.Object);
+        _controller = new TaskController(_mockUnitOfWork.Object, _mockTaskService.Object);
     }
 
     [Fact]
@@ -27,26 +26,30 @@ public class TaskControllerTests
     {
         // Arrange
         var taskNameUrl = "sample-task";
-        var taskItem = new TaskItem
+        var dto = new TaskItemDto
         {
             TaskId = Guid.NewGuid(),
             TaskName = "Sample Task",
             TaskNameUrl = taskNameUrl,
             TaskOrderNumber = 1,
             SectionId = Guid.NewGuid(),
-            CreatedByUpn = "test"
+            Stage = StageType.MainApplication
         };
 
-        _mockTaskRepository.Setup(r => r.GetTaskByTaskNameUrl(taskNameUrl))
-                           .ReturnsAsync(taskItem);
+        _mockTaskService
+            .Setup(s => s.GetTaskWithStatusByUrl(taskNameUrl))
+            .ReturnsAsync(dto);
+
         // Act
-        var result = await _controller.GetTaskByTaskNameUrl(taskNameUrl);
+        var actionResult = await _controller.GetTaskByTaskNameUrl(taskNameUrl);
 
         // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        var dto = Assert.IsType<TaskItemDto>(okResult.Value);
-        Assert.Equal(taskItem.TaskName, dto.TaskName);
-        Assert.Equal(taskItem.TaskNameUrl, dto.TaskNameUrl);
+        var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+        var returnedDto = Assert.IsType<TaskItemDto>(okResult.Value);
+        Assert.Equal(dto.TaskId, returnedDto.TaskId);
+        Assert.Equal(dto.TaskName, returnedDto.TaskName);
+        Assert.Equal(dto.TaskNameUrl, returnedDto.TaskNameUrl);
+        Assert.Equal(dto.Stage, returnedDto.Stage);
     }
 
     [Fact]
@@ -56,14 +59,32 @@ public class TaskControllerTests
         // Arrange
         var taskNameUrl = "non-existent-task";
 
-        _mockTaskRepository.Setup(r => r.GetTaskByTaskNameUrl(taskNameUrl))
-                           .ReturnsAsync((TaskItem?)null);
+        _mockTaskService
+            .Setup(s => s.GetTaskWithStatusByUrl(taskNameUrl))
+            .ReturnsAsync((TaskItemDto?)null);
 
         // Act
-        var result = await _controller.GetTaskByTaskNameUrl(taskNameUrl);
+        var actionResult = await _controller.GetTaskByTaskNameUrl(taskNameUrl);
 
         // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
         Assert.Equal($"No task found with URL: {taskNameUrl}", badRequestResult.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetTaskByTaskNameUrl_ThrowsException_WhenServiceThrows()
+    {
+        // Arrange
+        var taskNameUrl = "error-task";
+
+        _mockTaskService
+            .Setup(s => s.GetTaskWithStatusByUrl(taskNameUrl))
+            .ThrowsAsync(new InvalidOperationException("Something went wrong"));
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<Exception>(async () =>
+            await _controller.GetTaskByTaskNameUrl(taskNameUrl));
+        Assert.Equal("An error occurred while fetching the task. Please try again later.", ex.Message);
     }
 }

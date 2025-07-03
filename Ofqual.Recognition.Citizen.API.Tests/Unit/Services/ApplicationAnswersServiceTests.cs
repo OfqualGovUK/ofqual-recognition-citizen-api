@@ -17,8 +17,9 @@ public class ApplicationAnswersServiceTests
     private readonly Mock<IQuestionRepository> _mockQuestionRepository = new();
     private readonly Mock<IApplicationAnswersRepository> _mockApplicationAnswersRepository = new();
     private readonly Mock<IAttachmentRepository> _mockAttachmentRepository = new();
-    private readonly Mock<ITaskRepository> _mockTaskRepository = new();
+    private readonly Mock<ITaskStatusRepository> _mockTaskStatusRepository = new();
     private readonly Mock<IUserInformationService> _mockUserInformationService = new();
+    private readonly Mock<IStageService> _mockStageService = new();
     private readonly ApplicationAnswersService _applicationAnswersService;
 
     public ApplicationAnswersServiceTests()
@@ -26,17 +27,18 @@ public class ApplicationAnswersServiceTests
         _mockUnitOfWork.Setup(u => u.QuestionRepository).Returns(_mockQuestionRepository.Object);
         _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository).Returns(_mockApplicationAnswersRepository.Object);
         _mockUnitOfWork.Setup(u => u.AttachmentRepository).Returns(_mockAttachmentRepository.Object);
-        _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
+        _mockUnitOfWork.Setup(u => u.TaskStatusRepository).Returns(_mockTaskStatusRepository.Object);
 
         _applicationAnswersService = new ApplicationAnswersService(
             _mockUnitOfWork.Object,
-            _mockUserInformationService.Object
+            _mockUserInformationService.Object,
+            _mockStageService.Object
         );
     }
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task SubmitAnswerAndUpdateStatus_Should_Return_True_When_Answer_And_Status_Are_Successfully_Saved()
+    public async Task SubmitAnswerAndUpdateStatus_Should_Return_True_When_All_Operations_Succeed()
     {
         // Arrange
         var applicationId = Guid.NewGuid();
@@ -53,11 +55,12 @@ public class ApplicationAnswersServiceTests
             .Setup(x => x.UpsertQuestionAnswer(applicationId, questionId, answerJson, upn))
             .ReturnsAsync(true);
 
-        _mockUnitOfWork.Setup(x => x.ApplicationAnswersRepository)
-            .Returns(_mockApplicationAnswersRepository.Object);
-
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(x => x.UpdateTaskStatus(applicationId, taskId, StatusType.InProgress, upn))
+            .ReturnsAsync(true);
+
+        _mockStageService
+            .Setup(x => x.EvaluateAndUpsertAllStageStatus(applicationId))
             .ReturnsAsync(true);
 
         // Act
@@ -84,6 +87,77 @@ public class ApplicationAnswersServiceTests
 
         _mockApplicationAnswersRepository
             .Setup(x => x.UpsertQuestionAnswer(applicationId, questionId, answerJson, upn))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _applicationAnswersService.SubmitAnswerAndUpdateStatus(applicationId, taskId, questionId, answerJson);
+
+        // Assert
+        Assert.False(result);
+
+        // Verify no further calls
+        _mockTaskStatusRepository.Verify(x => x.UpdateTaskStatus(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<StatusType>(), It.IsAny<string>()), Times.Never);
+        _mockStageService.Verify(x => x.EvaluateAndUpsertAllStageStatus(It.IsAny<Guid>()), Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task SubmitAnswerAndUpdateStatus_Should_Return_False_When_Updating_Task_Status_Fails()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var answerJson = "{\"value\":\"test answer\"}";
+        var upn = "test@ofqual.gov.uk";
+
+        _mockUserInformationService
+            .Setup(x => x.GetCurrentUserUpn())
+            .Returns(upn);
+
+        _mockApplicationAnswersRepository
+            .Setup(x => x.UpsertQuestionAnswer(applicationId, questionId, answerJson, upn))
+            .ReturnsAsync(true);
+
+        _mockTaskStatusRepository
+            .Setup(x => x.UpdateTaskStatus(applicationId, taskId, StatusType.InProgress, upn))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _applicationAnswersService.SubmitAnswerAndUpdateStatus(applicationId, taskId, questionId, answerJson);
+
+        // Assert
+        Assert.False(result);
+
+        // Verify no call to stage service
+        _mockStageService.Verify(x => x.EvaluateAndUpsertAllStageStatus(It.IsAny<Guid>()), Times.Never);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task SubmitAnswerAndUpdateStatus_Should_Return_False_When_Updating_Stage_Status_Fails()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+        var answerJson = "{\"value\":\"test answer\"}";
+        var upn = "test@ofqual.gov.uk";
+
+        _mockUserInformationService
+            .Setup(x => x.GetCurrentUserUpn())
+            .Returns(upn);
+
+        _mockApplicationAnswersRepository
+            .Setup(x => x.UpsertQuestionAnswer(applicationId, questionId, answerJson, upn))
+            .ReturnsAsync(true);
+
+        _mockTaskStatusRepository
+            .Setup(x => x.UpdateTaskStatus(applicationId, taskId, StatusType.InProgress, upn))
+            .ReturnsAsync(true);
+
+        _mockStageService
+            .Setup(x => x.EvaluateAndUpsertAllStageStatus(applicationId))
             .ReturnsAsync(false);
 
         // Act

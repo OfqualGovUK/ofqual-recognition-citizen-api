@@ -136,7 +136,7 @@ public class ApplicationController : ControllerBase
     /// <param name="taskId">The task ID.</param>
     [HttpPost("{applicationId}/tasks/{taskId}")]
     [CheckApplicationId(queryParam: "applicationId")]
-    public async Task<ActionResult<ApplicationDetailsDto>> UpdateTaskStatus(Guid applicationId, Guid taskId, [FromBody] UpdateTaskStatusDto request)
+    public async Task<IActionResult> UpdateTaskStatus(Guid applicationId, Guid taskId, [FromBody] UpdateTaskStatusDto request)
     {
         try
         {
@@ -151,14 +151,8 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Unable to update task or stage status. Please try again.");
             }
 
-            ApplicationDetailsDto? application = await _applicationService.CheckAndSubmitApplication(applicationId);
-            if (application == null)
-            {
-                return BadRequest("Unable to determine application submission status.");
-            }
-
             _context.Commit();
-            return Ok(application);
+            return NoContent();
         }
         catch (Exception ex)
         {
@@ -261,6 +255,31 @@ public class ApplicationController : ControllerBase
         {
             Log.Error(ex, "An error occurred while retrieving the answer for QuestionId: {QuestionId} and ApplicationId: {ApplicationId}.", questionId, applicationId);
             throw new Exception("An error occurred while fetching the question answer. Please try again later.");
+        }
+    }
+
+    /// <summary>
+    /// Submits the specified application.
+    /// </summary>
+    /// <param name="applicationId">The application ID.</param>
+    [HttpPost("{applicationId}/submit")]
+    public async Task<ActionResult<ApplicationDetailsDto>> SubmitApplication(Guid applicationId)
+    {
+        try
+        {
+            ApplicationDetailsDto? application = await _applicationService.CheckAndSubmitApplication(applicationId);
+            if (application == null)
+            {
+                return BadRequest("Unable to submit application. Required stages may be incomplete.");
+            }
+
+            _context.Commit();
+            return Ok(application);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while submitting application {ApplicationId}.", applicationId);
+            throw new Exception("An error occurred while submitting the application. Please try again later.");
         }
     }
 }

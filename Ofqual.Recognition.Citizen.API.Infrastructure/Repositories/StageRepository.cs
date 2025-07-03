@@ -104,7 +104,7 @@ public class StageRepository : IStageRepository
                     StageCompletionDate
                 FROM [recognitionCitizen].[v_StageStatus]
                 WHERE ApplicationId = @ApplicationId AND StageId = @StageId;";
-            
+
             return await _connection.QueryFirstOrDefaultAsync<StageStatusView>(query, new
             {
                 ApplicationId = applicationId,
@@ -141,6 +141,32 @@ public class StageRepository : IStageRepository
         {
             Log.Error(ex, "Error retrieving stage tasks for StageId: {StageId}", stageId);
             return Enumerable.Empty<StageTaskView>();
+        }
+    }
+
+    public async Task<StageTaskView?> GetStageTaskByTaskId(Guid taskId)
+    {
+        try
+        {
+            const string query = @"
+                SELECT
+                    StageId,
+                    StageName,
+                    TaskId,
+                    Task,
+                    OrderNumber
+                FROM [recognitionCitizen].[v_StageTask]
+                WHERE TaskId = @taskId;";
+
+            return await _connection.QueryFirstOrDefaultAsync<StageTaskView>(query, new
+            {
+                taskId
+            }, _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error retrieving stage task for TaskId: {TaskId}", taskId);
+            return null;
         }
     }
 

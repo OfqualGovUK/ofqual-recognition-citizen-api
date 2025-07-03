@@ -23,7 +23,7 @@ public class TaskStatusService : ITaskStatusService
     {
         string upn = _userInformationService.GetCurrentUserUpn();
 
-        bool taskStatusUpdated = await _context.TaskRepository.UpdateTaskStatus(applicationId, taskId, status, upn);
+        bool taskStatusUpdated = await _context.TaskStatusRepository.UpdateTaskStatus(applicationId, taskId, status, upn);
         if (!taskStatusUpdated)
         {
             return false;
@@ -43,7 +43,7 @@ public class TaskStatusService : ITaskStatusService
 
     public async Task<IEnumerable<TaskItemStatusSectionDto>?> GetTaskStatusesForApplication(Guid applicationId)
     {
-        var taskStatuses = await _context.TaskRepository.GetTaskStatusesByApplicationId(applicationId);
+        var taskStatuses = await _context.TaskStatusRepository.GetTaskStatusesByApplicationId(applicationId);
         if (taskStatuses == null || !taskStatuses.Any())
         {
             return null;
@@ -154,6 +154,6 @@ public class TaskStatusService : ITaskStatusService
             };
         });
 
-        return await _context.TaskRepository.CreateTaskStatuses(newTaskStatuses);
+        return await _context.TaskStatusRepository.CreateTaskStatuses(newTaskStatuses);
     }
 }

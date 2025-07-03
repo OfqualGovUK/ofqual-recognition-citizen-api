@@ -12,7 +12,7 @@ namespace Ofqual.Recognition.Citizen.Tests.Unit.Services;
 public class StageServiceTests
 {
     private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
-    private readonly Mock<ITaskRepository> _mockTaskRepository = new();
+    private readonly Mock<ITaskStatusRepository> _mockTaskStatusRepository = new();
     private readonly Mock<IApplicationAnswersRepository> _mockApplicationAnswersRepository = new();
     private readonly Mock<IStageRepository> _mockStageRepository = new();
     private readonly Mock<IUserInformationService> _mockUserInformationService = new();
@@ -20,7 +20,7 @@ public class StageServiceTests
 
     public StageServiceTests()
     {
-        _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
+        _mockUnitOfWork.Setup(u => u.TaskStatusRepository).Returns(_mockTaskStatusRepository.Object);
         _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository).Returns(_mockApplicationAnswersRepository.Object);
         _mockUnitOfWork.Setup(u => u.StageRepository).Returns(_mockStageRepository.Object);
 
@@ -45,7 +45,7 @@ public class StageServiceTests
             .Setup(r => r.GetAllStageTasksByStageId(It.Is<StageType>(s => s != failingStage)))
             .ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = Guid.NewGuid() } });
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
             .ReturnsAsync(new List<TaskItemStatusSection>
             {
@@ -93,7 +93,7 @@ public class StageServiceTests
             .Setup(r => r.GetAllStageTasksByStageId(StageType.Declaration))
             .ReturnsAsync(new List<StageTaskView> { new StageTaskView { TaskId = taskId3 } });
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
             .ReturnsAsync(new List<TaskItemStatusSection>
             {
@@ -186,7 +186,7 @@ public class StageServiceTests
             new StageTaskView { TaskId = Guid.NewGuid() }
             });
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
             .ReturnsAsync((IEnumerable<TaskItemStatusSection>?)null);
 
@@ -214,7 +214,7 @@ public class StageServiceTests
                 new StageTaskView { TaskId = taskId2 }
             });
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
             .ReturnsAsync(new List<TaskItemStatusSection>
             {
@@ -260,7 +260,7 @@ public class StageServiceTests
                 new StageTaskView { TaskId = taskId2 }
             });
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
             .ReturnsAsync(new List<TaskItemStatusSection>
             {

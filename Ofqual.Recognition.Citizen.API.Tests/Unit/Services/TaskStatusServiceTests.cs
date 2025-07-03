@@ -13,6 +13,7 @@ public class TaskStatusServiceTests
 {
     private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
     private readonly Mock<ITaskRepository> _mockTaskRepository = new();
+    private readonly Mock<ITaskStatusRepository> _mockTaskStatusRepository = new();
     private readonly Mock<IApplicationAnswersRepository> _mockApplicationAnswersRepository = new();
     private readonly Mock<IApplicationRepository> _mockApplicationRepository = new();
     private readonly Mock<IStageRepository> _mockStageRepository = new();
@@ -23,6 +24,7 @@ public class TaskStatusServiceTests
     public TaskStatusServiceTests()
     {
         _mockUnitOfWork.Setup(u => u.TaskRepository).Returns(_mockTaskRepository.Object);
+        _mockUnitOfWork.Setup(u => u.TaskStatusRepository).Returns(_mockTaskStatusRepository.Object);
         _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository).Returns(_mockApplicationAnswersRepository.Object);
         _mockUnitOfWork.Setup(u => u.StageRepository).Returns(_mockStageRepository.Object);
         _mockUnitOfWork.Setup(u => u.ApplicationRepository).Returns(_mockApplicationRepository.Object);
@@ -47,7 +49,7 @@ public class TaskStatusServiceTests
             .Setup(s => s.GetCurrentUserUpn())
             .Returns(upn);
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.UpdateTaskStatus(applicationId, taskId, StatusType.Completed, upn))
             .ReturnsAsync(true);
 
@@ -75,7 +77,7 @@ public class TaskStatusServiceTests
             .Setup(s => s.GetCurrentUserUpn())
             .Returns(upn);
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.UpdateTaskStatus(applicationId, taskId, StatusType.InProgress, upn))
             .ReturnsAsync(true);
 
@@ -100,7 +102,7 @@ public class TaskStatusServiceTests
             .Setup(s => s.GetCurrentUserUpn())
             .Returns(upn);
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.UpdateTaskStatus(applicationId, taskId, StatusType.Completed, upn))
             .ReturnsAsync(false);
 
@@ -125,7 +127,7 @@ public class TaskStatusServiceTests
             .Setup(s => s.GetCurrentUserUpn())
             .Returns(upn);
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.UpdateTaskStatus(applicationId, taskId, StatusType.Completed, upn))
             .ReturnsAsync(true);
 
@@ -178,7 +180,7 @@ public class TaskStatusServiceTests
             ModifiedByUpn = "test@ofqual.gov.uk"
         };
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
             .ReturnsAsync(taskStatuses);
 
@@ -237,7 +239,7 @@ public class TaskStatusServiceTests
             ModifiedByUpn = "test@ofqual.gov.uk"
         };
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
             .ReturnsAsync(taskStatuses);
 
@@ -295,7 +297,7 @@ public class TaskStatusServiceTests
         // Arrange
         var applicationId = Guid.NewGuid();
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
             .ReturnsAsync((IEnumerable<TaskItemStatusSection>?)null!);
 
@@ -313,7 +315,7 @@ public class TaskStatusServiceTests
         // Arrange
         var applicationId = Guid.NewGuid();
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.GetTaskStatusesByApplicationId(applicationId))
             .ReturnsAsync(new List<TaskItemStatusSection>
             {
@@ -468,7 +470,7 @@ public class TaskStatusServiceTests
             }
             });
 
-        _mockTaskRepository
+        _mockTaskStatusRepository
             .Setup(r => r.CreateTaskStatuses(It.IsAny<IEnumerable<TaskItemStatus>>()))
             .ReturnsAsync(true);
 
@@ -478,7 +480,7 @@ public class TaskStatusServiceTests
         // Assert
         Assert.True(result);
 
-        _mockTaskRepository.Verify(r => r.CreateTaskStatuses(It.Is<IEnumerable<TaskItemStatus>>(statuses =>
+        _mockTaskStatusRepository.Verify(r => r.CreateTaskStatuses(It.Is<IEnumerable<TaskItemStatus>>(statuses =>
             statuses.Count() == 2 &&
             statuses.Any(s => s.TaskId == normalTaskId && s.Status == StatusType.Completed) &&
             statuses.Any(s => s.TaskId == declarationTaskId && s.Status == StatusType.CannotStartYet)

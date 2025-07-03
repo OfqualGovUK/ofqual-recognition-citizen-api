@@ -478,4 +478,62 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         // Clean up test container
         await _fixture.DisposeAsync();
     }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetStageTaskByTaskId_Should_Return_Correct_StageTaskView()
+    {
+        // Initialise test container and connection
+        await using var connection = await _fixture.InitNewTestDatabaseContainer();
+        using var unitOfWork = new UnitOfWork(connection);
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
+        {
+            SectionId = Guid.NewGuid(),
+            SectionName = "Test Section",
+            SectionOrderNumber = 1,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var task = await TaskTestDataBuilder.CreateTestTask(unitOfWork, new TaskItem
+        {
+            TaskId = Guid.NewGuid(),
+            TaskName = "Test Task",
+            TaskNameUrl = "test-task-url",
+            TaskOrderNumber = 1,
+            SectionId = section.SectionId,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
+        {
+            StageId = StageType.Declaration,
+            TaskId = task.TaskId,
+            OrderNumber = 1,
+            Enabled = true,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        unitOfWork.Commit();
+
+        // Act
+        var result = await unitOfWork.StageRepository.GetStageTaskByTaskId(task.TaskId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(StageType.Declaration, result.StageId);
+        Assert.Equal(task.TaskId, result.TaskId);
+        Assert.Equal(task.TaskName, result.Task);
+        Assert.Equal(1, result.OrderNumber);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
 }
