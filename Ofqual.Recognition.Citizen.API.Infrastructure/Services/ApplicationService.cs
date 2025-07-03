@@ -55,9 +55,9 @@ public class ApplicationService : IApplicationService
             }
 
             applicationDetailsDto.Submitted = true;
-        }
 
-        await _govUkNotifyService.SendEmailApplicationSubmitted();
+            await _govUkNotifyService.SendEmailApplicationSubmitted();
+        }
 
         return applicationDetailsDto;
     }
