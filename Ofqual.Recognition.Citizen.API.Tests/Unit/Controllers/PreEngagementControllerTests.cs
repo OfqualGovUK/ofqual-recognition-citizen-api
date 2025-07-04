@@ -15,6 +15,7 @@ public class PreEngagementControllerTests
     private readonly Mock<IUnitOfWork> _mockUnitOfWork = new();
     private readonly Mock<IStageRepository> _mockStageRepository = new();
     private readonly Mock<IApplicationAnswersService> _mockApplicationAnswersService = new();
+    private readonly Mock<IGovUkNotifyService> _mockGovUkNotifyService = new();
     private readonly PreEngagementController _controller;
 
     public PreEngagementControllerTests()
@@ -23,7 +24,8 @@ public class PreEngagementControllerTests
 
         _controller = new PreEngagementController(
             _mockUnitOfWork.Object,
-            _mockApplicationAnswersService.Object
+            _mockApplicationAnswersService.Object,
+            _mockGovUkNotifyService.Object
         );
     }
 
@@ -182,5 +184,40 @@ public class PreEngagementControllerTests
         // Act & Assert
         var ex = await Assert.ThrowsAsync<Exception>(() => _controller.ValidateAnswer(questionId, dto));
         Assert.Equal("An unexpected error occurred while validating the answer. Please try again shortly.", ex.Message);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task SendPreEngagementInformationEmail_Should_ReturnNoContent_WhenEmailSentSuccessfully()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        _mockGovUkNotifyService
+            .Setup(s => s.SendEmailInformationFromPreEngagement())
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.SendPreEngagementInformationEmail(applicationId);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task SendPreEngagementInformationEmail_Should_ReturnBadRequest_WhenEmailSendingFails()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        _mockGovUkNotifyService
+            .Setup(s => s.SendEmailInformationFromPreEngagement())
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.SendPreEngagementInformationEmail(applicationId);
+
+        // Assert
+        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("We could not send the email. Please try again.", badRequestResult.Value);
     }
 }

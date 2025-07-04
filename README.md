@@ -51,7 +51,8 @@ The main application settings are defined in `appsettings.json` and can be tailo
     "ApiKey": "",
     "TemplateIds": {
       "AccountCreation": "",
-      "ApplicationSubmitted": ""
+      "ApplicationSubmitted": "",
+      "InformationFromPreEngagement": ""
     }
   },
   "ConnectionStrings": {
@@ -109,6 +110,9 @@ The main application settings are defined in `appsettings.json` and can be tailo
 
 - **`GovUkNotify:TemplateIds:ApplicationSubmitted`**  
   The specific TemplateId used for GovUK Notify **application submission confirmation** emails.
+
+- **`GovUkNotify:TemplateIds:InformationFromPreEngagement`**  
+  The specific TemplateId used for GovUK Notify **pre-engagement information** emails.
 
 - **`ConnectionStrings:OfqualODS`**  
   Connection string for accessing the Ofqual ODS (Organisational Data Service) database.

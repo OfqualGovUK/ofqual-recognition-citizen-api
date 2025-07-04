@@ -1,8 +1,11 @@
 ﻿using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Attributes;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
-using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web.Resource;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
@@ -17,11 +20,13 @@ public class PreEngagementController : Controller
 {
     private readonly IUnitOfWork _context;
     public readonly IApplicationAnswersService _applicationAnswersService;
+    private readonly IGovUkNotifyService _govUkNotifyService;
 
-    public PreEngagementController(IUnitOfWork context, IApplicationAnswersService applicationAnswersService)
+    public PreEngagementController(IUnitOfWork context, IApplicationAnswersService applicationAnswersService, IGovUkNotifyService govUkNotifyService)
     {
         _context = context;
         _applicationAnswersService = applicationAnswersService;
+        _govUkNotifyService = govUkNotifyService;
     }
 
     /// <summary>
@@ -103,6 +108,33 @@ public class PreEngagementController : Controller
         {
             Log.Error(ex, "Something went wrong while trying to validate your answer for QuestionId: {QuestionId}.", questionId);
             throw new Exception("An unexpected error occurred while validating the answer. Please try again shortly.");
+        }
+    }
+
+    /// <summary>
+    /// Sends the pre-engagement information email.
+    /// </summary>
+    /// <param name="applicationId">The ID of the application for which the email is sent.</param>
+    [HttpPost("applications/{applicationId}/send-pre-engagement-email")]
+    [Authorize]
+    [RequiredScope("Applications.ReadWrite")]
+    [CheckApplicationId(queryParam: "applicationId")]
+    public async Task<IActionResult> SendPreEngagementInformationEmail(Guid applicationId)
+    {
+        try
+        {
+            bool emailSent = await _govUkNotifyService.SendEmailInformationFromPreEngagement();
+            if (!emailSent)
+            {
+                return BadRequest("We could not send the email. Please try again.");
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error sending pre-engagement information email for ApplicationId: {ApplicationId}.", applicationId);
+            return Problem("An unexpected error occurred while sending the email. Please try again shortly.");
         }
     }
 }
