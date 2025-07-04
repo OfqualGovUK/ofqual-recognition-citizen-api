@@ -258,6 +258,15 @@ public class ApplicationController : ControllerBase
         }
     }
 
+    [HttpGet("{applicationId}/tasks/answers")]
+    [CheckApplicationId(queryParam: "applicationId")]
+    public async Task<ActionResult<List<TaskReviewSectionDto>>> GetAllApplicationAnswersByAppId(Guid applicationId)
+    {
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        return Ok(result);
+    }
+
     /// <summary>
     /// Submits the specified application.
     /// </summary>

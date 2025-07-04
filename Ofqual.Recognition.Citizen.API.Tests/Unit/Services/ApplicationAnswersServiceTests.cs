@@ -351,6 +351,7 @@ public class ApplicationAnswersServiceTests
                 TaskName = "About You",
                 TaskNameUrl = "about-you",
                 TaskOrderNumber = 1,
+                ReviewFlag = true,
                 QuestionId = questionId,
                 QuestionNameUrl = "your-background",
                 QuestionContent = JsonSerializer.Serialize(new QuestionContent

@@ -15,6 +15,7 @@ public class SectionTaskQuestionAnswer
     public required string TaskName { get; set; }
     public required string TaskNameUrl { get; set; }
     public int TaskOrderNumber { get; set; }
+    public bool ReviewFlag { get; set; }
 
     // Question table
     public Guid QuestionId { get; set; }
