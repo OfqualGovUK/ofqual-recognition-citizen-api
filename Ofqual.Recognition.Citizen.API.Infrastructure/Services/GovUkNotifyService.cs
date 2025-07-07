@@ -29,6 +29,12 @@ public class GovUkNotifyService : IGovUkNotifyService
         return await SendEmail(userUpn, _config.TemplateIds.ApplicationSubmitted);
     }
 
+    public async Task<bool> SendEmailInformationFromPreEngagement()
+    {
+        string userUpn = _userInformationService.GetCurrentUserUpn();
+        return await SendEmail(userUpn, _config.TemplateIds.InformationFromPreEngagement);
+    }
+
     private async Task<bool> SendEmail(string outboundEmailAddress, string templateId, Dictionary<string, object>? personalisation = null)
     {
         try
