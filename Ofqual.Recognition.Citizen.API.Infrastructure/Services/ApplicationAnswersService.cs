@@ -72,6 +72,9 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
     public async Task<List<TaskReviewSectionDto>> GetAllApplicationAnswerReview(Guid applicationId)
     {
+        // If there is no section name. But there are two separate questions within the same task.
+        // We need to merge them into one section.
+
         var allAnswers = await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId);
         if (allAnswers == null || !allAnswers.Any())
         {
@@ -94,19 +97,39 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
             foreach (var taskGroup in tasks)
             {
+                // Get all review answers for this task
                 var taskAnswers = await GetTaskAnswerReview(applicationId, taskGroup.Key.TaskId);
+
+                var taskName = taskGroup.FirstOrDefault()?.TaskName;
+
                 sectionTasks.AddRange(taskAnswers);
+
+                foreach (var item in sectionTasks)
+                {
+                    if (item.SectionHeading == null)
+                    {
+                        item.SectionHeading = taskName;
+                    }
+                }
             }
 
-            result.Add(new TaskReviewSectionDto
+
+            // Only add the section if the tasks need a review
+            if (sectionGroup.Any(reviewTask => reviewTask.ReviewFlag))
             {
-                SectionName = sectionGroup.Key.SectionName,
-                TaskGroups = sectionTasks
-            });
+                result.Add(new TaskReviewSectionDto
+                {
+                    SectionName = sectionGroup.Key.SectionName,
+                    TaskGroups = sectionTasks
+                });
+            }
+
+
         }
 
         return result;
     }
+
 
     public async Task<List<TaskReviewGroupDto>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {

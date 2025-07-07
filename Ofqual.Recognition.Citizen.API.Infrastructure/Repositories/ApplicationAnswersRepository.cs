@@ -32,6 +32,7 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
                     T.TaskName,
                     T.TaskNameUrl,
                     T.OrderNumber AS TaskOrderNumber,
+                    T.ReviewFlag,
                     S.SectionId,
                     S.SectionName,
                     S.OrderNumber AS SectionOrderNumber

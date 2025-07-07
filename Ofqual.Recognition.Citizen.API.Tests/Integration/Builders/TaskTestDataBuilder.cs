@@ -10,11 +10,11 @@ public static class TaskTestDataBuilder
     {
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO [recognitionCitizen].[Task]
-            (TaskId, TaskName, TaskNameUrl, OrderNumber, SectionId, CreatedDate, ModifiedDate, CreatedByUpn)
-            VALUES (@TaskId, @TaskName, @TaskNameUrl, @TaskOrderNumber, @SectionId, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
+            (TaskId, TaskName, TaskNameUrl, OrderNumber, ReviewFlag, HintText, SectionId, CreatedDate, ModifiedDate, CreatedByUpn)
+            VALUES (@TaskId, @TaskName, @TaskNameUrl, @TaskOrderNumber, @ReviewFlag, @HintText, @SectionId, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
             task,
             unitOfWork.Transaction);
-        
+
         return task;
     }
 
