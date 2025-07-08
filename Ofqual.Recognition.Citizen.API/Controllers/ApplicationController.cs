@@ -136,6 +136,7 @@ public class ApplicationController : ControllerBase
     /// <param name="taskId">The task ID.</param>
     [HttpPost("{applicationId}/tasks/{taskId}")]
     [CheckApplicationId(queryParam: "applicationId")]
+    [PreventReadOnlyEdit(queryParam: "applicationId")]
     public async Task<IActionResult> UpdateTaskStatus(Guid applicationId, Guid taskId, [FromBody] UpdateTaskStatusDto request)
     {
         try
@@ -170,6 +171,7 @@ public class ApplicationController : ControllerBase
     /// <param name="request">The answer payload.</param>
     [HttpPost("{applicationId}/tasks/{taskId}/questions/{questionId}")]
     [CheckApplicationId(queryParam: "applicationId")]
+    [PreventReadOnlyEdit(queryParam: "applicationId")]
     public async Task<IActionResult> SubmitQuestionAnswer(Guid applicationId, Guid taskId, Guid questionId, [FromBody] QuestionAnswerSubmissionDto request)
     {
         try
@@ -213,6 +215,7 @@ public class ApplicationController : ControllerBase
     /// <param name="taskId">The ID of the task.</param>
     [HttpGet("{applicationId}/tasks/{taskId}/questions/answers")]
     [CheckApplicationId(queryParam: "applicationId")]
+    [PreventReadOnlyEdit(queryParam: "applicationId")]
     public async Task<ActionResult<List<TaskReviewGroupDto>>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
         try
@@ -272,6 +275,8 @@ public class ApplicationController : ControllerBase
     /// </summary>
     /// <param name="applicationId">The application ID.</param>
     [HttpPost("{applicationId}/submit")]
+    [CheckApplicationId(queryParam: "applicationId")]
+    [PreventReadOnlyEdit(queryParam: "applicationId")]
     public async Task<ActionResult<ApplicationDetailsDto>> SubmitApplication(Guid applicationId)
     {
         try

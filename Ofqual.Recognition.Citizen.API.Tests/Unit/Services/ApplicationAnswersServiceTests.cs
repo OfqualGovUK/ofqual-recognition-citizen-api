@@ -528,7 +528,7 @@ public class ApplicationAnswersServiceTests
         var result = await _applicationAnswersService.ValidateQuestionAnswers(questionId, "{}");
 
         // Assert
-        Assert.NotNull(result.Errors);
+        Assert.NotNull(result?.Errors);
         var firstError = result.Errors.First();
         Assert.Equal("Enter Your name", firstError.ErrorMessage);
     }
@@ -579,7 +579,7 @@ public class ApplicationAnswersServiceTests
         var result = await _applicationAnswersService.ValidateQuestionAnswers(questionId, validAnswer);
 
         // Assert
-        Assert.Empty(result.Errors!);
+        Assert.Empty(result?.Errors!);
     }
 
     [Fact]
@@ -628,8 +628,8 @@ public class ApplicationAnswersServiceTests
         var result = await _applicationAnswersService.ValidateQuestionAnswers(questionId, answerJson);
 
         // Assert
-        Assert.Single(result.Errors!);
-        Assert.Equal("The Your name \"John Doe\" already exists in our records", result.Errors!.First().ErrorMessage);
+        Assert.Single(result?.Errors!);
+        Assert.Equal("The Your name \"John Doe\" already exists in our records", result?.Errors!.First().ErrorMessage);
     }
 
     [Fact]
@@ -672,8 +672,8 @@ public class ApplicationAnswersServiceTests
         var result = await _applicationAnswersService.ValidateQuestionAnswers(questionId, answerJson);
 
         // Assert
-        Assert.Single(result.Errors!);
-        Assert.Equal("Bio must be 5 words or more", result.Errors!.First().ErrorMessage);
+        Assert.Single(result?.Errors!);
+        Assert.Equal("Bio must be 5 words or more", result?.Errors!.First().ErrorMessage);
     }
 
     [Fact]
