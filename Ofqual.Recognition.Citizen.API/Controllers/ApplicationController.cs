@@ -215,7 +215,6 @@ public class ApplicationController : ControllerBase
     /// <param name="taskId">The ID of the task.</param>
     [HttpGet("{applicationId}/tasks/{taskId}/questions/answers")]
     [CheckApplicationId(queryParam: "applicationId")]
-    [PreventReadOnlyEdit(queryParam: "applicationId")]
     public async Task<ActionResult<List<TaskReviewGroupDto>>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
         try
