@@ -174,6 +174,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<CheckApplicationIdMiddleware>(); // This MUST come after UseAuthentication and UseAuthorization middlewares, as the checks need a logged in user!
+app.UseMiddleware<PreventReadOnlyEditMiddleware>(); // This MUST come after CheckApplicationIdMiddleware, as you need to check the user can access in the first place before checking if they can edit!
 app.MapControllers();
 
 #endregion

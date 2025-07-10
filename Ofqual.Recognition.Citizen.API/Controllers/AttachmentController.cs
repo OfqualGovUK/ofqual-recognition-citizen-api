@@ -42,6 +42,7 @@ public class AttachmentController : ControllerBase
     [RequestSizeLimit(25 * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = 25 * 1024 * 1024)]
     [CheckApplicationId(queryParam: "applicationId")]
+    [PreventReadOnlyEdit(queryParam: "applicationId")]
     public async Task<ActionResult<AttachmentDto>> UploadFile(LinkType linkType, Guid linkId, Guid applicationId, IFormFile file)
     {
         try
@@ -162,6 +163,7 @@ public class AttachmentController : ControllerBase
     /// <returns>No content if the deletion is successful.</returns>
     [HttpDelete("linked/{linkType}/{linkId}/attachment/{attachmentId}/application/{applicationId}")]
     [CheckApplicationId(queryParam: "applicationId")]
+    [PreventReadOnlyEdit(queryParam: "applicationId")]
     public async Task<IActionResult> DeleteFile(LinkType linkType, Guid linkId, Guid attachmentId, Guid applicationId)
     {
         try
