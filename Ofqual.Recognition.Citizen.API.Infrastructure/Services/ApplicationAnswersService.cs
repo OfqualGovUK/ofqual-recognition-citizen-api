@@ -505,8 +505,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
                     string message = component switch
                     {
-                        CheckBoxGroup => $"Select at least one option for {label}",
-                        RadioButtonGroup => $"Select an option for {label}",
+                        CheckBoxGroup or RadioButtonGroup => $"Select {label}",
                         _ => $"Enter {label}"
                     };
 
@@ -544,8 +543,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
                     string message = component switch
                     {
-                        CheckBoxGroup => $"Select at least one option for {label}",
-                        RadioButtonGroup => $"Select an option for {label}",
+                        CheckBoxGroup or RadioButtonGroup => $"Select {label}",
                         _ => $"Enter {label}"
                     };
 
