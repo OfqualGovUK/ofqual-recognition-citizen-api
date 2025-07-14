@@ -130,4 +130,26 @@ public class ApplicationRepository : IApplicationRepository
             return null;
         }
     }
+
+    public async Task<string?> GetContactNameById(Guid applicationId)
+    {
+        try
+        {
+            const string query = @"
+                SELECT  
+                    o.Name
+                FROM [recognitionCitizen].[Application] AS a
+                JOIN [organisation].[Organisation] AS o 
+                    ON o.Id = a.OrganisationId
+                WHERE a.ApplicationId = @ApplicationId
+                AND a.SubmittedDate IS NOT NULL;";
+
+            return await _connection.QuerySingleOrDefaultAsync<string>(query, new { applicationId }, _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to retrieve contact name with ID: {ApplicationId}", applicationId);
+            return null;
+        }
+    }
 }

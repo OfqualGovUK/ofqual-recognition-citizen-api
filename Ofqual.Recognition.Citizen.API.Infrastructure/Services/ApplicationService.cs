@@ -56,6 +56,17 @@ public class ApplicationService : IApplicationService
 
             applicationDetailsDto.Submitted = true;
 
+            if (_featureFlagService.IsFeatureEnabled("EmailRecognition"))
+            {
+                string? contactName = await _context
+                    .ApplicationRepository
+                    .GetContactNameById(applicationDetailsDto.ApplicationId);
+
+                // Send email to the recognition inbox if contact name is available
+                if (!string.IsNullOrEmpty(contactName))
+                    await _govUkNotifyService.SendEmailApplicationToRecognition(contactName);
+            }
+            
             await _govUkNotifyService.SendEmailApplicationSubmitted();
         }
 
