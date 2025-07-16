@@ -103,6 +103,19 @@ public class ApplicationController : ControllerBase
         }
     }
 
+    [HttpGet]
+    public async Task<ActionResult<ApplicationDetailsDto>> GetLatestApplicationDetails()
+    {
+        ApplicationDetailsDto? latestApplication = await _applicationService.GetLatestApplicationForCurrentUser();
+        if (latestApplication != null)
+        {
+            return Ok(latestApplication);
+        } else
+        {
+            return NotFound("Application not found");
+        }
+    }
+
     /// <summary>
     /// Retrieves sections with tasks and their statuses for a given application.
     /// </summary>
