@@ -8,4 +8,5 @@ public interface IApplicationRepository
     public Task<bool> UpdateApplicationSubmittedDate(Guid applicationId, string modifiedByUpn);
     public Task<Application?> GetLatestApplication(string oid);
     public Task<Application?> GetApplicationById(Guid applicationId);
+    public Task<string?> GetContactNameById(Guid applicationId);
 }

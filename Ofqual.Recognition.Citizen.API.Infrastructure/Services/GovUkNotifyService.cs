@@ -29,6 +29,16 @@ public class GovUkNotifyService : IGovUkNotifyService
         return await SendEmail(userUpn, _config.TemplateIds.ApplicationSubmitted);
     }
 
+    public async Task<bool> SendEmailApplicationToRecognition(string contactName)
+    {     
+        return await SendEmail(
+            _config.RecognitionEmailInbox,
+            _config.TemplateIds.ApplicationSubmittedNotifyRecognition, 
+            new Dictionary<string, object> { ["PAO_Contact"] = contactName }
+        );
+    }
+
+
     public async Task<bool> SendEmailInformationFromPreEngagement()
     {
         string userUpn = _userInformationService.GetCurrentUserUpn();
