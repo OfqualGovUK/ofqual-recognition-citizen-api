@@ -112,7 +112,7 @@ public class ApplicationService : IApplicationService
         return application;
     }
 
-    public async Task<bool> CheckUserCanModifyApplication(Guid applicationId)
+    public async Task<bool> CheckUserCanAccessApplication(Guid applicationId)
     {
         string oid = _userInformationService.GetCurrentUserObjectId();
 
@@ -122,6 +122,18 @@ public class ApplicationService : IApplicationService
             return applicationId == application.ApplicationId;
         }
 
+        return false;
+    }
+
+    public async Task<bool> CheckUserCanModifyApplication(Guid applicationId)
+    {
+        string oid = _userInformationService.GetCurrentUserObjectId();
+
+        Application? application = await _context.ApplicationRepository.GetLatestApplication(oid);
+        if (application != null)
+        {
+            return application.SubmittedDate == null;
+        }
         return false;
     }
 }

@@ -119,6 +119,7 @@ public class PreEngagementController : Controller
     [Authorize]
     [RequiredScope("Applications.ReadWrite")]
     [CheckApplicationId(queryParam: "applicationId")]
+    [PreventReadOnlyEdit(queryParam: "applicationId")]
     public async Task<IActionResult> SendPreEngagementInformationEmail(Guid applicationId)
     {
         try
