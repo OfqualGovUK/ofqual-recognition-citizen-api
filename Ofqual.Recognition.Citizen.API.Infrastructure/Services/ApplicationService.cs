@@ -2,6 +2,7 @@ using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Serilog;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -58,13 +59,21 @@ public class ApplicationService : IApplicationService
 
             if (_featureFlagService.IsFeatureEnabled("EmailRecognition"))
             {
-                string? contactName = await _context
-                    .ApplicationRepository
-                    .GetContactNameById(applicationDetailsDto.ApplicationId);
+                try
+                {
+                    var contactName = await _context
+                        .ApplicationRepository
+                        .GetContactNameById(applicationDetailsDto.ApplicationId);
 
-                // Send email to the recognition inbox if contact name is available
-                if (!string.IsNullOrEmpty(contactName))
-                    await _govUkNotifyService.SendEmailApplicationToRecognition(contactName);
+                    if(!await _govUkNotifyService.SendEmailApplicationToRecognition(contactName!))
+                        throw new Exception("GovUkNotifyService::SendEmail was unable to send notification");
+                }
+                catch (Exception ex)
+                {                    
+                    Log.Error(ex, "ApplicationService::CheckAndSubmitApplication: " +
+                        "Failed to send email to recognition inbox for Application \"{ApplicationId}\"",
+                            applicationDetailsDto.ApplicationId);
+                }
             }
             
             await _govUkNotifyService.SendEmailApplicationSubmitted();
