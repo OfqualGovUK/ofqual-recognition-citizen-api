@@ -304,7 +304,7 @@ public class ApplicationServiceTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task CheckUserCanModifyApplication_ShouldReturnTrue_WhenApplicationMatches()
+    public async Task CheckUserCanAccessApplication_ShouldReturnTrue_WhenApplicationMatches()
     {
         // Arrange
         string oid = Guid.NewGuid().ToString();
@@ -325,7 +325,7 @@ public class ApplicationServiceTests
         _mockApplicationRepository.Setup(x => x.GetLatestApplication(oid)).ReturnsAsync(app);
 
         // Act
-        bool result = await _service.CheckUserCanModifyApplication(appId);
+        bool result = await _service.CheckUserCanAccessApplication(appId);
 
         // Assert
         Assert.True(result);
@@ -333,7 +333,7 @@ public class ApplicationServiceTests
 
     [Fact]
     [Trait("Category", "Unit")]
-    public async Task CheckUserCanModifyApplication_ShouldReturnFalse_WhenApplicationDoesNotMatch()
+    public async Task CheckUserCanAccessApplication_ShouldReturnFalse_WhenApplicationDoesNotMatch()
     {
         // Arrange
         string oid = Guid.NewGuid().ToString();
@@ -350,6 +350,67 @@ public class ApplicationServiceTests
             ModifiedDate = DateTime.UtcNow,
             CreatedByUpn = "ofqual@ofqual.gov.uk",
             ModifiedByUpn = "ofqual@ofqual.gov.uk"
+        };
+
+        _mockApplicationRepository.Setup(x => x.GetLatestApplication(oid)).ReturnsAsync(app);
+
+        // Act
+        bool result = await _service.CheckUserCanAccessApplication(givenAppId);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task CheckUserCanModifyApplication_ShouldReturnTrue_WhenApplicationSubmittedDateIsNotPresent()
+    {
+        // Arrange
+        string oid = Guid.NewGuid().ToString();
+        Guid givenAppId = Guid.NewGuid();
+        Guid actualAppId = Guid.NewGuid();
+
+        _mockUserInformationService.Setup(x => x.GetCurrentUserObjectId()).Returns(oid);
+
+        var app = new Application
+        {
+            ApplicationId = actualAppId,
+            OwnerUserId = Guid.NewGuid(),
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "ofqual@ofqual.gov.uk",
+            ModifiedByUpn = "ofqual@ofqual.gov.uk",
+        };
+
+        _mockApplicationRepository.Setup(x => x.GetLatestApplication(oid)).ReturnsAsync(app);
+
+        // Act
+        bool result = await _service.CheckUserCanModifyApplication(givenAppId);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task CheckUserCanModifyApplication_ShouldReturnFalse_WhenApplicationContainsSubmittedDate()
+    {
+        // Arrange
+        string oid = Guid.NewGuid().ToString();
+        Guid givenAppId = Guid.NewGuid();
+        Guid actualAppId = Guid.NewGuid();
+
+        _mockUserInformationService.Setup(x => x.GetCurrentUserObjectId()).Returns(oid);
+
+        var app = new Application
+        {
+            ApplicationId = actualAppId,
+            OwnerUserId = Guid.NewGuid(),
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "ofqual@ofqual.gov.uk",
+            ModifiedByUpn = "ofqual@ofqual.gov.uk",
+            SubmittedDate = DateTime.UtcNow,
         };
 
         _mockApplicationRepository.Setup(x => x.GetLatestApplication(oid)).ReturnsAsync(app);

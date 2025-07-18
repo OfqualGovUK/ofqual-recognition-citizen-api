@@ -2,6 +2,7 @@ using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Serilog;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -56,6 +57,25 @@ public class ApplicationService : IApplicationService
 
             applicationDetailsDto.Submitted = true;
 
+            if (_featureFlagService.IsFeatureEnabled("EmailRecognition"))
+            {
+                try
+                {
+                    var contactName = await _context
+                        .ApplicationRepository
+                        .GetContactNameById(applicationDetailsDto.ApplicationId);
+
+                    if(!await _govUkNotifyService.SendEmailApplicationToRecognition(contactName!))
+                        throw new Exception("GovUkNotifyService::SendEmail was unable to send notification");
+                }
+                catch (Exception ex)
+                {                    
+                    Log.Error(ex, "ApplicationService::CheckAndSubmitApplication: " +
+                        "Failed to send email to recognition inbox for Application \"{ApplicationId}\"",
+                            applicationDetailsDto.ApplicationId);
+                }
+            }
+            
             await _govUkNotifyService.SendEmailApplicationSubmitted();
         }
 
@@ -101,7 +121,7 @@ public class ApplicationService : IApplicationService
         return application;
     }
 
-    public async Task<bool> CheckUserCanModifyApplication(Guid applicationId)
+    public async Task<bool> CheckUserCanAccessApplication(Guid applicationId)
     {
         string oid = _userInformationService.GetCurrentUserObjectId();
 
@@ -111,6 +131,18 @@ public class ApplicationService : IApplicationService
             return applicationId == application.ApplicationId;
         }
 
+        return false;
+    }
+
+    public async Task<bool> CheckUserCanModifyApplication(Guid applicationId)
+    {
+        string oid = _userInformationService.GetCurrentUserObjectId();
+
+        Application? application = await _context.ApplicationRepository.GetLatestApplication(oid);
+        if (application != null)
+        {
+            return application.SubmittedDate == null;
+        }
         return false;
     }
 }
