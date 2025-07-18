@@ -465,7 +465,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
             {
                 continue;
             }
-
+            
+            //If compoent is a parent, skip validating it as we should validate children
             if (formGroup.CheckboxGroup?.Options != null)
             {
                 var parent = formGroup.CheckboxGroup.Options.FirstOrDefault(cb =>
@@ -481,6 +482,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 }
             }
 
+            //If compoent is a parent, skip validating it as we should validate children
             if (formGroup.RadioButtonGroup?.Options != null)
             {
                 var parent = formGroup.RadioButtonGroup.Options.FirstOrDefault(rb =>
@@ -496,16 +498,17 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 }
             }
 
+            //if validation has a defined componentValidationLabel, use it, otherwise use the component name
+            var componentValidationLabel = component.GetValidationLabel();
+
             if (!answerValue.TryGetValue(component.Name, out var answerElement))
             {
                 if (validation.Required == true)
-                {
-                    var label = StringHelper.CapitaliseFirstLetter(component.ValidationLabel);
-
+                {           
                     string message = component switch
                     {
-                        CheckBoxGroup or RadioButtonGroup => $"Select {label}",
-                        _ => $"Enter {label}"
+                        CheckBoxGroup or RadioButtonGroup => $"Select {componentValidationLabel}",
+                        _ => $"Enter {componentValidationLabel}"
                     };
 
                     errors.Add(new ValidationErrorItem
@@ -538,13 +541,11 @@ public class ApplicationAnswersService : IApplicationAnswersService
             if (string.IsNullOrWhiteSpace(answerString) && (answerArray == null || !answerArray.Any()))
             {
                 if (validation.Required == true)
-                {
-                    var label = StringHelper.CapitaliseFirstLetter(component.ValidationLabel);
-
+                {                    
                     string message = component switch
                     {
-                        CheckBoxGroup or RadioButtonGroup => $"Select {label}",
-                        _ => $"Enter {label}"
+                        CheckBoxGroup or RadioButtonGroup => $"Select {componentValidationLabel}",
+                        _ => $"Enter {componentValidationLabel}"
                     };
 
                     errors.Add(new ValidationErrorItem
@@ -576,7 +577,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
-                        ErrorMessage = $"The {StringHelper.CapitaliseFirstLetter(component.ValidationLabel)} \"{answerString}\" already exists in our records"
+                        ErrorMessage = $"The {componentValidationLabel} \"{answerString}\" already exists in our records"
                     });
                 }
 
@@ -588,7 +589,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             {
                 bool countWords = validation.CountWords == true;
 
-                int length = countWords 
+                 int length = countWords 
                     ? answerString.Split(['\t', '\r', '\n', ' '], StringSplitOptions.RemoveEmptyEntries).Length
                     : answerString.Length;
 
@@ -600,7 +601,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
-                        ErrorMessage = $"{StringHelper.CapitaliseFirstLetter(component.ValidationLabel)} must be {validation.MinLength.Value} {countType} or more"
+                        ErrorMessage = $"{componentValidationLabel} must be {validation.MinLength.Value} {countType} or more"
                     });
 
                     continue;
@@ -611,7 +612,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
-                        ErrorMessage = $"{StringHelper.CapitaliseFirstLetter(component.ValidationLabel)} must be {validation.MaxLength.Value} {countType} or fewer"
+                        ErrorMessage = $"{componentValidationLabel} must be {validation.MaxLength.Value} {countType} or fewer"
                     });
 
                     continue;
@@ -627,7 +628,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
-                        ErrorMessage = $"Enter a valid {StringHelper.CapitaliseFirstLetter(component.ValidationLabel)}"
+                        ErrorMessage = $"Enter a valid {componentValidationLabel}"
                     });
 
                     continue;
@@ -638,7 +639,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
     }
 
     private static ValidationErrorItem? ValidateSelectableComponent(IValidatable component, ValidationRule validation, JsonElement answerElement)
-    {
+    {      
+
         if (validation.MinSelected.HasValue || validation.MaxSelected.HasValue)
         {
             int selectedCount = 0;
@@ -657,6 +659,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 }
             }
 
+            var componentValidationLabel = component.GetValidationLabel();
+
             if (validation.MinSelected.HasValue && selectedCount < validation.MinSelected.Value)            
                 return new ValidationErrorItem
                 {
@@ -665,7 +669,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                                     (validation.MinSelected.Value > 1
                                             ? $"{validation.MinSelected.Value} options for"
                                             : "1 option for"
-                                    ) + StringHelper.CapitaliseFirstLetter(component.ValidationLabel)
+                                    ) + componentValidationLabel
                 };
             
 
@@ -678,9 +682,12 @@ public class ApplicationAnswersService : IApplicationAnswersService
                                     (validation.MaxSelected.Value > 1
                                             ? $"{validation.MaxSelected.Value} options for"
                                             : "1 option for"
-                                    ) + StringHelper.CapitaliseFirstLetter(component.ValidationLabel)
+                                    ) + componentValidationLabel
                 };            
         }
         return null;
     }
+
+    
+    
 }

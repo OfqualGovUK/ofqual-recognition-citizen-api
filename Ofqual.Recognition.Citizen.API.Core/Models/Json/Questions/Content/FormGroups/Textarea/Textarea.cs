@@ -10,11 +10,6 @@ public class Textarea : IValidatable, ISectionGroup
     public required TextWithSize Label { get; set; }
 
     /// <summary>
-    /// The label used in validation messages.
-    /// </summary>
-    public string ValidationLabel => Label.Text;
-
-    /// <summary>
     /// Hint text displayed below the label.
     /// </summary>
     public string? Hint { get; set; }

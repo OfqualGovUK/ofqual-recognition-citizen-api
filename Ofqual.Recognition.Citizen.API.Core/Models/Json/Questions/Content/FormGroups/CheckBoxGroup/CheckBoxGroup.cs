@@ -10,11 +10,6 @@ public class CheckBoxGroup : IValidatable, ISectionGroup
     public required TextWithSize Heading { get; set; }
 
     /// <summary>
-    /// The label used in validation messages.
-    /// </summary>
-    public string ValidationLabel => Heading.Text;
-
-    /// <summary>
     /// Hint text shown below the heading.
     /// </summary>
     public string? Hint { get; set; }

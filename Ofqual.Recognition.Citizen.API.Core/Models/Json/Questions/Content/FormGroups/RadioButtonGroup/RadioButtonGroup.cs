@@ -8,12 +8,7 @@ public class RadioButtonGroup : IValidatable, ISectionGroup
     /// The heading shown above the radio button group.
     /// </summary>
     public required TextWithSize Heading { get; set; }
-
-    /// <summary>
-    /// The label used in validation messages.
-    /// </summary>
-    public string ValidationLabel => Heading.Text;
-    
+   
     /// <summary>
     /// Hint text displayed beneath the heading.
     /// </summary>
