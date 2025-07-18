@@ -10,11 +10,6 @@ public class Select : IValidatable
     public required string Label { get; set; }
 
     /// <summary>
-    /// The label used in validation messages.
-    /// </summary>
-    public string ValidationLabel => Label;
-
-    /// <summary>
     /// Hint text shown below the label.
     /// </summary>
     public string? Hint { get; set; }

@@ -130,7 +130,6 @@ public class ApplicationAnswersService : IApplicationAnswersService
         return result;
     }
 
-
     public async Task<List<TaskReviewGroupDto>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
         var taskQuestionAnswers = await _context.ApplicationAnswersRepository.GetTaskQuestionAnswers(applicationId, taskId);
@@ -466,7 +465,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
             {
                 continue;
             }
-
+            
+            //If compoent is a parent, skip validating it as we should validate children
             if (formGroup.CheckboxGroup?.Options != null)
             {
                 var parent = formGroup.CheckboxGroup.Options.FirstOrDefault(cb =>
@@ -482,6 +482,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 }
             }
 
+            //If compoent is a parent, skip validating it as we should validate children
             if (formGroup.RadioButtonGroup?.Options != null)
             {
                 var parent = formGroup.RadioButtonGroup.Options.FirstOrDefault(rb =>
@@ -497,16 +498,17 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 }
             }
 
+            //if validation has a defined componentValidationLabel, use it, otherwise use the component name
+            var componentValidationLabel = component.GetValidationLabel();
+
             if (!answerValue.TryGetValue(component.Name, out var answerElement))
             {
                 if (validation.Required == true)
-                {
-                    var label = StringHelper.CapitaliseFirstLetter(component.ValidationLabel);
-
+                {           
                     string message = component switch
                     {
-                        CheckBoxGroup or RadioButtonGroup => $"Select {label}",
-                        _ => $"Enter {label}"
+                        CheckBoxGroup or RadioButtonGroup => $"Select {componentValidationLabel}",
+                        _ => $"Enter {componentValidationLabel}"
                     };
 
                     errors.Add(new ValidationErrorItem
@@ -535,16 +537,15 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 answerString = string.Join(", ", answerArray);
             }
 
+            //Check if the answer is empty or null when required
             if (string.IsNullOrWhiteSpace(answerString) && (answerArray == null || !answerArray.Any()))
             {
                 if (validation.Required == true)
-                {
-                    var label = StringHelper.CapitaliseFirstLetter(component.ValidationLabel);
-
+                {                    
                     string message = component switch
                     {
-                        CheckBoxGroup or RadioButtonGroup => $"Select {label}",
-                        _ => $"Enter {label}"
+                        CheckBoxGroup or RadioButtonGroup => $"Select {componentValidationLabel}",
+                        _ => $"Enter {componentValidationLabel}"
                     };
 
                     errors.Add(new ValidationErrorItem
@@ -557,6 +558,17 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 continue;
             }
 
+            //Following validation is only applicable for CheckBoxGroup and RadioButtonGroup
+            if (component is CheckBoxGroup or RadioButtonGroup)
+            {   // Check for minimum and maximum selected options where applicable
+                var selectError = ValidateSelectableComponent(component, validation, answerElement);
+                if(selectError != null)                
+                    errors.Add(selectError);
+                                
+                continue; // following validations are not applicable for CheckBoxGroup and RadioButtonGroup
+            }
+
+            //Check if the answer is in database if unique validation is required
             if (validation.Unique == true && !string.IsNullOrWhiteSpace(answerString))
             {
                 var exists = await _context.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(questionId, component.Name, answerString);
@@ -565,43 +577,47 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
-                        ErrorMessage = $"The {StringHelper.CapitaliseFirstLetter(component.ValidationLabel)} \"{answerString}\" already exists in our records"
+                        ErrorMessage = $"The {componentValidationLabel} \"{answerString}\" already exists in our records"
                     });
                 }
 
                 continue;
             }
 
+            // Check for minimum and maximum length or word count
             if ((validation.MinLength.HasValue || validation.MaxLength.HasValue) && !string.IsNullOrWhiteSpace(answerString))
             {
                 bool countWords = validation.CountWords == true;
 
-                if (countWords)
+                 int length = countWords 
+                    ? answerString.Split(['\t', '\r', '\n', ' '], StringSplitOptions.RemoveEmptyEntries).Length
+                    : answerString.Length;
+
+                string countType = countWords ? "words" : "characters";
+
+
+                if (validation.MinLength.HasValue && length < validation.MinLength.Value)
                 {
-                    int length = answerString.Split(['\t', '\r', '\n', ' '], StringSplitOptions.RemoveEmptyEntries).Length;
-
-                    if (validation.MinLength.HasValue && length < validation.MinLength.Value)
+                    errors.Add(new ValidationErrorItem
                     {
-                        errors.Add(new ValidationErrorItem
-                        {
-                            PropertyName = component.Name,
-                            ErrorMessage = $"{StringHelper.CapitaliseFirstLetter(component.ValidationLabel)} must be {validation.MinLength.Value} words or more"
-                        });
+                        PropertyName = component.Name,
+                        ErrorMessage = $"{componentValidationLabel} must be {validation.MinLength.Value} {countType} or more"
+                    });
 
-                        continue;
-                    }
-
-                    if (validation.MaxLength.HasValue && length > validation.MaxLength.Value)
-                    {
-                        errors.Add(new ValidationErrorItem
-                        {
-                            PropertyName = component.Name,
-                            ErrorMessage = $"{StringHelper.CapitaliseFirstLetter(component.ValidationLabel)} must be {validation.MaxLength.Value} words or fewer"
-                        });
-
-                        continue;
-                    }
+                    continue;
                 }
+
+                if (validation.MaxLength.HasValue && length > validation.MaxLength.Value)
+                {
+                    errors.Add(new ValidationErrorItem
+                    {
+                        PropertyName = component.Name,
+                        ErrorMessage = $"{componentValidationLabel} must be {validation.MaxLength.Value} {countType} or fewer"
+                    });
+
+                    continue;
+                }
+                
             }
 
             if (!string.IsNullOrWhiteSpace(validation.Pattern) && !string.IsNullOrWhiteSpace(answerString))
@@ -612,55 +628,66 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
-                        ErrorMessage = $"Enter a valid {StringHelper.CapitaliseFirstLetter(component.ValidationLabel)}"
-                    });
-
-                    continue;
-                }
-            }
-
-            if (validation.MinSelected.HasValue || validation.MaxSelected.HasValue)
-            {
-                int selectedCount = 0;
-
-                if (answerElement.ValueKind == JsonValueKind.Array)
-                {
-                    selectedCount = answerElement.EnumerateArray()
-                        .Count(x => !string.IsNullOrWhiteSpace(x.GetString()));
-                }
-                else if (answerElement.ValueKind == JsonValueKind.String)
-                {
-                    var val = answerElement.GetString();
-                    if (!string.IsNullOrWhiteSpace(val))
-                    {
-                        selectedCount = 1;
-                    }
-                }
-
-                if (validation.MinSelected.HasValue && selectedCount < validation.MinSelected.Value)
-                {
-                    errors.Add(new ValidationErrorItem
-                    {
-                        PropertyName = component.Name,
-                        ErrorMessage = $"Select at least {validation.MinSelected.Value} option{(validation.MinSelected.Value > 1 ? "s" : "")} for {StringHelper.CapitaliseFirstLetter(component.ValidationLabel)}"
-                    });
-
-                    continue;
-                }
-
-                if (validation.MaxSelected.HasValue && selectedCount > validation.MaxSelected.Value)
-                {
-                    errors.Add(new ValidationErrorItem
-                    {
-                        PropertyName = component.Name,
-                        ErrorMessage = $"You can only select up to {validation.MaxSelected.Value} option{(validation.MaxSelected.Value > 1 ? "s" : "")} for {StringHelper.CapitaliseFirstLetter(component.ValidationLabel)}"
+                        ErrorMessage = $"Enter a valid {componentValidationLabel}"
                     });
 
                     continue;
                 }
             }
         }
-
         return new ValidationResponse { Errors = errors };
     }
+
+    private static ValidationErrorItem? ValidateSelectableComponent(IValidatable component, ValidationRule validation, JsonElement answerElement)
+    {      
+
+        if (validation.MinSelected.HasValue || validation.MaxSelected.HasValue)
+        {
+            int selectedCount = 0;
+
+            if (answerElement.ValueKind == JsonValueKind.Array)
+            {
+                selectedCount = answerElement.EnumerateArray()
+                    .Count(x => !string.IsNullOrWhiteSpace(x.GetString()));
+            }
+            else if (answerElement.ValueKind == JsonValueKind.String)
+            {
+                var val = answerElement.GetString();
+                if (!string.IsNullOrWhiteSpace(val))
+                {
+                    selectedCount = 1;
+                }
+            }
+
+            var componentValidationLabel = component.GetValidationLabel();
+
+            if (validation.MinSelected.HasValue && selectedCount < validation.MinSelected.Value)            
+                return new ValidationErrorItem
+                {
+                    PropertyName = component.Name,
+                    ErrorMessage = "Select at least " +
+                                    (validation.MinSelected.Value > 1
+                                            ? $"{validation.MinSelected.Value} options for "
+                                            : "1 option for "
+                                    ) + componentValidationLabel
+                };
+            
+
+            if (validation.MaxSelected.HasValue && selectedCount > validation.MaxSelected.Value)
+            
+                return new ValidationErrorItem
+                {
+                    PropertyName = component.Name,
+                    ErrorMessage = $"You can only select up to " +
+                                    (validation.MaxSelected.Value > 1
+                                            ? $"{validation.MaxSelected.Value} options for "
+                                            : "1 option for "
+                                    ) + componentValidationLabel
+                };            
+        }
+        return null;
+    }
+
+    
+    
 }

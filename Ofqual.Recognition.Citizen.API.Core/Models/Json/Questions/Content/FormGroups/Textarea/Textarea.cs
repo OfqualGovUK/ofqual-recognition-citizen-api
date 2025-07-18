@@ -9,10 +9,12 @@ public class Textarea : IValidatable, ISectionGroup
     /// </summary>
     public required TextWithSize Label { get; set; }
 
+
     /// <summary>
-    /// The label used in validation messages.
+    /// Gets the label text associated with the current object.
     /// </summary>
-    public string ValidationLabel => Label.Text;
+    string IValidatable.Label => Label.Text;
+
 
     /// <summary>
     /// Hint text displayed below the label.

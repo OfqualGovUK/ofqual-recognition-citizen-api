@@ -2,6 +2,12 @@ namespace Ofqual.Recognition.API.Models.JSON.Questions;
 
 public class ValidationRule
 {
+    
+    /// <summary>
+    /// Allows a custom error message to be provided and displayed on the front-end
+    /// if not specified, this will default to using the parent component name
+    /// </summary>
+    public string? ValidationLabel { get; set; }
     /// <summary>
     /// Requires that an answer is provided.
     /// * Checkboxes: A value must be selected.

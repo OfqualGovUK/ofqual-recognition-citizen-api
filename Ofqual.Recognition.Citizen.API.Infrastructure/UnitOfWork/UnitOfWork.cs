@@ -9,14 +9,14 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     private readonly IDbConnection _connection;
     private IDbTransaction _transaction;
 
-    public ITaskRepository TaskRepository { get; private set; }
-    public ITaskStatusRepository TaskStatusRepository { get; private set; }
-    public IApplicationRepository ApplicationRepository { get; private set; }
-    public IQuestionRepository QuestionRepository { get; private set; }
-    public IStageRepository StageRepository { get; private set; }
-    public IApplicationAnswersRepository ApplicationAnswersRepository { get; private set; }
-    public IAttachmentRepository AttachmentRepository { get; private set; }
-    public IUserRepository UserRepository { get; private set; }
+    public ITaskRepository TaskRepository { get; private set; } = null!; //supress warnings as InitialiseRepositories() will initialise these
+    public ITaskStatusRepository TaskStatusRepository { get; private set; } = null!;
+    public IApplicationRepository ApplicationRepository { get; private set; } = null!;
+    public IQuestionRepository QuestionRepository { get; private set; } = null!;
+    public IStageRepository StageRepository { get; private set; } = null!;
+    public IApplicationAnswersRepository ApplicationAnswersRepository { get; private set; } = null!;
+    public IAttachmentRepository AttachmentRepository { get; private set; } = null!;
+    public IUserRepository UserRepository { get; private set; } = null!;
 
     public UnitOfWork(IDbConnection connection)
     {
