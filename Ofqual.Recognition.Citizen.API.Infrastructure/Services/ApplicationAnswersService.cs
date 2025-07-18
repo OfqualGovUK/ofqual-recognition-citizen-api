@@ -667,8 +667,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     PropertyName = component.Name,
                     ErrorMessage = "Select at least " +
                                     (validation.MinSelected.Value > 1
-                                            ? $"{validation.MinSelected.Value} options for"
-                                            : "1 option for"
+                                            ? $"{validation.MinSelected.Value} options for "
+                                            : "1 option for "
                                     ) + componentValidationLabel
                 };
             
@@ -680,8 +680,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     PropertyName = component.Name,
                     ErrorMessage = $"You can only select up to " +
                                     (validation.MaxSelected.Value > 1
-                                            ? $"{validation.MaxSelected.Value} options for"
-                                            : "1 option for"
+                                            ? $"{validation.MaxSelected.Value} options for "
+                                            : "1 option for "
                                     ) + componentValidationLabel
                 };            
         }
