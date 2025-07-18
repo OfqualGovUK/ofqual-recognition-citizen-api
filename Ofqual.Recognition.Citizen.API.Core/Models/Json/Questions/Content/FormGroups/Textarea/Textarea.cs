@@ -9,6 +9,13 @@ public class Textarea : IValidatable, ISectionGroup
     /// </summary>
     public required TextWithSize Label { get; set; }
 
+
+    /// <summary>
+    /// Gets the label text associated with the current object.
+    /// </summary>
+    string IValidatable.Label => Label.Text;
+
+
     /// <summary>
     /// Hint text displayed below the label.
     /// </summary>

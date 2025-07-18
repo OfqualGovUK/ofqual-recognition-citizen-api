@@ -29,6 +29,6 @@ public static class StringHelper
     /// <returns>The validationLabel if specified, else return the component name</returns>
     public static string GetValidationLabel(this IValidatable component) =>
         string.IsNullOrWhiteSpace(component.Validation?.ValidationLabel)
-            ? component.Name.CapitaliseFirstLetter()!
+            ? component.Label.CapitaliseFirstLetter()!
             : component.Validation.ValidationLabel;
 }

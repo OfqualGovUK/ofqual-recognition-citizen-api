@@ -10,6 +10,11 @@ public class CheckBoxGroup : IValidatable, ISectionGroup
     public required TextWithSize Heading { get; set; }
 
     /// <summary>
+    /// Gets the label text associated with the current object.
+    /// </summary>
+    string IValidatable.Label => Heading.Text;
+
+    /// <summary>
     /// Hint text shown below the heading.
     /// </summary>
     public string? Hint { get; set; }
