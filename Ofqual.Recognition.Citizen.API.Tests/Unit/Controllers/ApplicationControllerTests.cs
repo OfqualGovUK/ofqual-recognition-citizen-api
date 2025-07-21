@@ -705,4 +705,47 @@ public class ApplicationControllerTests
         Assert.Equal("An error occurred while submitting the application. Please try again later.", ex.Message);
         _mockUnitOfWork.Verify(u => u.Commit(), Times.Never);
     }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswersByAppId_ReturnsOk_WhenAnswersExist()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var answers = new List<TaskReviewSectionDto>
+        {
+            new TaskReviewSectionDto { SectionName = "Section 1" }
+        };
+
+        _mockApplicationAnswersService
+            .Setup(s => s.GetAllApplicationAnswerReview(applicationId))
+            .ReturnsAsync(answers);
+
+        // Act
+        var result = await _controller.GetAllApplicationAnswersByAppId(applicationId);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedValue = Assert.IsAssignableFrom<List<TaskReviewSectionDto>>(okResult.Value);
+        Assert.Single(returnedValue);
+        Assert.Equal("Section 1", returnedValue[0].SectionName);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswersByAppId_ReturnsNotFound_WhenNoAnswersExist()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        _mockApplicationAnswersService
+            .Setup(s => s.GetAllApplicationAnswerReview(applicationId))
+            .ReturnsAsync(new List<TaskReviewSectionDto>());
+
+        // Act
+        var result = await _controller.GetAllApplicationAnswersByAppId(applicationId);
+
+        // Assert
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.Equal("No answers found for the specified application.", notFoundResult.Value);
+    }
 }

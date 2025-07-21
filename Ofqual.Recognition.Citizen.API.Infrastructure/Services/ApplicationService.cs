@@ -61,12 +61,12 @@ public class ApplicationService : IApplicationService
             {
                 try
                 {
-                    var contactName = await _context
-                        .ApplicationRepository
-                        .GetContactNameById(applicationDetailsDto.ApplicationId);
+                    var contactName = await _context.ApplicationRepository.GetContactNameById(applicationDetailsDto.ApplicationId);
 
-                    if(!await _govUkNotifyService.SendEmailApplicationToRecognition(contactName!))
+                    if (!await _govUkNotifyService.SendEmailApplicationToRecognition(contactName!))
+                    {
                         throw new Exception("GovUkNotifyService::SendEmail was unable to send notification");
+                    }
                 }
                 catch (Exception ex)
                 {                    

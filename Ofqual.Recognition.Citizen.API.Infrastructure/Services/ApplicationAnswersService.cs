@@ -72,9 +72,6 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
     public async Task<List<TaskReviewSectionDto>> GetAllApplicationAnswerReview(Guid applicationId)
     {
-        // If there is no section name. But there are two separate questions within the same task.
-        // We need to merge them into one section.
-
         var allAnswers = await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId);
         if (allAnswers == null || !allAnswers.Any())
         {
@@ -97,24 +94,28 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
             foreach (var taskGroup in tasks)
             {
-                // Get all review answers for this task
                 var taskAnswers = await GetTaskAnswerReview(applicationId, taskGroup.Key.TaskId);
-
                 var taskName = taskGroup.FirstOrDefault()?.TaskName;
 
-                sectionTasks.AddRange(taskAnswers);
-
-                foreach (var item in sectionTasks)
+                foreach (var group in taskAnswers)
                 {
-                    if (item.SectionHeading == null)
+                    if (string.IsNullOrWhiteSpace(group.SectionHeading))
                     {
-                        item.SectionHeading = taskName;
+                        group.SectionHeading = taskName;
+                    }
+
+                    var existingGroup = sectionTasks.FirstOrDefault(t => t.SectionHeading == group.SectionHeading);
+                    if (existingGroup != null)
+                    {
+                        existingGroup.QuestionAnswers.AddRange(group.QuestionAnswers);
+                    }
+                    else
+                    {
+                        sectionTasks.Add(group);
                     }
                 }
             }
 
-
-            // Only add the section if the tasks need a review
             if (sectionGroup.Any(reviewTask => reviewTask.ReviewFlag))
             {
                 result.Add(new TaskReviewSectionDto
@@ -123,13 +124,10 @@ public class ApplicationAnswersService : IApplicationAnswersService
                     TaskGroups = sectionTasks
                 });
             }
-
-
         }
 
         return result;
     }
-
 
     public async Task<List<TaskReviewGroupDto>> GetTaskAnswerReview(Guid applicationId, Guid taskId)
     {
