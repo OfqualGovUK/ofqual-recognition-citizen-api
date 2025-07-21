@@ -28,8 +28,16 @@ The main application settings are defined in `appsettings.json` and can be tailo
 
 ```json
 {
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
   "FeatureFlag": {
-    "CheckUser": true
+    "CheckUser": true,
+    "EmailRecognition": false
   },
   "LogzIo": {
     "Environment": "",
@@ -49,9 +57,11 @@ The main application settings are defined in `appsettings.json` and can be tailo
   },
   "GovUkNotify": {
     "ApiKey": "",
+    "RecognitionEmailInbox": "",
     "TemplateIds": {
       "AccountCreation": "",
       "ApplicationSubmitted": "",
+      "ApplicationSubmittedNotifyRecognition": "",
       "InformationFromPreEngagement": ""
     }
   },
@@ -64,10 +74,24 @@ The main application settings are defined in `appsettings.json` and can be tailo
 
 ### Setting Details
 
+- **`Logging:LogLevel:Default`**
+  The default logging level for the service; refer to the [Microsoft Documentation](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loglevel?view=net-9.0-pp) for an explanation of the different levels
+
+- **`Logging:LogLevel:Microsoft.AspNetCore`**
+  The logging level for AspNetCore specific errors; refer to the [Microsoft Documentation](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loglevel?view=net-9.0-pp) for an explanation of the different levels
+
+- **`AllowedHosts`**
+  As per the [Microsoft Documentation](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel?view=aspnetcore-3.1#host-filtering) - keep this set to wildcard for ease of use
+
 - **`FeatureFlag:CheckUser`**  
   A **boolean** flag used to control whether the system attempts to retrieve application data for the current user.  
   When set to `true`, the system will check for an existing user and retrieve their latest application if available.  
   When set to `false`, the system will skip this check and treat the user as not eligible for application retrieval or creation.
+
+- **`FeatureFlag:EmailRecognition`**
+  A **boolean** flag used to control whether an email is sent to the Recognition Team when an application has been submitted.
+  When set to `true`, this is turned on; when set to `false`, the system will skip this email
+  If set to true, you must also provide `GovUkNotify:RecognitionEmailInbox` in your environment variables.
 
 - **`LogzIo:Environment`**  
   Identifies the current environment in the logs (e.g., `DEV`, `PREPROD`, `PROD`). This helps differentiate log entries across deployments.
@@ -105,11 +129,17 @@ The main application settings are defined in `appsettings.json` and can be tailo
 - **`GovUkNotify:TemplateIds`**  
   The collection of TemplateIds used for sending out GovUK Notify emails.
 
+- **`GovUkNotify:RecognitionEmailInbox`**
+  An email address used for sending submission emails to the Recognition team.
+
 - **`GovUkNotify:TemplateIds:AccountCreation`**  
   The specific TemplateId used for GovUK Notify **account creation** emails.
 
 - **`GovUkNotify:TemplateIds:ApplicationSubmitted`**  
-  The specific TemplateId used for GovUK Notify **application submission confirmation** emails.
+  The specific TemplateId used for GovUK Notify **application submission confirmation** emails for the **Citizen User**.
+
+- **`GovUkNotify:TemplateIds:ApplicationSubmittedNotifyRecognition`**
+  The specific TemplateId used for GovUK Notify **application submission confirmation** emails for the **Recognition/Ofqual Team**
 
 - **`GovUkNotify:TemplateIds:InformationFromPreEngagement`**  
   The specific TemplateId used for GovUK Notify **pre-engagement information** emails.
