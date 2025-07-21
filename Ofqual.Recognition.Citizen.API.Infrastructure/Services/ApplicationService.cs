@@ -59,23 +59,15 @@ public class ApplicationService : IApplicationService
 
             if (_featureFlagService.IsFeatureEnabled("EmailRecognition"))
             {
-                try
+                string? contactName = await _context.ApplicationRepository.GetContactNameById(applicationDetailsDto.ApplicationId);
+                if (contactName == null)
                 {
-                    var contactName = await _context.ApplicationRepository.GetContactNameById(applicationDetailsDto.ApplicationId);
+                    return null;
+                }
 
-                    if (!await _govUkNotifyService.SendEmailApplicationToRecognition(contactName!))
-                    {
-                        throw new Exception("GovUkNotifyService::SendEmail was unable to send notification");
-                    }
-                }
-                catch (Exception ex)
-                {                    
-                    Log.Error(ex, "ApplicationService::CheckAndSubmitApplication: " +
-                        "Failed to send email to recognition inbox for Application \"{ApplicationId}\"",
-                            applicationDetailsDto.ApplicationId);
-                }
+                await _govUkNotifyService.SendEmailApplicationToRecognition(contactName);
             }
-            
+
             await _govUkNotifyService.SendEmailApplicationSubmitted();
         }
 
