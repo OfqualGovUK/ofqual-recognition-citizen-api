@@ -65,12 +65,10 @@ public class ApplicationService : IApplicationService
                         .ApplicationRepository
                         .GetContactNameById(applicationDetailsDto.ApplicationId);
 
-                    foreach (var contactName in contactNameList!.Split(';'))
-                    {
+                    foreach (var contactName in contactNameList!.Split(';'))                    
                         if (!await _govUkNotifyService.SendEmailApplicationToRecognition(contactName))
                             Log.Warning("GovUkNotifyService::SendEmail was unable to send notification to \"{contactName}\"", contactName);
-                    }
-                }
+                }                
                 catch (Exception ex)
                 {
                     Log.Error(ex, "ApplicationService::CheckAndSubmitApplication: " +
