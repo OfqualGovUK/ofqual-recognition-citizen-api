@@ -33,8 +33,7 @@ public class TaskService : ITaskService
             TaskNameUrl = task.TaskNameUrl,
             TaskOrderNumber = task.TaskOrderNumber,
             SectionId = task.SectionId,
-            Stage = stageTask.StageId,
-            ReviewFlag = task.ReviewFlag
+            Stage = stageTask.StageId
         };
     }
 }
