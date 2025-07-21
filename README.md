@@ -28,6 +28,13 @@ The main application settings are defined in `appsettings.json` and can be tailo
 
 ```json
 {
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
   "FeatureFlag": {
     "CheckUser": true,
     "EmailRecognition": false,
@@ -54,6 +61,7 @@ The main application settings are defined in `appsettings.json` and can be tailo
     "TemplateIds": {
       "AccountCreation": "",
       "ApplicationSubmitted": "",
+      "ApplicationSubmittedNotifyRecognition": "",
       "InformationFromPreEngagement": ""
     }
   },
@@ -66,15 +74,24 @@ The main application settings are defined in `appsettings.json` and can be tailo
 
 ### Setting Details
 
+- **`Logging:LogLevel:Default`**
+  The default logging level for the service; refer to the [Microsoft Documentation](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loglevel?view=net-9.0-pp) for an explanation of the different levels
+
+- **`Logging:LogLevel:Microsoft.AspNetCore`**
+  The logging level for AspNetCore specific errors; refer to the [Microsoft Documentation](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loglevel?view=net-9.0-pp) for an explanation of the different levels
+
+- **`AllowedHosts`**
+  As per the [Microsoft Documentation](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel?view=aspnetcore-3.1#host-filtering) - keep this set to wildcard for ease of use
+
 - **`FeatureFlag:CheckUser`**  
   A **boolean** flag used to control whether the system attempts to retrieve application data for the current user.  
   When set to `true`, the system will check for an existing user and retrieve their latest application if available.  
   When set to `false`, the system will skip this check and treat the user as not eligible for application retrieval or creation.
 
 - **`FeatureFlag:EmailRecognition`**  
-  A **boolean** flag used to control whether the system sends recognition emails to recipients defined in `GovUkNotify:RecognitionEmailInbox`.  
-  When set to `true`, the system will send recognition emails to the configured inbox.  
-  When set to `false`, the system will suppress these emails.
+  A **boolean** flag used to control whether an email is sent to the Recognition Team when an application has been submitted.  
+  When set to `true`, the system will send the email to the address configured in `GovUkNotify:RecognitionEmailInbox`.  
+  When set to `false`, the email will not be sent.  
 
 - **`LogzIo:Environment`**  
   Identifies the current environment in the logs (e.g., `DEV`, `PREPROD`, `PROD`). This helps differentiate log entries across deployments.
@@ -110,17 +127,20 @@ The main application settings are defined in `appsettings.json` and can be tailo
   The API key for the GovUK Notify library to function.
 
 - **`GovUkNotify:RecognitionEmailInbox`**  
-  A **single email address** that will receive recognition emails when `FeatureFlag:EmailRecognition` is enabled.  
-  This address is used by the system to send recognition notifications via GOV.UK Notify, typically to an internal team or mailbox.
+  A **single email address** used for sending submission emails to the Recognition team.  
+  This address will receive recognition emails when `FeatureFlag:EmailRecognition` is enabled.  
 
 - **`GovUkNotify:TemplateIds`**  
   The collection of TemplateIds used for sending out GOV.UK Notify emails.
 
+  - **`GovUkNotify:RecognitionEmailInbox`**
+    An email address used for sending submission emails to the Recognition team.
+
   - **`GovUkNotify:TemplateIds:AccountCreation`**  
-    The specific TemplateId used for GOV.UK Notify **account creation** emails.
+    The specific TemplateId used for GovUK Notify **account creation** emails.
 
   - **`GovUkNotify:TemplateIds:ApplicationSubmitted`**  
-    The specific TemplateId used for GOV.UK Notify **application submission confirmation** emails.
+    The specific TemplateId used for GovUK Notify **application submission confirmation** emails.
 
   - **`GovUkNotify:TemplateIds:InformationFromPreEngagement`**  
     The specific TemplateId used for GOV.UK Notify **pre-engagement information** emails.
