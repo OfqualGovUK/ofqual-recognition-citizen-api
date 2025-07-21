@@ -61,15 +61,18 @@ public class ApplicationService : IApplicationService
             {
                 try
                 {
-                    var contactName = await _context
+                    var contactNameList = await _context
                         .ApplicationRepository
                         .GetContactNameById(applicationDetailsDto.ApplicationId);
 
-                    if(!await _govUkNotifyService.SendEmailApplicationToRecognition(contactName!))
-                        throw new Exception("GovUkNotifyService::SendEmail was unable to send notification");
+                    foreach (var contactName in contactNameList!.Split(';'))
+                    {
+                        if (!await _govUkNotifyService.SendEmailApplicationToRecognition(contactName))
+                            Log.Warning("GovUkNotifyService::SendEmail was unable to send notification to \"{contactName}\"", contactName);
+                    }
                 }
                 catch (Exception ex)
-                {                    
+                {
                     Log.Error(ex, "ApplicationService::CheckAndSubmitApplication: " +
                         "Failed to send email to recognition inbox for Application \"{ApplicationId}\"",
                             applicationDetailsDto.ApplicationId);
