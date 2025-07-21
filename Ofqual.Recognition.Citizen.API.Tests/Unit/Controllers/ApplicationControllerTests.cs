@@ -746,6 +746,22 @@ public class ApplicationControllerTests
         // Assert  
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
         Assert.Equal("Application not found", notFoundResult.Value);
+    }
 
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetLatestApplicationDetails_ShouldThrowException_WhenServiceThrows()
+    {
+        // Arrange
+
+        _mockApplicationService
+            .Setup(s => s.GetLatestApplicationForCurrentUser())
+            .ThrowsAsync(new Exception("Unexpected failure"));
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() =>
+            _controller.GetLatestApplicationDetails());
+
+        Assert.Equal("An error occurred while fetching the latest application details. Please try again later.", exception.Message);
     }
 }

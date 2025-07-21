@@ -106,14 +106,21 @@ public class ApplicationController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<ApplicationDetailsDto>> GetLatestApplicationDetails()
     {
-        ApplicationDetailsDto? latestApplication = await _applicationService.GetLatestApplicationForCurrentUser();
-        if (latestApplication != null)
+        try
         {
-            return Ok(latestApplication);
-        } else
-        {
+            ApplicationDetailsDto? latestApplication = await _applicationService.GetLatestApplicationForCurrentUser();
+            if (latestApplication != null)
+            {
+                return Ok(latestApplication);
+            }
             return NotFound("Application not found");
         }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while retrieving the latest application details.");
+            throw new Exception("An error occurred while fetching the latest application details. Please try again later.");
+        }
+
     }
 
     /// <summary>
