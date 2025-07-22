@@ -464,7 +464,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             {
                 continue;
             }
-            
+
             //If compoent is a parent, skip validating it as we should validate children
             if (formGroup.CheckboxGroup?.Options != null)
             {
@@ -503,7 +503,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             if (!answerValue.TryGetValue(component.Name, out var answerElement))
             {
                 if (validation.Required == true)
-                {           
+                {
                     string message = component switch
                     {
                         CheckBoxGroup or RadioButtonGroup => $"Select {componentValidationLabel}",
@@ -540,7 +540,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             if (string.IsNullOrWhiteSpace(answerString) && (answerArray == null || !answerArray.Any()))
             {
                 if (validation.Required == true)
-                {                    
+                {
                     string message = component switch
                     {
                         CheckBoxGroup or RadioButtonGroup => $"Select {componentValidationLabel}",
@@ -559,12 +559,16 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
             //Following validation is only applicable for CheckBoxGroup and RadioButtonGroup
             if (component is CheckBoxGroup or RadioButtonGroup)
-            {   // Check for minimum and maximum selected options where applicable
+            {
+                // Check for minimum and maximum selected options where applicable
                 var selectError = ValidateSelectableComponent(component, validation, answerElement);
-                if(selectError != null)                
+                if (selectError != null)
+                {
                     errors.Add(selectError);
-                                
-                continue; // following validations are not applicable for CheckBoxGroup and RadioButtonGroup
+                }
+
+                // following validations are not applicable for CheckBoxGroup and RadioButtonGroup
+                continue;
             }
 
             //Check if the answer is in database if unique validation is required
@@ -588,12 +592,11 @@ public class ApplicationAnswersService : IApplicationAnswersService
             {
                 bool countWords = validation.CountWords == true;
 
-                 int length = countWords 
-                    ? answerString.Split(['\t', '\r', '\n', ' '], StringSplitOptions.RemoveEmptyEntries).Length
-                    : answerString.Length;
+                int length = countWords
+                   ? answerString.Split(['\t', '\r', '\n', ' '], StringSplitOptions.RemoveEmptyEntries).Length
+                   : answerString.Length;
 
                 string countType = countWords ? "words" : "characters";
-
 
                 if (validation.MinLength.HasValue && length < validation.MinLength.Value)
                 {
@@ -616,7 +619,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
                     continue;
                 }
-                
+
             }
 
             if (!string.IsNullOrWhiteSpace(validation.Pattern) && !string.IsNullOrWhiteSpace(answerString))
@@ -638,16 +641,14 @@ public class ApplicationAnswersService : IApplicationAnswersService
     }
 
     private static ValidationErrorItem? ValidateSelectableComponent(IValidatable component, ValidationRule validation, JsonElement answerElement)
-    {      
-
+    {
         if (validation.MinSelected.HasValue || validation.MaxSelected.HasValue)
         {
             int selectedCount = 0;
 
             if (answerElement.ValueKind == JsonValueKind.Array)
             {
-                selectedCount = answerElement.EnumerateArray()
-                    .Count(x => !string.IsNullOrWhiteSpace(x.GetString()));
+                selectedCount = answerElement.EnumerateArray().Count(x => !string.IsNullOrWhiteSpace(x.GetString()));
             }
             else if (answerElement.ValueKind == JsonValueKind.String)
             {
@@ -660,33 +661,32 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
             var componentValidationLabel = component.GetValidationLabel();
 
-            if (validation.MinSelected.HasValue && selectedCount < validation.MinSelected.Value)            
+            if (validation.MinSelected.HasValue && selectedCount < validation.MinSelected.Value)
+            {
+                var countText = validation.MinSelected.Value > 1
+                    ? $"{validation.MinSelected.Value} options"
+                    : "1 option";
+
                 return new ValidationErrorItem
                 {
                     PropertyName = component.Name,
-                    ErrorMessage = "Select at least " +
-                                    (validation.MinSelected.Value > 1
-                                            ? $"{validation.MinSelected.Value} options for "
-                                            : "1 option for "
-                                    ) + componentValidationLabel
+                    ErrorMessage = $"Select at least {countText} for {componentValidationLabel}"
                 };
-            
+            }
 
             if (validation.MaxSelected.HasValue && selectedCount > validation.MaxSelected.Value)
-            
+            {
+                var countText = validation.MaxSelected.Value > 1
+                    ? $"{validation.MaxSelected.Value} options"
+                    : "1 option";
+
                 return new ValidationErrorItem
                 {
                     PropertyName = component.Name,
-                    ErrorMessage = $"You can only select up to " +
-                                    (validation.MaxSelected.Value > 1
-                                            ? $"{validation.MaxSelected.Value} options for "
-                                            : "1 option for "
-                                    ) + componentValidationLabel
-                };            
+                    ErrorMessage = $"You can only select up to {countText} for {componentValidationLabel}"
+                };
+            }
         }
         return null;
     }
-
-    
-    
 }
