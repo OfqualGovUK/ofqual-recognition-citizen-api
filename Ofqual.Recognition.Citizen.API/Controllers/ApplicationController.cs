@@ -104,6 +104,30 @@ public class ApplicationController : ControllerBase
     }
 
     /// <summary>
+    /// Retrieves the latest application details for the current user.
+    /// </summary>
+    /// <returns>The latest application details.</returns>
+    [HttpGet]
+    public async Task<ActionResult<ApplicationDetailsDto>> GetLatestApplicationDetails()
+    {
+        try
+        {
+            ApplicationDetailsDto? latestApplication = await _applicationService.GetLatestApplicationForCurrentUser();
+            if (latestApplication == null)
+            {
+                return NotFound("Application not found");
+            }
+
+            return Ok(latestApplication);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while retrieving the latest application details.");
+            throw new Exception("An error occurred while fetching the latest application details. Please try again later.");
+        }
+    }
+
+    /// <summary>
     /// Retrieves sections with tasks and their statuses for a given application.
     /// </summary>
     /// <param name="applicationId">The application ID.</param>

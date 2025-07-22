@@ -708,6 +708,65 @@ public class ApplicationControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
+    public async Task GetLatestApplicationDetails_ReturnsOk_WhenApplicationExists()
+    {
+        // Arrange  
+        var expectedApplication = new ApplicationDetailsDto
+        {
+            ApplicationId = Guid.NewGuid(),
+            Submitted = false
+        };
+
+        _mockApplicationService
+            .Setup(s => s.GetLatestApplicationForCurrentUser())
+            .ReturnsAsync(expectedApplication);
+
+        // Act  
+        var result = await _controller.GetLatestApplicationDetails();
+
+        // Assert  
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedApplication = Assert.IsType<ApplicationDetailsDto>(okResult.Value);
+        Assert.Equal(expectedApplication.ApplicationId, returnedApplication.ApplicationId);
+        Assert.Equal(expectedApplication.Submitted, returnedApplication.Submitted);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetLatestApplicationDetails_ReturnsNotFound_WhenApplicationDoesNotExist()
+    {
+        // Arrange  
+        _mockApplicationService
+            .Setup(s => s.GetLatestApplicationForCurrentUser())
+            .ReturnsAsync((ApplicationDetailsDto?)null);
+
+        // Act  
+        var result = await _controller.GetLatestApplicationDetails();
+
+        // Assert  
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.Equal("Application not found", notFoundResult.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetLatestApplicationDetails_ShouldThrowException_WhenServiceThrows()
+    {
+        // Arrange
+
+        _mockApplicationService
+            .Setup(s => s.GetLatestApplicationForCurrentUser())
+            .ThrowsAsync(new Exception("Unexpected failure"));
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() =>
+            _controller.GetLatestApplicationDetails());
+
+        Assert.Equal("An error occurred while fetching the latest application details. Please try again later.", exception.Message);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public async Task GetAllApplicationAnswersByAppId_ReturnsOk_WhenAnswersExist()
     {
         // Arrange
