@@ -103,24 +103,28 @@ public class ApplicationController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Retrieves the latest application details for the current user.
+    /// </summary>
+    /// <returns>The latest application details.</returns>
     [HttpGet]
     public async Task<ActionResult<ApplicationDetailsDto>> GetLatestApplicationDetails()
     {
         try
         {
             ApplicationDetailsDto? latestApplication = await _applicationService.GetLatestApplicationForCurrentUser();
-            if (latestApplication != null)
+            if (latestApplication == null)
             {
-                return Ok(latestApplication);
+                return NotFound("Application not found");
             }
-            return NotFound("Application not found");
+
+            return Ok(latestApplication);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "An error occurred while retrieving the latest application details.");
             throw new Exception("An error occurred while fetching the latest application details. Please try again later.");
         }
-
     }
 
     /// <summary>
@@ -280,13 +284,30 @@ public class ApplicationController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Retrieves all answers associated with a specific application.
+    /// </summary>
+    /// <param name="applicationId">The ID of the application.</param>
+    /// <returns>A list of task review section DTOs.</returns>
     [HttpGet("{applicationId}/tasks/answers")]
     [CheckApplicationId(queryParam: "applicationId")]
     public async Task<ActionResult<List<TaskReviewSectionDto>>> GetAllApplicationAnswersByAppId(Guid applicationId)
     {
-        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+        try
+        {
+            var applicationAnswers = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+            if (applicationAnswers != null && !applicationAnswers.Any())
+            {
+                return NotFound("No answers found for the specified application.");
+            }
 
-        return Ok(result);
+            return Ok(applicationAnswers);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "An error occurred while retrieving answers for ApplicationId: {ApplicationId}.", applicationId);
+            throw new Exception("An error occurred while fetching the application answers. Please try again later.");
+        }
     }
 
     /// <summary>

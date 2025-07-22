@@ -37,7 +37,7 @@ The main application settings are defined in `appsettings.json` and can be tailo
   "AllowedHosts": "*",
   "FeatureFlag": {
     "CheckUser": true,
-    "EmailRecognition": false
+    "EmailRecognition": false,
   },
   "LogzIo": {
     "Environment": "",
@@ -88,10 +88,10 @@ The main application settings are defined in `appsettings.json` and can be tailo
   When set to `true`, the system will check for an existing user and retrieve their latest application if available.  
   When set to `false`, the system will skip this check and treat the user as not eligible for application retrieval or creation.
 
-- **`FeatureFlag:EmailRecognition`**
-  A **boolean** flag used to control whether an email is sent to the Recognition Team when an application has been submitted.
-  When set to `true`, this is turned on; when set to `false`, the system will skip this email
-  If set to true, you must also provide `GovUkNotify:RecognitionEmailInbox` in your environment variables.
+- **`FeatureFlag:EmailRecognition`**  
+  A **boolean** flag used to control whether an email is sent to the Recognition Team when an application has been submitted.  
+  When set to `true`, the system will send the email to the address configured in `GovUkNotify:RecognitionEmailInbox`.  
+  When set to `false`, the email will not be sent.  
 
 - **`LogzIo:Environment`**  
   Identifies the current environment in the logs (e.g., `DEV`, `PREPROD`, `PROD`). This helps differentiate log entries across deployments.
@@ -126,23 +126,24 @@ The main application settings are defined in `appsettings.json` and can be tailo
 - **`GovUkNotify:ApiKey`**  
   The API key for the GovUK Notify library to function.
 
+- **`GovUkNotify:RecognitionEmailInbox`**  
+  A **single email address** used for sending submission emails to the Recognition team.  
+  This address will receive recognition emails when `FeatureFlag:EmailRecognition` is enabled.  
+
 - **`GovUkNotify:TemplateIds`**  
-  The collection of TemplateIds used for sending out GovUK Notify emails.
+  The collection of TemplateIds used for sending out GOV.UK Notify emails.
 
-- **`GovUkNotify:RecognitionEmailInbox`**
-  An email address used for sending submission emails to the Recognition team.
+  - **`GovUkNotify:RecognitionEmailInbox`**
+    An email address used for sending submission emails to the Recognition team.
 
-- **`GovUkNotify:TemplateIds:AccountCreation`**  
-  The specific TemplateId used for GovUK Notify **account creation** emails.
+  - **`GovUkNotify:TemplateIds:AccountCreation`**  
+    The specific TemplateId used for GovUK Notify **account creation** emails.
 
-- **`GovUkNotify:TemplateIds:ApplicationSubmitted`**  
-  The specific TemplateId used for GovUK Notify **application submission confirmation** emails for the **Citizen User**.
+  - **`GovUkNotify:TemplateIds:ApplicationSubmitted`**  
+    The specific TemplateId used for GovUK Notify **application submission confirmation** emails.
 
-- **`GovUkNotify:TemplateIds:ApplicationSubmittedNotifyRecognition`**
-  The specific TemplateId used for GovUK Notify **application submission confirmation** emails for the **Recognition/Ofqual Team**
-
-- **`GovUkNotify:TemplateIds:InformationFromPreEngagement`**  
-  The specific TemplateId used for GovUK Notify **pre-engagement information** emails.
+  - **`GovUkNotify:TemplateIds:InformationFromPreEngagement`**  
+    The specific TemplateId used for GOV.UK Notify **pre-engagement information** emails.
 
 - **`ConnectionStrings:OfqualODS`**  
   Connection string for accessing the Ofqual ODS (Organisational Data Service) database.

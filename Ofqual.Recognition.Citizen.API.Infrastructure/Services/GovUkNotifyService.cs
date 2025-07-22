@@ -38,7 +38,6 @@ public class GovUkNotifyService : IGovUkNotifyService
         );
     }
 
-
     public async Task<bool> SendEmailInformationFromPreEngagement()
     {
         string userUpn = _userInformationService.GetCurrentUserUpn();

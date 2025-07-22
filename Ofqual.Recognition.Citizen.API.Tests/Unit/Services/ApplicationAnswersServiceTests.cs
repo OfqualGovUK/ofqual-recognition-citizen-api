@@ -819,4 +819,936 @@ public class ApplicationAnswersServiceTests
         // Assert
         Assert.Empty(result!.Errors!);
     }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswerReview_ShouldReturnEmptyList_WhenNoAnswersExist()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(new List<SectionTaskQuestionAnswer>());
+
+        // Act
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswerReview_ShouldSkipSection_WhenReviewFlagIsFalse()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var sectionId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+
+        var answers = new List<SectionTaskQuestionAnswer>
+        {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Non-Reviewed Section",
+                SectionOrderNumber = 1,
+                TaskId = taskId,
+                TaskName = "Task 1",
+                TaskOrderNumber = 1,
+                QuestionId = Guid.NewGuid(),
+                ReviewFlag = false,
+                QuestionContent = JsonSerializer.Serialize(new QuestionContent
+                {
+                    FormGroup = new FormGroup
+                    {
+                        TextInputGroup = new TextInputGroup
+                        {
+                            SectionName = "Test",
+                            Fields = new List<TextInputItem>
+                            {
+                                new TextInputItem { Name = "name", Label = "Name" }
+                            }
+                        }
+                    }
+                }),
+                Answer = JsonSerializer.Serialize(new Dictionary<string, object> { { "name", "Test User" } }),
+                TaskNameUrl = "task-1",
+                QuestionNameUrl = "question-1"
+            }
+        };
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(answers);
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
+            .ReturnsAsync(answers);
+
+        _mockAttachmentRepository
+            .Setup(repo => repo.GetAllAttachmentsForLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+            .ReturnsAsync(new List<Attachment>());
+
+        // Act
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswerReview_ShouldIncludeSection_WhenReviewFlagIsTrue()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var sectionId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+
+        var answers = new List<SectionTaskQuestionAnswer>
+        {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Reviewed Section",
+                SectionOrderNumber = 1,
+                TaskId = taskId,
+                TaskName = "Task 1",
+                TaskOrderNumber = 1,
+                QuestionId = questionId,
+                ReviewFlag = true,
+                QuestionContent = JsonSerializer.Serialize(new QuestionContent
+                {
+                    FormGroup = new FormGroup
+                    {
+                        TextInputGroup = new TextInputGroup
+                        {
+                            SectionName = "Personal Info",
+                            Fields = new List<TextInputItem>
+                            {
+                                new TextInputItem { Name = "txtName", Label = "Your name" }
+                            }
+                        }
+                    }
+                }),
+                Answer = JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    { "txtName", "Test User" }
+                }),
+                TaskNameUrl = "task-1",
+                QuestionNameUrl = "question-1"
+            }
+        };
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(answers);
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
+            .ReturnsAsync(answers);
+
+        _mockAttachmentRepository
+            .Setup(repo => repo.GetAllAttachmentsForLink(applicationId, questionId, LinkType.Question))
+            .ReturnsAsync(new List<Attachment>());
+
+        // Act
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Reviewed Section", result[0].SectionName);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswerReview_ShouldMergeTaskGroups_WhenSectionHeadingsMatch()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var sectionId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId1 = Guid.NewGuid();
+        var questionId2 = Guid.NewGuid();
+
+        var answers = new List<SectionTaskQuestionAnswer>
+        {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Criteria A",
+                SectionOrderNumber = 1,
+                TaskId = taskId,
+                TaskName = "About You",
+                TaskNameUrl = "about-you",
+                TaskOrderNumber = 1,
+                QuestionId = questionId1,
+                ReviewFlag = true,
+                QuestionNameUrl = "question-1",
+                QuestionContent = JsonSerializer.Serialize(new QuestionContent
+                {
+                    FormGroup = new FormGroup
+                    {
+                        TextInputGroup = new TextInputGroup
+                        {
+                            SectionName = "Personal Info",
+                            Fields = new List<TextInputItem>
+                            {
+                                new TextInputItem { Name = "name", Label = "Your name" }
+                            }
+                        }
+                    }
+                }),
+                Answer = JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    { "name", "Alice" }
+                })
+            },
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Criteria A",
+                SectionOrderNumber = 1,
+                TaskId = taskId,
+                TaskName = "About You",
+                TaskNameUrl = "about-you",
+                TaskOrderNumber = 1,
+                QuestionId = questionId2,
+                ReviewFlag = true,
+                QuestionNameUrl = "question-2",
+                QuestionContent = JsonSerializer.Serialize(new QuestionContent
+                {
+                    FormGroup = new FormGroup
+                    {
+                        Textarea = new Textarea
+                        {
+                            SectionName = "Personal Info",
+                            Name = "experience",
+                            Label = new TextWithSize { Text = "Describe your experience" }
+                        }
+                    }
+                }),
+                Answer = JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    { "experience", "Lots" }
+                })
+            }
+        };
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(answers);
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
+            .ReturnsAsync(answers);
+
+        _mockAttachmentRepository
+            .Setup(repo => repo.GetAllAttachmentsForLink(applicationId, It.IsAny<Guid>(), LinkType.Question))
+            .ReturnsAsync(new List<Attachment>());
+
+        // Act
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        var section = result.First();
+        Assert.Single(section.TaskGroups);
+        var group = section.TaskGroups.First();
+        Assert.Equal("Personal Info", group.SectionHeading);
+        Assert.Equal(2, group.QuestionAnswers.Count);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswerReview_ShouldNotMergeTaskGroups_WhenSectionHeadingsDiffer()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var sectionId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId1 = Guid.NewGuid();
+        var questionId2 = Guid.NewGuid();
+
+        var answers = new List<SectionTaskQuestionAnswer>
+        {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Criteria A",
+                SectionOrderNumber = 1,
+                TaskId = taskId,
+                TaskName = "About You",
+                TaskNameUrl = "about-you",
+                TaskOrderNumber = 1,
+                QuestionId = questionId1,
+                ReviewFlag = true,
+                QuestionNameUrl = "question-1",
+                QuestionContent = JsonSerializer.Serialize(new QuestionContent
+                {
+                    FormGroup = new FormGroup
+                    {
+                        TextInputGroup = new TextInputGroup
+                        {
+                            SectionName = "Personal Info A",
+                            Fields = new List<TextInputItem>
+                            {
+                                new TextInputItem { Name = "name", Label = "Your name" }
+                            }
+                        }
+                    }
+                }),
+                Answer = JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    { "name", "Alice" }
+                })
+            },
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Criteria A",
+                SectionOrderNumber = 1,
+                TaskId = taskId,
+                TaskName = "About You",
+                TaskNameUrl = "about-you",
+                TaskOrderNumber = 1,
+                QuestionId = questionId2,
+                ReviewFlag = true,
+                QuestionNameUrl = "question-2",
+                QuestionContent = JsonSerializer.Serialize(new QuestionContent
+                {
+                    FormGroup = new FormGroup
+                    {
+                        TextInputGroup = new TextInputGroup
+                        {
+                            SectionName = "Personal Info B",
+                            Fields = new List<TextInputItem>
+                            {
+                                new TextInputItem { Name = "email", Label = "Your email" }
+                            }
+                        }
+                    }
+                }),
+                Answer = JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    { "email", "alice@example.com" }
+                })
+            }
+        };
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(answers);
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
+            .ReturnsAsync(answers);
+
+        _mockAttachmentRepository
+            .Setup(repo => repo.GetAllAttachmentsForLink(applicationId, It.IsAny<Guid>(), LinkType.Question))
+            .ReturnsAsync(new List<Attachment>());
+
+        // Act
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        var section = result.First();
+        Assert.Equal(2, section.TaskGroups.Count);
+        Assert.Contains(section.TaskGroups, g => g.SectionHeading == "Personal Info A");
+        Assert.Contains(section.TaskGroups, g => g.SectionHeading == "Personal Info B");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswerReview_ShouldHandleMultipleSections_WithCorrectOrdering()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+
+        var sectionId1 = Guid.NewGuid();
+        var sectionId2 = Guid.NewGuid();
+
+        var taskId1 = Guid.NewGuid();
+        var taskId2 = Guid.NewGuid();
+
+        var answers = new List<SectionTaskQuestionAnswer>
+        {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId2,
+                SectionName = "Section B",
+                SectionOrderNumber = 2,
+                TaskId = taskId2,
+                TaskName = "Task 2",
+                TaskOrderNumber = 1,
+                QuestionId = Guid.NewGuid(),
+                ReviewFlag = true,
+                QuestionContent = JsonSerializer.Serialize(new QuestionContent
+                {
+                    FormGroup = new FormGroup
+                    {
+                        TextInputGroup = new TextInputGroup
+                        {
+                            SectionName = "Group B",
+                            Fields = new List<TextInputItem>
+                            {
+                                new TextInputItem { Name = "field2", Label = "Field 2" }
+                            }
+                        }
+                    }
+                }),
+                Answer = JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    { "field2", "Answer B" }
+                }),
+                TaskNameUrl = "task-2",
+                QuestionNameUrl = "question-2"
+            },
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId1,
+                SectionName = "Section A",
+                SectionOrderNumber = 1,
+                TaskId = taskId1,
+                TaskName = "Task 1",
+                TaskOrderNumber = 1,
+                QuestionId = Guid.NewGuid(),
+                ReviewFlag = true,
+                QuestionContent = JsonSerializer.Serialize(new QuestionContent
+                {
+                    FormGroup = new FormGroup
+                    {
+                        TextInputGroup = new TextInputGroup
+                        {
+                            SectionName = "Group A",
+                            Fields = new List<TextInputItem>
+                            {
+                                new TextInputItem { Name = "field1", Label = "Field 1" }
+                            }
+                        }
+                    }
+                }),
+                Answer = JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    { "field1", "Answer A" }
+                }),
+                TaskNameUrl = "task-1",
+                QuestionNameUrl = "question-1"
+            }
+        };
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(answers);
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId1))
+            .ReturnsAsync(answers.Where(a => a.TaskId == taskId1).ToList());
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId2))
+            .ReturnsAsync(answers.Where(a => a.TaskId == taskId2).ToList());
+
+        _mockAttachmentRepository
+            .Setup(repo => repo.GetAllAttachmentsForLink(applicationId, It.IsAny<Guid>(), LinkType.Question))
+            .ReturnsAsync(new List<Attachment>());
+
+        // Act
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Section A", result[0].SectionName);
+        Assert.Equal("Section B", result[1].SectionName);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswerReview_ShouldHandleMultipleTasksWithinSection()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var sectionId = Guid.NewGuid();
+
+        var taskId1 = Guid.NewGuid();
+        var taskId2 = Guid.NewGuid();
+
+        var questionId1 = Guid.NewGuid();
+        var questionId2 = Guid.NewGuid();
+
+        var answers = new List<SectionTaskQuestionAnswer>
+        {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Shared Section",
+                SectionOrderNumber = 1,
+                TaskId = taskId1,
+                TaskName = "Task A",
+                TaskOrderNumber = 1,
+                QuestionId = questionId1,
+                ReviewFlag = true,
+                QuestionNameUrl = "question-1",
+                TaskNameUrl = "task-a",
+                QuestionContent = JsonSerializer.Serialize(new QuestionContent
+                {
+                    FormGroup = new FormGroup
+                    {
+                        TextInputGroup = new TextInputGroup
+                        {
+                            SectionName = "Details A",
+                            Fields = new List<TextInputItem>
+                            {
+                                new TextInputItem { Name = "inputA", Label = "Input A" }
+                            }
+                        }
+                    }
+                }),
+                Answer = JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    { "inputA", "Value A" }
+                })
+            },
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Shared Section",
+                SectionOrderNumber = 1,
+                TaskId = taskId2,
+                TaskName = "Task B",
+                TaskOrderNumber = 2,
+                QuestionId = questionId2,
+                ReviewFlag = true,
+                QuestionNameUrl = "question-2",
+                TaskNameUrl = "task-b",
+                QuestionContent = JsonSerializer.Serialize(new QuestionContent
+                {
+                    FormGroup = new FormGroup
+                    {
+                        TextInputGroup = new TextInputGroup
+                        {
+                            SectionName = "Details B",
+                            Fields = new List<TextInputItem>
+                            {
+                                new TextInputItem { Name = "inputB", Label = "Input B" }
+                            }
+                        }
+                    }
+                }),
+                Answer = JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    { "inputB", "Value B" }
+                })
+            }
+        };
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(answers);
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId1))
+            .ReturnsAsync(answers.Where(a => a.TaskId == taskId1).ToList());
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId2))
+            .ReturnsAsync(answers.Where(a => a.TaskId == taskId2).ToList());
+
+        _mockAttachmentRepository
+            .Setup(repo => repo.GetAllAttachmentsForLink(applicationId, It.IsAny<Guid>(), LinkType.Question))
+            .ReturnsAsync(new List<Attachment>());
+
+        // Act
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        var section = result.First();
+        Assert.Equal("Shared Section", section.SectionName);
+        Assert.Equal(2, section.TaskGroups.Count);
+        Assert.Contains(section.TaskGroups, g => g.SectionHeading == "Details A");
+        Assert.Contains(section.TaskGroups, g => g.SectionHeading == "Details B");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswerReview_ShouldAddQuestionAnswers_ForAllControlTypes()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var sectionId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+
+        var attachments = new List<Attachment>
+        {
+            new Attachment
+            {
+                AttachmentId = Guid.NewGuid(),
+                FileName = "CV.pdf",
+                BlobId = Guid.NewGuid(),
+                FileMIMEtype = "application/pdf",
+                FileSize = 1024,
+                CreatedDate = DateTime.UtcNow.AddDays(-2),
+                ModifiedDate = DateTime.UtcNow,
+                CreatedByUpn = "user1",
+                ModifiedByUpn = "user1"
+            }
+        };
+
+        var content = new QuestionContent
+        {
+            FormGroup = new FormGroup
+            {
+                TextInputGroup = new TextInputGroup
+                {
+                    SectionName = "Profile",
+                    Fields = new List<TextInputItem>
+                {
+                    new TextInputItem { Name = "fullName", Label = "Full name" }
+                }
+                },
+                Textarea = new Textarea
+                {
+                    SectionName = "Profile",
+                    Name = "bio",
+                    Label = new TextWithSize { Text = "Bio" }
+                },
+                RadioButtonGroup = new RadioButtonGroup
+                {
+                    SectionName = "Profile",
+                    Name = "role",
+                    Heading = new TextWithSize { Text = "Choose role" },
+                    Options = new List<RadioButtonItem>
+                {
+                    new RadioButtonItem { Label = "Admin", Value = "admin" }
+                }
+                },
+                CheckboxGroup = new CheckBoxGroup
+                {
+                    SectionName = "Profile",
+                    Name = "skills",
+                    Heading = new TextWithSize { Text = "Your skills" },
+                    Options = new List<CheckBoxItem>
+                {
+                    new CheckBoxItem
+                    {
+                        Label = "Leadership",
+                        Value = "leadership",
+                        ConditionalInputs = new List<TextInputItem>
+                        {
+                            new TextInputItem { Name = "leadershipDetails", Label = "Details" }
+                        }
+                    }
+                }
+                },
+                FileUpload = new FileUpload
+                {
+                    SectionName = "Profile",
+                    Label = new TextWithSize { Text = "Upload your CV" },
+                    Name = "cv"
+                }
+            }
+        };
+
+        var answer = new Dictionary<string, object>
+        {
+            { "fullName", "test test" },
+            { "bio", "Experienced professional" },
+            { "role", "admin" },
+            { "skills", new[] { "leadership" } },
+            { "leadershipDetails", "test details" }
+        };
+
+        var answers = new List<SectionTaskQuestionAnswer>
+        {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Profile Section",
+                SectionOrderNumber = 1,
+                TaskId = taskId,
+                TaskName = "User Profile",
+                TaskOrderNumber = 1,
+                TaskNameUrl = "user-profile",
+                QuestionId = questionId,
+                QuestionNameUrl = "profile",
+                ReviewFlag = true,
+                QuestionContent = JsonSerializer.Serialize(content),
+                Answer = JsonSerializer.Serialize(answer),
+                ApplicationId = applicationId
+            }
+        };
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(answers);
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
+            .ReturnsAsync(answers);
+
+        _mockAttachmentRepository
+            .Setup(repo => repo.GetAllAttachmentsForLink(applicationId, questionId, LinkType.Question))
+            .ReturnsAsync(attachments);
+
+        // Act
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        var group = result.First().TaskGroups.First();
+        Assert.Equal(6, group.QuestionAnswers.Count);
+
+        Assert.Contains(group.QuestionAnswers, q => q.QuestionText == "Full name" && q.AnswerValue?.First() == "test test");
+        Assert.Contains(group.QuestionAnswers, q => q.QuestionText == "Bio" && q.AnswerValue?.First() == "Experienced professional");
+        Assert.Contains(group.QuestionAnswers, q => q.QuestionText == "Choose role" && q.AnswerValue?.First() == "admin");
+        Assert.Contains(group.QuestionAnswers, q => q.QuestionText == "Your skills" && q.AnswerValue?.First() == "leadership");
+        Assert.Contains(group.QuestionAnswers, q => q.QuestionText == "Details" && q.AnswerValue?.First() == "test details");
+        Assert.Contains(group.QuestionAnswers, q => q.QuestionText == "Files you uploaded" && q.AnswerValue?.First() == "CV.pdf");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswerReview_ShouldSortAttachmentsAlphabetically_ByFileName()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var sectionId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+
+        var attachments = new List<Attachment>
+        {
+            new Attachment
+            {
+                AttachmentId = Guid.NewGuid(),
+                FileName = "Zebra.docx",
+                BlobId = Guid.NewGuid(),
+                FileMIMEtype = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                FileSize = 2000,
+                CreatedDate = DateTime.UtcNow.AddDays(-1),
+                ModifiedDate = DateTime.UtcNow,
+                CreatedByUpn = "user1",
+                ModifiedByUpn = "user1"
+            },
+            new Attachment
+            {
+                AttachmentId = Guid.NewGuid(),
+                FileName = "Alpha.pdf",
+                BlobId = Guid.NewGuid(),
+                FileMIMEtype = "application/pdf",
+                FileSize = 1500,
+                CreatedDate = DateTime.UtcNow.AddDays(-2),
+                ModifiedDate = DateTime.UtcNow,
+                CreatedByUpn = "user2",
+                ModifiedByUpn = "user2"
+            }
+        };
+
+        var content = new QuestionContent
+        {
+            FormGroup = new FormGroup
+            {
+                FileUpload = new FileUpload
+                {
+                    SectionName = "Docs",
+                    Label = new TextWithSize { Text = "Files you uploaded" },
+                    Name = "fileUpload"
+                }
+            }
+        };
+
+        var answer = new Dictionary<string, object>();
+
+        var answers = new List<SectionTaskQuestionAnswer>
+        {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Documents",
+                SectionOrderNumber = 1,
+                TaskId = taskId,
+                TaskName = "Upload",
+                TaskOrderNumber = 1,
+                TaskNameUrl = "upload",
+                QuestionId = questionId,
+                QuestionNameUrl = "docs",
+                ReviewFlag = true,
+                QuestionContent = JsonSerializer.Serialize(content),
+                Answer = JsonSerializer.Serialize(answer),
+                ApplicationId = applicationId
+            }
+        };
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(answers);
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
+            .ReturnsAsync(answers);
+
+        _mockAttachmentRepository
+            .Setup(repo => repo.GetAllAttachmentsForLink(applicationId, questionId, LinkType.Question))
+            .ReturnsAsync(attachments);
+
+        // Act
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        var fileAnswer = result
+            .First().TaskGroups
+            .First().QuestionAnswers
+            .FirstOrDefault(q => q.QuestionText == "Files you uploaded");
+
+        Assert.NotNull(fileAnswer);
+        Assert.Equal(2, fileAnswer!.AnswerValue!.Count);
+        Assert.Equal("Alpha.pdf", fileAnswer.AnswerValue[0]);
+        Assert.Equal("Zebra.docx", fileAnswer.AnswerValue[1]);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswerReview_ShouldAddNotProvided_WhenNoAttachmentsExist()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var sectionId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+
+        var content = new QuestionContent
+        {
+            FormGroup = new FormGroup
+            {
+                FileUpload = new FileUpload
+                {
+                    SectionName = "Documents",
+                    Label = new TextWithSize { Text = "Upload your documents" },
+                    Name = "supportingDocs"
+                }
+            }
+        };
+
+        var answer = new Dictionary<string, object>();
+
+        var answers = new List<SectionTaskQuestionAnswer>
+        {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Document Upload",
+                SectionOrderNumber = 1,
+                TaskId = taskId,
+                TaskName = "Evidence Task",
+                TaskOrderNumber = 1,
+                TaskNameUrl = "evidence-task",
+                QuestionId = questionId,
+                QuestionNameUrl = "upload-docs",
+                ReviewFlag = true,
+                QuestionContent = JsonSerializer.Serialize(content),
+                Answer = JsonSerializer.Serialize(answer),
+                ApplicationId = applicationId
+            }
+        };
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(answers);
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
+            .ReturnsAsync(answers);
+
+        _mockAttachmentRepository
+            .Setup(repo => repo.GetAllAttachmentsForLink(applicationId, questionId, LinkType.Question))
+            .ReturnsAsync(new List<Attachment>());
+
+        // Act
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        var fileAnswer = result
+            .First().TaskGroups
+            .First().QuestionAnswers
+            .FirstOrDefault(q => q.QuestionText == "Files you uploaded");
+
+        Assert.NotNull(fileAnswer);
+        Assert.Single(fileAnswer!.AnswerValue!);
+        Assert.Equal("Not provided", fileAnswer.AnswerValue!.First());
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task GetAllApplicationAnswerReview_ShouldIgnoreTask_WhenNoValidQuestionAnswersExist()
+    {
+        // Arrange
+        var applicationId = Guid.NewGuid();
+        var sectionId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var questionId = Guid.NewGuid();
+
+        var content = new QuestionContent
+        {
+            FormGroup = new FormGroup()
+        };
+
+        var answer = new Dictionary<string, object>();
+
+        var answers = new List<SectionTaskQuestionAnswer>
+        {
+            new SectionTaskQuestionAnswer
+            {
+                SectionId = sectionId,
+                SectionName = "Section With Empty Task",
+                SectionOrderNumber = 1,
+                TaskId = taskId,
+                TaskName = "Empty Task",
+                TaskOrderNumber = 1,
+                TaskNameUrl = "empty-task",
+                QuestionId = questionId,
+                QuestionNameUrl = "question-1",
+                ReviewFlag = true,
+                QuestionContent = JsonSerializer.Serialize(content),
+                Answer = JsonSerializer.Serialize(answer),
+                ApplicationId = applicationId
+            }
+        };
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetAllApplicationAnswers(applicationId))
+            .ReturnsAsync(answers);
+
+        _mockApplicationAnswersRepository
+            .Setup(repo => repo.GetTaskQuestionAnswers(applicationId, taskId))
+            .ReturnsAsync(answers);
+
+        _mockAttachmentRepository
+            .Setup(repo => repo.GetAllAttachmentsForLink(applicationId, questionId, LinkType.Question))
+            .ReturnsAsync(new List<Attachment>());
+
+        // Act
+        var result = await _applicationAnswersService.GetAllApplicationAnswerReview(applicationId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        var section = result.First();
+        Assert.Empty(section.TaskGroups);
+    }
 }
