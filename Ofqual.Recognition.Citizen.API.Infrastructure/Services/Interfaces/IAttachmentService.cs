@@ -7,4 +7,5 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 public interface IAttachmentService
 {
     public Task<Attachment?> SaveAttachmentAndLink(Guid applicationId, Guid linkId, LinkType linkType, IFormFile file);
+    public Task<bool> WillExceedAttachmentSizeLimit(Guid applicationId, Guid linkId, LinkType linkType, IFormFile newFile);
 }
