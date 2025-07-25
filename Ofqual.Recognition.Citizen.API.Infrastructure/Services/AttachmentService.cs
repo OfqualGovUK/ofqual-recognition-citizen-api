@@ -1,4 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Constants;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Microsoft.AspNetCore.Http;
@@ -20,14 +21,12 @@ public class AttachmentService : IAttachmentService
     {
         string upn = _userInformationService.GetCurrentUserUpn();
 
-        // Save attachment metadata
         Attachment? savedAttachment = await _context.AttachmentRepository.CreateAttachment(file.FileName, file.ContentType, file.Length, upn);
         if (savedAttachment == null)
         {
             return null;
         }
 
-        // Create the attachment link
         bool linkCreated = await _context.AttachmentRepository.CreateAttachmentLink(applicationId, savedAttachment.AttachmentId, linkId, linkType, upn);
         if (!linkCreated)
         {
@@ -35,5 +34,15 @@ public class AttachmentService : IAttachmentService
         }
 
         return savedAttachment;
+    }
+
+    public async Task<bool> WillExceedAttachmentSizeLimit(Guid applicationId, Guid linkId, LinkType linkType, IFormFile newFile)
+    {
+        var existingAttachments = await _context.AttachmentRepository.GetAllAttachmentsForLink(applicationId, linkId, linkType);
+
+        long existingTotalSize = existingAttachments.Sum(a => a.FileSize);
+        long newTotalSize = existingTotalSize + newFile.Length;
+
+        return newTotalSize > AttachmentConstants.MaxTotalSizeBytes;
     }
 }

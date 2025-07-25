@@ -1,6 +1,7 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Core.Constants;
 using Ofqual.Recognition.Citizen.API.Controllers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
@@ -87,7 +88,7 @@ public class AttachmentControllerTests
         var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Equal("A file must be provided and must not be empty.", badRequest.Value);
     }
-
+    
     [Fact]
     [Trait("Category", "Unit")]
     public async Task UploadFile_ReturnsBadRequest_WhenFileIsEmpty()
@@ -123,6 +124,29 @@ public class AttachmentControllerTests
 
     [Fact]
     [Trait("Category", "Unit")]
+    public async Task UploadFile_ReturnsBadRequest_WhenTotalFileSizeLimitExceeded()
+    {
+        // Arrange
+        var file = new FormFile(new MemoryStream(Encoding.UTF8.GetBytes("valid content")), 0, 1024 * 1024, "file", "valid.pdf")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "application/pdf"
+        };
+
+        _mockAttachmentService
+            .Setup(s => s.WillExceedAttachmentSizeLimit(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>(), file))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal($"Total file size for this question must not exceed {AttachmentConstants.MaxTotalSizeMb}MB.", badRequest.Value);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public async Task UploadFile_ReturnsBadRequest_WhenVirusScanFails()
     {
         // Arrange
@@ -132,8 +156,13 @@ public class AttachmentControllerTests
             ContentType = "application/pdf"
         };
 
-        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), "unsafe.pdf"))
-                      .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Found });
+        _mockAttachmentService
+            .Setup(s => s.WillExceedAttachmentSizeLimit(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>(), file))
+            .ReturnsAsync(false);
+
+        _mockAntiVirus
+            .Setup(s => s.ScanFile(It.IsAny<Stream>(), "unsafe.pdf"))
+            .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Found });
 
         // Act
         var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file);
@@ -154,10 +183,17 @@ public class AttachmentControllerTests
             ContentType = "application/pdf"
         };
 
-        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), "valid.pdf"))
-                      .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
-        _mockAttachmentService.Setup(s => s.SaveAttachmentAndLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>(), file))
-                              .ReturnsAsync((Attachment?)null);
+        _mockAttachmentService
+            .Setup(s => s.WillExceedAttachmentSizeLimit(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>(), file))
+            .ReturnsAsync(false);
+
+        _mockAntiVirus
+            .Setup(s => s.ScanFile(It.IsAny<Stream>(), "valid.pdf"))
+            .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
+
+        _mockAttachmentService
+            .Setup(s => s.SaveAttachmentAndLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>(), file))
+            .ReturnsAsync((Attachment?)null);
 
         // Act
         var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file);
@@ -191,12 +227,21 @@ public class AttachmentControllerTests
             ModifiedDate = DateTime.UtcNow
         };
 
-        _mockAntiVirus.Setup(s => s.ScanFile(It.IsAny<Stream>(), "valid.pdf"))
-                      .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
-        _mockAttachmentService.Setup(s => s.SaveAttachmentAndLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>(), file))
-                              .ReturnsAsync(attachment);
-        _mockBlobStorage.Setup(s => s.Write(It.IsAny<Guid>(), attachment.BlobId, It.IsAny<Stream>(), false))
-                            .ReturnsAsync(false);
+        _mockAttachmentService
+            .Setup(s => s.WillExceedAttachmentSizeLimit(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>(), file))
+            .ReturnsAsync(false);
+
+        _mockAntiVirus
+            .Setup(s => s.ScanFile(It.IsAny<Stream>(), "valid.pdf"))
+            .ReturnsAsync(new AttachmentScannerResult { Status = ScanStatus.Ok });
+
+        _mockAttachmentService
+            .Setup(s => s.SaveAttachmentAndLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>(), file))
+            .ReturnsAsync(attachment);
+
+        _mockBlobStorage
+            .Setup(s => s.Write(It.IsAny<Guid>(), attachment.BlobId, It.IsAny<Stream>(), false))
+            .ReturnsAsync(false);
 
         // Act
         var result = await _controller.UploadFile(LinkType.Question, Guid.NewGuid(), Guid.NewGuid(), file);
