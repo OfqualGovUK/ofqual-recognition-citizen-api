@@ -58,6 +58,7 @@ public class AttachmentController : ControllerBase
                 return BadRequest("Unsupported file type or content. Allowed: CSV, JPEG, PNG, Excel, Word, PDF and text formats.");
             }
 
+            // TODO: This check is not thread-safe. Add distributed locking to prevent race conditions when multiple uploads occur concurrently.
             bool exceedsLimit = await _attachmentService.WillExceedAttachmentSizeLimit(applicationId, linkId, LinkType.Question, file);
             if (exceedsLimit)
             {
