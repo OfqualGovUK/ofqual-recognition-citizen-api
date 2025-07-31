@@ -185,6 +185,7 @@ public class StageRepository : IStageRepository
                 WHEN MATCHED THEN
                     UPDATE SET
                         StatusId = @StatusId,
+                        StageStartDate = @StageStartDate,   
                         StageCompletionDate = @StageCompletionDate,
                         ModifiedByUpn = @ModifiedByUpn,
                         ModifiedDate = GETDATE()

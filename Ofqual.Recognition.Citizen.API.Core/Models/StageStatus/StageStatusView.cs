@@ -9,6 +9,6 @@ public class StageStatusView
     public required string StageName { get; set; }
     public StatusType StatusId { get; set; }
     public required string Status { get; set; }
-    public DateTime StageStartDate { get; set; }
+    public DateTime? StageStartDate { get; set; }
     public DateTime? StageCompletionDate { get; set; }
 }

@@ -299,7 +299,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.Equal(application.ApplicationId, result.ApplicationId);
         Assert.Equal(stageId, result.StageId);
         Assert.Equal(StatusType.InProgress, result.StatusId);
-        TestAssertHelpers.AssertDateTimeAlmostEqual(stageStatus.StageStartDate, result.StageStartDate);
+        TestAssertHelpers.AssertDateTimeAlmostEqual(stageStatus.StageStartDate!.Value, result.StageStartDate!.Value);
         TestAssertHelpers.AssertDateTimeAlmostEqual(stageStatus.StageCompletionDate!.Value, result.StageCompletionDate!.Value);
         Assert.False(string.IsNullOrWhiteSpace(result.Status));
         Assert.False(string.IsNullOrWhiteSpace(result.StageName));
@@ -457,7 +457,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.NotNull(insertedResult);
         Assert.Equal(StatusType.NotStarted, insertedResult!.StatusId);
         Assert.Null(insertedResult.StageCompletionDate);
-        TestAssertHelpers.AssertDateTimeAlmostEqual(now, insertedResult.StageStartDate);
+        TestAssertHelpers.AssertDateTimeAlmostEqual(now, insertedResult.StageStartDate!.Value);
 
         // Act: Update existing
         var updatedStatus = new StageStatus
@@ -483,7 +483,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.NotNull(updatedResult);
         Assert.Equal(StatusType.Completed, updatedResult!.StatusId);
         Assert.Equal(now.AddDays(1).Date, updatedResult.StageCompletionDate?.Date);
-        TestAssertHelpers.AssertDateTimeAlmostEqual(now, updatedResult.StageStartDate);
+        TestAssertHelpers.AssertDateTimeAlmostEqual(now, updatedResult.StageStartDate!.Value);
 
         // Clean up test container
         await _fixture.DisposeAsync();

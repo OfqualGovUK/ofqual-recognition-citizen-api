@@ -8,7 +8,7 @@ public class StageStatus
     public Guid ApplicationId { get; set; }
     public StageType StageId { get; set; }
     public StatusType StatusId { get; set; }
-    public DateTime StageStartDate { get; set; }
+    public DateTime? StageStartDate { get; set; }
     public DateTime? StageCompletionDate { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime ModifiedDate { get; set; }
