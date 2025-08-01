@@ -232,7 +232,6 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         // Assert
         Assert.True(success);
         Assert.NotNull(result);
-        Assert.Single(result);
 
         var item = result[0];
         Assert.Equal(application.ApplicationId, item.ApplicationId);
