@@ -1,6 +1,7 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Ofqual.Recognition.Citizen.API.Core.Attributes;
 using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Core.Constants;
 using Ofqual.Recognition.Citizen.API.Core.Helpers;
 using Ofqual.Recognition.Citizen.API.Core.Mappers;
 using Ofqual.Recognition.Citizen.API.Core.Models;
@@ -39,8 +40,8 @@ public class AttachmentController : ControllerBase
     /// <param name="applicationId">The unique identifier of the application to associate the file with.</param>
     /// <returns>The created attachment details.</returns>
     [HttpPost("linked/{linkType}/{linkId}/application/{applicationId}")]
-    [RequestSizeLimit(25 * 1024 * 1024)]
-    [RequestFormLimits(MultipartBodyLengthLimit = 25 * 1024 * 1024)]
+    [RequestSizeLimit(AttachmentConstants.MaxFileSizeBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = AttachmentConstants.MaxFileSizeBytes)]
     [CheckApplicationId(queryParam: "applicationId")]
     [PreventReadOnlyEdit(queryParam: "applicationId")]
     public async Task<ActionResult<AttachmentDto>> UploadFile(LinkType linkType, Guid linkId, Guid applicationId, IFormFile file)
@@ -55,6 +56,13 @@ public class AttachmentController : ControllerBase
             if (!FileValidationHelper.IsAllowedFile(file))
             {
                 return BadRequest("Unsupported file type or content. Allowed: CSV, JPEG, PNG, Excel, Word, PDF and text formats.");
+            }
+
+            // TODO: This check is not thread-safe. Add distributed locking to prevent race conditions when multiple uploads occur concurrently.
+            bool exceedsLimit = await _attachmentService.WillExceedAttachmentSizeLimit(applicationId, linkId, LinkType.Question, file);
+            if (exceedsLimit)
+            {
+                return BadRequest($"Total file size for this question must not exceed {AttachmentConstants.MaxTotalSizeMb}MB.");
             }
 
             await using var scanStream = file.OpenReadStream();
