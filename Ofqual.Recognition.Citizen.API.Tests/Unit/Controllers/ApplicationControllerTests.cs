@@ -419,7 +419,7 @@ public class ApplicationControllerTests
         };
 
         _mockApplicationAnswersService
-            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer, applicationId))
             .ReturnsAsync(validationResponse);
 
         // Act
@@ -441,7 +441,7 @@ public class ApplicationControllerTests
         var dto = new QuestionAnswerSubmissionDto { Answer = "Answer A" };
 
         _mockApplicationAnswersService
-            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer, applicationId))
             .ReturnsAsync(new ValidationResponse());
 
         _mockApplicationAnswersService
@@ -467,7 +467,7 @@ public class ApplicationControllerTests
         var dto = new QuestionAnswerSubmissionDto { Answer = "Test" };
 
         _mockApplicationAnswersService
-            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer, applicationId))
             .ReturnsAsync((ValidationResponse?)null);
 
         // Act
@@ -489,7 +489,7 @@ public class ApplicationControllerTests
         var dto = new QuestionAnswerSubmissionDto { Answer = "Answer" };
 
         _mockApplicationAnswersService
-            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer, applicationId))
             .ReturnsAsync(new ValidationResponse());
 
         _mockApplicationAnswersService
@@ -516,7 +516,7 @@ public class ApplicationControllerTests
         var dto = new QuestionAnswerSubmissionDto { Answer = "Any" };
 
         _mockApplicationAnswersService
-            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer))
+            .Setup(s => s.ValidateQuestionAnswers(questionId, dto.Answer, applicationId))
             .ThrowsAsync(new Exception("Something went wrong"));
 
         // Act & Assert

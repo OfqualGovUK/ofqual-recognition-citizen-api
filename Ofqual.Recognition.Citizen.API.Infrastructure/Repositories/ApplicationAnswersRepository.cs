@@ -167,18 +167,33 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
         }
     }
 
-    public async Task<bool> CheckIfQuestionAnswerExists(Guid questionId, string questionItemName, string questionItemAnswer)
+    public async Task<bool> CheckIfQuestionAnswerExists(Guid questionId, string questionItemName, string questionItemAnswer, Guid? applicationId)
     {
         try
         {
             const string query = @"
-                SELECT ISNULL((
-                    SELECT TOP(1) 1
-                    FROM recognitionCitizen.ApplicationAnswers AS A
-                    JOIN recognitionCitizen.Question AS Q ON Q.QuestionId = A.QuestionId
-                    WHERE Q.QuestionId = @questionId
-                    AND JSON_VALUE(A.Answer, CONCAT('$.', @questionItemName)) = @questionItemAnswer
-                ), 0);";
+               SELECT CASE 
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM recognitionCitizen.ApplicationAnswers AS AA
+                        JOIN recognitionCitizen.Application AS A ON AA.ApplicationId = A.ApplicationId
+                        WHERE @QuestionId = AA.QuestionId
+                            AND JSON_VALUE(AA.Answer, CONCAT('$.', @questionItemName)) = @questionItemAnswer
+                            AND (
+                                @applicationId IS NULL
+                                OR @applicationId <> A.ApplicationId
+                            )
+                            AND (
+                                A.OrganisationId IS NULL
+                                OR NOT EXISTS (
+                                    SELECT 1
+                                    FROM recognitionCitizen.Application AS A2
+                                    WHERE A2.OrganisationId = A.OrganisationId
+                                    AND A2.ApplicationId = A.ApplicationId
+                                )
+                            )
+                    ) THEN 1 ELSE 0
+                END;";
 
             return await _connection.QuerySingleAsync<bool>(
                 query,
@@ -186,7 +201,8 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
                 {
                     questionId,
                     questionItemName,
-                    questionItemAnswer
+                    questionItemAnswer,
+                    applicationId
                 },
                 _transaction
             );

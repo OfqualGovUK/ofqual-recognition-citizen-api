@@ -135,7 +135,7 @@ public class PreEngagementControllerTests
         };
 
         _mockApplicationAnswersService
-            .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
+            .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer, null))
             .ReturnsAsync(validationResponse);
 
         // Act
@@ -158,7 +158,7 @@ public class PreEngagementControllerTests
         var validationResponse = new ValidationResponse();
 
         _mockApplicationAnswersService
-            .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
+            .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer, null))
             .ReturnsAsync(validationResponse);
 
         // Act
@@ -178,7 +178,7 @@ public class PreEngagementControllerTests
         var dto = new QuestionAnswerSubmissionDto { Answer = "{}" };
 
         _mockApplicationAnswersService
-            .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer))
+            .Setup(x => x.ValidateQuestionAnswers(questionId, dto.Answer, null))
             .ThrowsAsync(new Exception("Database error"));
 
         // Act & Assert

@@ -588,6 +588,7 @@ public class ApplicationAnswersServiceTests
     {
         // Arrange
         var questionId = Guid.NewGuid();
+        var applicationId = Guid.NewGuid();
         var questionContent = JsonSerializer.Serialize(new QuestionContent
         {
             FormGroup = new FormGroup
@@ -621,11 +622,11 @@ public class ApplicationAnswersServiceTests
                 TaskNameUrl = "task"
             });
 
-        _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(questionId, "field", "John Doe"))
+        _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(questionId, "field", "John Doe", applicationId))
             .ReturnsAsync(true);
 
         // Act
-        var result = await _applicationAnswersService.ValidateQuestionAnswers(questionId, answerJson);
+        var result = await _applicationAnswersService.ValidateQuestionAnswers(questionId, answerJson, applicationId);
 
         // Assert
         Assert.Single(result?.Errors!);
