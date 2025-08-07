@@ -572,6 +572,8 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var newAppliationId = Guid.NewGuid();
+
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
         {
             B2CId = Guid.NewGuid(),
@@ -648,7 +650,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             question.QuestionId,
             "contact",
             "email",
-            application.ApplicationId
+            newAppliationId
         );
 
         // Assert
