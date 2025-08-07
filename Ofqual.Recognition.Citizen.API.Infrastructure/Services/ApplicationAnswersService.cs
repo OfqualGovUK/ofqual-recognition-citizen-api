@@ -54,7 +54,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
 
         foreach (var answer in answers)
         {
-            ValidationResponse? validationResult = await ValidateQuestionAnswers(answer.QuestionId, answer.AnswerJson);
+            ValidationResponse? validationResult = await ValidateQuestionAnswers(answer.QuestionId, answer.AnswerJson, applicationId);
             if (validationResult == null || (validationResult.Errors != null && validationResult.Errors.Any()))
             {
                 return false;
@@ -356,7 +356,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
         return new List<string> { token.ToString() };
     }
 
-    public async Task<ValidationResponse?> ValidateQuestionAnswers(Guid questionId, string answerJson)
+    public async Task<ValidationResponse?> ValidateQuestionAnswers(Guid questionId, string answerJson, Guid? applicationId = null)
     {
         var questionDetails = await _context.QuestionRepository.GetQuestionByQuestionId(questionId);
         if (questionDetails == null)
@@ -574,7 +574,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             //Check if the answer is in database if unique validation is required
             if (validation.Unique == true && !string.IsNullOrWhiteSpace(answerString))
             {
-                var exists = await _context.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(questionId, component.Name, answerString);
+                var exists = await _context.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(questionId, component.Name, answerString, applicationId);
                 if (exists)
                 {
                     errors.Add(new ValidationErrorItem

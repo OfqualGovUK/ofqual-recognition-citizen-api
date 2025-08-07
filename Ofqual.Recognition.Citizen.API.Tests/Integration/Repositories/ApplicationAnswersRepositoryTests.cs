@@ -647,7 +647,8 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var exists = await unitOfWork.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(
             question.QuestionId,
             "contact",
-            "email"
+            "email",
+            application.ApplicationId
         );
 
         // Assert
@@ -741,7 +742,8 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var exists = await unitOfWork.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(
             question.QuestionId,
             "contact",
-            "email"
+            "email",
+            application.ApplicationId
         );
 
         // Assert
