@@ -572,6 +572,8 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         using var unitOfWork = new UnitOfWork(connection);
 
         // Arrange
+        var newAppliationId = Guid.NewGuid();
+
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
         {
             B2CId = Guid.NewGuid(),
@@ -647,7 +649,8 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var exists = await unitOfWork.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(
             question.QuestionId,
             "contact",
-            "email"
+            "email",
+            newAppliationId
         );
 
         // Assert
@@ -741,7 +744,8 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var exists = await unitOfWork.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(
             question.QuestionId,
             "contact",
-            "email"
+            "email",
+            application.ApplicationId
         );
 
         // Assert

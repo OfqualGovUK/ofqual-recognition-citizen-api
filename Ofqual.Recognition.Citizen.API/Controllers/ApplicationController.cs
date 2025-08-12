@@ -205,7 +205,7 @@ public class ApplicationController : ControllerBase
                 return BadRequest("Request body cannot be null.");
             }
 
-            ValidationResponse? validationResult = await _applicationAnswersService.ValidateQuestionAnswers(questionId, request.Answer);
+            ValidationResponse? validationResult = await _applicationAnswersService.ValidateQuestionAnswers(questionId, request.Answer, applicationId);
             if (validationResult == null)
             {
                 return BadRequest("We could not check your answer. Please try again.");
