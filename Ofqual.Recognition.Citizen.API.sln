@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ofqual.Recognition.Citizen.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ofqual.Recognition.Citizen.API.Tests", "Ofqual.Recognition.Citizen.API.Tests\Ofqual.Recognition.Citizen.API.Tests.csproj", "{4F310CD1-B011-42EE-9CF8-B0A9FCBA194B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ofqual.Recognition.Citizen.API.Notification", "Ofqual.Recognition.Citizen.API.Notification\Ofqual.Recognition.Citizen.API.Notification.csproj", "{FE7C84F3-D764-4664-9719-97C657F1F12B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{4F310CD1-B011-42EE-9CF8-B0A9FCBA194B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F310CD1-B011-42EE-9CF8-B0A9FCBA194B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F310CD1-B011-42EE-9CF8-B0A9FCBA194B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE7C84F3-D764-4664-9719-97C657F1F12B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE7C84F3-D764-4664-9719-97C657F1F12B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE7C84F3-D764-4664-9719-97C657F1F12B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE7C84F3-D764-4664-9719-97C657F1F12B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,1 @@
+Rich has been a great colleauge to work with our current project and has provided novel solutions to many of the problems we have come across. He has been relatively quick in addressing any concerns with the work fairly quickly, although it has on occassion been difficult to get back to him in a timely manner 
