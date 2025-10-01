@@ -182,9 +182,38 @@ public class AttachmentRepository : IAttachmentRepository
         }
         catch (Exception ex)
         {
-            Log.Error(ex,
-                "Error deleting attachment and link for AttachmentId {AttachmentId}, LinkId {LinkId}, LinkType {LinkType}, ApplicationId {ApplicationId}",
-                attachmentId, linkId, linkType, applicationId);
+            Log.Error(ex, "Error deleting attachment and link for AttachmentId {AttachmentId}, LinkId {LinkId}, LinkType {LinkType}, ApplicationId {ApplicationId}", attachmentId, linkId, linkType, applicationId);
+            return false;
+        }
+    }
+
+    public async Task<bool> IsAttachmentInOtherCriteria(string fileName, Guid applicationId, Guid currentLinkId)
+    {
+        try
+        {
+            const string query = @"
+                SELECT CASE
+                        WHEN COUNT(DISTINCT al.LinkId) > 0
+                        THEN CAST(1 AS BIT)
+                        ELSE CAST(0 AS BIT)
+                    END
+                FROM recognitionCitizen.Attachment a
+                INNER JOIN recognitionCitizen.AttachmentLink al
+                    ON a.AttachmentId = al.AttachmentId
+                WHERE a.FileName = @FileName
+                AND al.ApplicationId = @ApplicationId
+                AND al.LinkId <> @CurrentLinkId;";
+
+            return await _connection.ExecuteScalarAsync<bool>(query, new
+            {
+                FileName = fileName,
+                ApplicationId = applicationId,
+                CurrentLinkId = currentLinkId
+            }, _transaction);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error checking duplicate filename {FileName} for ApplicationId {ApplicationId} (excluding LinkId {LinkId})", fileName, applicationId, currentLinkId);
             return false;
         }
     }

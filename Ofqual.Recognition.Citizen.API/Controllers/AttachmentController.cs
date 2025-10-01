@@ -87,6 +87,9 @@ public class AttachmentController : ControllerBase
 
             AttachmentDto savedAttachmentDto = AttachmentMapper.ToDto(attachment);
 
+            // TODO: This is not thread-safe. Add distributed locking
+            savedAttachmentDto.IsInOtherCriteria = await _context.AttachmentRepository.IsAttachmentInOtherCriteria(file.FileName, applicationId, linkId);
+
             _context.Commit();
             return Ok(savedAttachmentDto);
         }
@@ -105,19 +108,17 @@ public class AttachmentController : ControllerBase
     /// <returns>A list of attachments linked to the specified entity.</returns>
     [HttpGet("linked/{linkType}/{linkId}/application/{applicationId}")]
     [CheckApplicationId(queryParam: "applicationId")]
-    public async Task<ActionResult<List<Attachment>>> GetAllFiles(LinkType linkType, Guid linkId, Guid applicationId)
+    public async Task<ActionResult<List<AttachmentDto>>> GetAllFiles(LinkType linkType, Guid linkId, Guid applicationId)
     {
         try
         {
-            var attachments = await _context.AttachmentRepository.GetAllAttachmentsForLink(applicationId, linkId, linkType);
-            if (!attachments.Any())
+            var attachments = await _attachmentService.GetAllAttachmentsForLink(applicationId, linkId, linkType);
+            if (attachments == null)
             {
                 return NotFound("No attachments found for the specified entity.");
             }
 
-            var attachmentDtos = AttachmentMapper.ToDto(attachments);
-
-            return Ok(attachmentDtos);
+            return Ok(attachments);
         }
         catch (Exception ex)
         {

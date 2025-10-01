@@ -256,31 +256,38 @@ public class AttachmentControllerTests
     public async Task GetAllFiles_ReturnsOk_WhenAttachmentsExist()
     {
         // Arrange
-        var attachments = new List<Attachment>
+        var attachments = new List<AttachmentDto>
         {
-            new Attachment
+            new AttachmentDto
             {
                 AttachmentId = Guid.NewGuid(),
                 FileName = "test.pdf",
                 FileMIMEtype = "application/pdf",
                 FileSize = 1024,
-                BlobId = Guid.NewGuid(),
-                CreatedByUpn = "test@ofqual.gov.uk",
-                ModifiedByUpn = "test@ofqual.gov.uk",
-                CreatedDate = DateTime.UtcNow,
-                ModifiedDate = DateTime.UtcNow
+                IsInOtherCriteria = false
+
             }
         };
 
-        _mockAttachmentRepository.Setup(r => r.GetAllAttachmentsForLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
-                           .ReturnsAsync(attachments);
+        _mockAttachmentService
+            .Setup(s => s.GetAllAttachmentsForLink(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<LinkType>()))
+            .ReturnsAsync(attachments);
+
+        var applicationId = Guid.NewGuid();
+        var linkId = Guid.NewGuid();
 
         // Act
-        var result = await _controller.GetAllFiles(LinkType.Question, Guid.NewGuid(), Guid.NewGuid());
+        var result = await _controller.GetAllFiles(LinkType.Question, applicationId, linkId);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedList = Assert.IsAssignableFrom<IEnumerable<AttachmentDto>>(okResult.Value);
+
+        var dto = returnedList.First();
+        Assert.Equal("test.pdf", dto.FileName);
+        Assert.Equal("application/pdf", dto.FileMIMEtype);
+        Assert.Equal(1024, dto.FileSize);
+        Assert.False(dto.IsInOtherCriteria);
     }
 
     [Fact]

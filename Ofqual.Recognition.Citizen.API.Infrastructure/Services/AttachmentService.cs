@@ -3,6 +3,7 @@ using Ofqual.Recognition.Citizen.API.Core.Constants;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Microsoft.AspNetCore.Http;
+using Ofqual.Recognition.Citizen.API.Core.Mappers;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
@@ -44,5 +45,24 @@ public class AttachmentService : IAttachmentService
         long newTotalSize = existingTotalSize + newFile.Length;
 
         return newTotalSize > AttachmentConstants.MaxTotalSizeBytes;
+    }
+
+    public async Task<List<AttachmentDto>?> GetAllAttachmentsForLink(Guid applicationId, Guid linkId, LinkType linkType)
+    {
+        var attachments = await _context.AttachmentRepository.GetAllAttachmentsForLink(applicationId, linkId, linkType);
+        if (!attachments.Any())
+        {
+            return null;
+        }
+
+        var attachmentDtos = AttachmentMapper.ToDto(attachments);
+
+        var tasks = attachmentDtos.Select(async dto =>
+        {
+            dto.IsInOtherCriteria = await _context.AttachmentRepository.IsAttachmentInOtherCriteria(dto.FileName, applicationId, linkId);
+            return dto;
+        });
+
+        return (await Task.WhenAll(tasks)).ToList();
     }
 }
