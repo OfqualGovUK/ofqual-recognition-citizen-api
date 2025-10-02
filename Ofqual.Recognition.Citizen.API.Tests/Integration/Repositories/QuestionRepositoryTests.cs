@@ -1,6 +1,5 @@
 using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
 using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
-using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Xunit;
 
@@ -20,8 +19,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetQuestionByQuestionId_Should_Return_Correct_Question_With_Navigation_Urls()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
@@ -120,8 +118,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetAllQuestions_Should_Return_All_Inserted_Questions()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
@@ -210,8 +207,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetQuestionByTaskAndQuestionUrl_Should_Return_Correct_Navigation_Details()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
