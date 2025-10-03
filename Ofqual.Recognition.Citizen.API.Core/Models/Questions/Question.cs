@@ -11,6 +11,7 @@ public class Question : IQuestion, IDataMetadata
     public Guid TaskId { get; set; }
     public int QuestionOrderNumber { get; set; }
     public Guid QuestionTypeId { get; set; }
+    public QuestionType? QuestionTypeKey { get; set; }  //set this to required once QuestionTypeKey is implemented in frontend
     public required string QuestionContent { get; set; }
     public required string QuestionNameUrl { get; set; }
     public DateTime CreatedDate { get; set; }

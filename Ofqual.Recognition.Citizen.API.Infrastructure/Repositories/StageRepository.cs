@@ -1,9 +1,10 @@
-﻿using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
-using Ofqual.Recognition.Citizen.API.Core.Models;
+﻿using Dapper;
+using Ofqual.Recognition.API.Models.JSON.Questions;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
-using System.Data;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
 using Serilog;
-using Dapper;
+using System.Data;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
@@ -11,18 +12,33 @@ public class StageRepository : IStageRepository
 {
     private readonly IDbConnection _connection;
     private readonly IDbTransaction _transaction;
+    private readonly bool _questionTableExists;
 
     public StageRepository(IDbConnection connection, IDbTransaction transaction)
     {
         _connection = connection;
         _transaction = transaction;
+
+        _questionTableExists = QuestionTableExists().GetAwaiter().GetResult();
     }
+
+
+    private async Task<bool> QuestionTableExists() =>    
+        await _connection.QuerySingleAsync<bool>(
+            @"SELECT ISNULL((
+                SELECT TOP(1) 1 FROM sys.tables AS[table]
+                JOIN sys.schemas AS[schema] ON[schema].schema_id = [table].schema_id
+                WHERE[schema].[name] = 'recognitionCitizen'
+                AND[table].[name] = 'QuestionType', 0) AS [exists]",
+            null, _transaction);
+        
+    
 
     public async Task<StageQuestionDetails?> GetStageQuestionByTaskAndQuestionUrl(StageType stageId, string taskNameUrl, string questionNameUrl)
     {
         try
         {
-            var query = @"
+            var query = $@"
                 SELECT *
                 FROM (
                     SELECT
@@ -31,14 +47,19 @@ public class StageRepository : IStageRepository
                         q.QuestionContent,
                         q.TaskId,
                         q.QuestionNameUrl AS CurrentQuestionNameUrl,
-                        qt.QuestionTypeName,
+                        {(_questionTableExists ? "qt.QuestionTypeName,": string.Empty)}
+                        q.QuestionTypeKey, 
                         t.TaskNameUrl AS CurrentTaskNameUrl,
                         LEAD(q.QuestionNameUrl) OVER (ORDER BY vst.OrderNumber) AS NextQuestionNameUrl,
                         LEAD(t.TaskNameUrl) OVER (ORDER BY vst.OrderNumber) AS NextTaskNameUrl,
                         LAG(q.QuestionNameUrl) OVER (ORDER BY vst.OrderNumber) AS PreviousQuestionNameUrl,
                         LAG(t.TaskNameUrl) OVER (ORDER BY vst.OrderNumber) AS PreviousTaskNameUrl
                     FROM recognitionCitizen.Question q
-                    INNER JOIN recognitionCitizen.QuestionType qt ON q.QuestionTypeId = qt.QuestionTypeId
+                    {(
+                        _questionTableExists 
+                        ? "INNER JOIN recognitionCitizen.QuestionType qt ON q.QuestionTypeId = qt.QuestionTypeId"
+                        : string.Empty
+                    )}  
                     INNER JOIN recognitionCitizen.Task t ON q.TaskId = t.TaskId
                     INNER JOIN recognitionCitizen.v_StageTask vst ON vst.TaskId = t.TaskId
                     WHERE vst.StageId = @stageId

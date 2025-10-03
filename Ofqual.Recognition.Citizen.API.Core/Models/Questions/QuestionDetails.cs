@@ -16,7 +16,9 @@ public class QuestionDetails: IQuestion, IQuestionType
     public string? NextQuestionNameUrl { get; set; }
 
     // QuestionType table
-    public required string QuestionTypeName { get; set; }
+    public string? QuestionTypeName { get; set; }
+
+    public QuestionType? QuestionTypeKey { get; set; }  //set this to required once QuestionTypeKey is implemented in frontend
 
     // Task table
     public required string TaskNameUrl { get; set; }

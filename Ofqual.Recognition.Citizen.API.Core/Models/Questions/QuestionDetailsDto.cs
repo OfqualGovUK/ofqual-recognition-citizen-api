@@ -10,7 +10,8 @@ public class QuestionDetailsDto : IQuestion, IQuestionType
 {
     public required Guid QuestionId { get; set; }
     public required Guid TaskId { get; set; }
-    public required string QuestionTypeName { get; set; }
+    public string? QuestionTypeName { get; set; }
+    public QuestionType? QuestionTypeKey { get; set; }  //set this to required once QuestionTypeKey is implemented in frontend
     public required string QuestionContent { get; set; }
     public required string CurrentQuestionUrl { get; set; }
     public string? PreviousQuestionUrl { get; set; }

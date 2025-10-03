@@ -10,24 +10,37 @@ public class QuestionRepository : IQuestionRepository
 {
     private readonly IDbConnection _connection;
     private readonly IDbTransaction _transaction;
+    private readonly bool _questionTableExists; //Temporary flag to handle when QuestionType has been removed from the database.
 
     public QuestionRepository(IDbConnection connection, IDbTransaction transaction)
     {
         _connection = connection;
         _transaction = transaction;
+
+        _questionTableExists = QuestionTableExists().GetAwaiter().GetResult();
     }
+
+    private async Task<bool> QuestionTableExists() =>
+    await _connection.QuerySingleAsync<bool>(
+        @"SELECT ISNULL((
+                SELECT TOP(1) 1 FROM sys.tables AS[table]
+                JOIN sys.schemas AS[schema] ON[schema].schema_id = [table].schema_id
+                WHERE[schema].[name] = 'recognitionCitizen'
+                AND[table].[name] = 'QuestionType', 0) AS [exists]",
+        null, _transaction);
 
     public async Task<QuestionDetails?> GetQuestionByTaskAndQuestionUrl(string taskNameUrl, string questionNameUrl)
     {
         try
         {
-            var query = @"
+            var query = $@"
                 SELECT
                     Q.QuestionId,
                     Q.QuestionContent,
                     Q.TaskId,
                     Q.QuestionNameUrl AS CurrentQuestionNameUrl,
-                    QT.QuestionTypeName,
+                    {(_questionTableExists ? "QT.QuestionTypeName," : string.Empty )}
+                    Q.QuestionType,
                     (
                         SELECT TOP 1 prev.QuestionNameUrl
                         FROM recognitionCitizen.Question prev
@@ -44,7 +57,11 @@ public class QuestionRepository : IQuestionRepository
                     ) AS NextQuestionNameUrl,
                     T.TaskNameUrl
                 FROM recognitionCitizen.Question Q
-                JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
+                {(
+                    _questionTableExists 
+                    ? "LEFT JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId" 
+                    : string.Empty
+                )}               
                 JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
                 WHERE Q.QuestionNameUrl = @questionNameUrl
                 AND T.TaskNameUrl = @taskNameUrl";
@@ -66,13 +83,14 @@ public class QuestionRepository : IQuestionRepository
     {
         try
         {
-            var query = @"
+            var query = $@"
                 SELECT
                     Q.QuestionId,
                     Q.QuestionContent,
                     Q.TaskId,
                     Q.QuestionNameUrl AS CurrentQuestionNameUrl,
-                    QT.QuestionTypeName,
+                    {(_questionTableExists ? "QT.QuestionTypeName," : string.Empty)}
+                    Q.QuestionType,
                     (
                         SELECT TOP 1 prev.QuestionNameUrl
                         FROM recognitionCitizen.Question prev
@@ -89,7 +107,11 @@ public class QuestionRepository : IQuestionRepository
                     ) AS NextQuestionNameUrl,
                     T.TaskNameUrl
                 FROM recognitionCitizen.Question Q
-                JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
+                {(
+                    _questionTableExists 
+                    ? "LEFT JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId" 
+                    : string.Empty
+                 )}
                 JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
                 WHERE Q.QuestionId = @questionId";
             
@@ -115,6 +137,7 @@ public class QuestionRepository : IQuestionRepository
                     TaskId,
                     OrderNumber,
                     QuestionTypeId,
+                    QuestionType,
                     QuestionContent,
                     QuestionNameUrl,
                     CreatedDate,

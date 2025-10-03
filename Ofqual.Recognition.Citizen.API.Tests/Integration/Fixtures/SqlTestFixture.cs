@@ -12,7 +12,7 @@ public class SqlTestFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _config = new ConfigurationBuilder()
+       _config = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.Test.json", optional: true, reloadOnChange: true)
             .AddJsonFile("appsettings.Test.Development.json", optional: true, reloadOnChange: true)
@@ -20,6 +20,7 @@ public class SqlTestFixture : IAsyncLifetime
             .Build();
 
         _containerBootstrapper = new ContainerBootstrapper(_config);
+        await Task.CompletedTask;
     }
 
     public Task<SqlConnection> InitNewTestDatabaseContainer()

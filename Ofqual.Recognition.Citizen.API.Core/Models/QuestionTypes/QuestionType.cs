@@ -8,7 +8,7 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 public class QuestionType : IQuestionType, IDataMetadata
 {
     public Guid QuestionTypeId { get; set; }
-    public required string QuestionTypeName { get; set; }
+    public string? QuestionTypeName { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime ModifiedDate { get; set; }
     public required string CreatedByUpn { get; set; }

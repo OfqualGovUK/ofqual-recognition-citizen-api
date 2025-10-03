@@ -14,6 +14,7 @@ public static class QuestionMapper
             QuestionId = taskQuestion.QuestionId,
             TaskId = taskQuestion.TaskId,
             QuestionTypeName = taskQuestion.QuestionTypeName,
+            QuestionTypeKey = taskQuestion.QuestionTypeKey,
             QuestionContent = taskQuestion.QuestionContent,
             CurrentQuestionUrl = $"{taskQuestion.TaskNameUrl}/{taskQuestion.CurrentQuestionNameUrl}",
             PreviousQuestionUrl = taskQuestion.PreviousQuestionNameUrl != null
@@ -35,6 +36,7 @@ public static class QuestionMapper
             QuestionId = stageQuestionDetails.QuestionId,
             TaskId = stageQuestionDetails.TaskId,
             QuestionTypeName = stageQuestionDetails.QuestionTypeName,
+            QuestionTypeKey = stageQuestionDetails.QuestionTypeKey,
             QuestionContent = stageQuestionDetails.QuestionContent,
             CurrentQuestionUrl = $"{stageQuestionDetails.CurrentTaskNameUrl}/{stageQuestionDetails.CurrentQuestionNameUrl}",
             PreviousQuestionUrl = stageQuestionDetails.PreviousQuestionNameUrl != null

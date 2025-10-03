@@ -5,6 +5,7 @@ using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Xunit;
+using QuestionType = Ofqual.Recognition.Citizen.API.Core.Models.QuestionType;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 
