@@ -59,7 +59,7 @@ public class AttachmentService : IAttachmentService
 
         var tasks = attachmentDtos.Select(async dto =>
         {
-            dto.IsInOtherCriteria = await _context.AttachmentRepository.IsAttachmentInOtherCriteria(dto.FileName, applicationId, linkId);
+            dto.IsInOtherCriteria = await _context.AttachmentRepository.IsAttachmentInOtherCriteria(dto.FileName, applicationId);
             return dto;
         });
 

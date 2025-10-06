@@ -326,8 +326,8 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var isDuplicateForLink1 = await unitOfWork.AttachmentRepository.IsAttachmentInOtherCriteria(attachment.FileName, application.ApplicationId, linkId1);
-        var isDuplicateForLink2 = await unitOfWork.AttachmentRepository.IsAttachmentInOtherCriteria(attachment.FileName, application.ApplicationId, linkId2);
+        var isDuplicateForLink1 = await unitOfWork.AttachmentRepository.IsAttachmentInOtherCriteria(attachment.FileName, application.ApplicationId);
+        var isDuplicateForLink2 = await unitOfWork.AttachmentRepository.IsAttachmentInOtherCriteria(attachment.FileName, application.ApplicationId);
         
         // Assert
         Assert.True(isDuplicateForLink1);
@@ -372,7 +372,7 @@ public class AttachmentRepositoryTests : IClassFixture<SqlTestFixture>
         unitOfWork.Commit();
 
         // Act
-        var isDuplicate = await unitOfWork.AttachmentRepository.IsAttachmentInOtherCriteria(attachment.FileName, application.ApplicationId, linkId);
+        var isDuplicate = await unitOfWork.AttachmentRepository.IsAttachmentInOtherCriteria(attachment.FileName, application.ApplicationId);
 
         // Assert
         Assert.False(isDuplicate);

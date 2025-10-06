@@ -163,7 +163,7 @@ public class AttachmentServiceTests
             .ReturnsAsync(attachments);
 
         _mockAttachmentRepository
-            .Setup(r => r.IsAttachmentInOtherCriteria(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
+            .Setup(r => r.IsAttachmentInOtherCriteria(It.IsAny<string>(), It.IsAny<Guid>()))
             .ReturnsAsync(false);
 
         var applicationId = Guid.NewGuid();
@@ -209,7 +209,7 @@ public class AttachmentServiceTests
             .ReturnsAsync(attachments);
 
         _mockAttachmentRepository
-            .Setup(r => r.IsAttachmentInOtherCriteria(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
+            .Setup(r => r.IsAttachmentInOtherCriteria(It.IsAny<string>(), It.IsAny<Guid>()))
             .ReturnsAsync(true);
 
         var applicationId = Guid.NewGuid();

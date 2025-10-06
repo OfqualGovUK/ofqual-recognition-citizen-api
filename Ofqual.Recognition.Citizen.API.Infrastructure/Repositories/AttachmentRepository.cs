@@ -187,13 +187,13 @@ public class AttachmentRepository : IAttachmentRepository
         }
     }
 
-    public async Task<bool> IsAttachmentInOtherCriteria(string fileName, Guid applicationId, Guid currentLinkId)
+    public async Task<bool> IsAttachmentInOtherCriteria(string fileName, Guid applicationId)
     {
         try
         {
             const string query = @"
                 SELECT CASE
-                        WHEN COUNT(DISTINCT al.LinkId) > 0
+                        WHEN COUNT(DISTINCT al.LinkId) > 1
                         THEN CAST(1 AS BIT)
                         ELSE CAST(0 AS BIT)
                     END
@@ -201,19 +201,17 @@ public class AttachmentRepository : IAttachmentRepository
                 INNER JOIN recognitionCitizen.AttachmentLink al
                     ON a.AttachmentId = al.AttachmentId
                 WHERE a.FileName = @FileName
-                AND al.ApplicationId = @ApplicationId
-                AND al.LinkId <> @CurrentLinkId;";
+                AND al.ApplicationId = @ApplicationId;";
 
             return await _connection.ExecuteScalarAsync<bool>(query, new
             {
                 FileName = fileName,
-                ApplicationId = applicationId,
-                CurrentLinkId = currentLinkId
+                ApplicationId = applicationId
             }, _transaction);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error checking duplicate filename {FileName} for ApplicationId {ApplicationId} (excluding LinkId {LinkId})", fileName, applicationId, currentLinkId);
+            Log.Error(ex, "Error checking duplicate filename {FileName} for ApplicationId {ApplicationId}", fileName, applicationId);
             return false;
         }
     }

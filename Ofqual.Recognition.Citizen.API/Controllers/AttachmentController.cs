@@ -88,7 +88,7 @@ public class AttachmentController : ControllerBase
             AttachmentDto savedAttachmentDto = AttachmentMapper.ToDto(attachment);
 
             // TODO: This is not thread-safe. Add distributed locking
-            savedAttachmentDto.IsInOtherCriteria = await _context.AttachmentRepository.IsAttachmentInOtherCriteria(file.FileName, applicationId, linkId);
+            savedAttachmentDto.IsInOtherCriteria = await _context.AttachmentRepository.IsAttachmentInOtherCriteria(file.FileName, applicationId);
 
             _context.Commit();
             return Ok(savedAttachmentDto);
