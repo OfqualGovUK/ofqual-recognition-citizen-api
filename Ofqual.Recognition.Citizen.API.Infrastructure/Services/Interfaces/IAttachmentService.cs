@@ -8,4 +8,5 @@ public interface IAttachmentService
 {
     public Task<Attachment?> SaveAttachmentAndLink(Guid applicationId, Guid linkId, LinkType linkType, IFormFile file);
     public Task<bool> WillExceedAttachmentSizeLimit(Guid applicationId, Guid linkId, LinkType linkType, IFormFile newFile);
+    public Task<List<AttachmentDto>?> GetAllAttachmentsForLink(Guid applicationId, Guid linkId, LinkType linkType);
 }

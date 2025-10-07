@@ -1,5 +1,4 @@
 using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
-using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Xunit;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
@@ -18,8 +17,7 @@ public class UserRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task CreateUser_Should_Insert_And_Return_User()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var oid = Guid.NewGuid().ToString();

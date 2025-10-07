@@ -1,7 +1,8 @@
 using Ofqual.Recognition.Citizen.Tests.Integration.Utils;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Data.SqlClient;
 using Xunit;
+using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
 
@@ -22,9 +23,14 @@ public class SqlTestFixture : IAsyncLifetime
         _containerBootstrapper = new ContainerBootstrapper(_config);
     }
 
-    public Task<SqlConnection> InitNewTestDatabaseContainer()
+    public async Task<UnitOfWork> InitNewTestDatabaseContainer()
     {
-        return _containerBootstrapper.InitDbContainer();
+        var connection = await _containerBootstrapper.InitDbContainer();
+        var unitOfWork = new UnitOfWork(connection);
+
+        await KeyValueTestDataBuilder.PopulateKeyValue(unitOfWork);
+
+        return unitOfWork;
     }
 
     public async Task DisposeAsync()

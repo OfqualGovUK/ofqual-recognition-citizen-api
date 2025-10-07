@@ -1,6 +1,5 @@
 using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
 using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
-using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using System.Text.Json;
 using Xunit;
@@ -21,8 +20,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task UpsertQuestionAnswer_Should_Insert_Then_Update_Answer()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
@@ -145,8 +143,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetAllApplicationAnswers_Should_Return_All_Answers_For_Application()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
@@ -257,8 +254,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetTaskQuestionAnswers_Should_Return_Answers_For_Given_Task_And_Application()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
@@ -374,8 +370,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetQuestionAnswer_Should_Return_Answer_If_Exists()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
@@ -475,8 +470,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetQuestionAnswer_Should_Return_Null_When_Answer_Does_Not_Exist()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
 
@@ -568,8 +562,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task CheckIfQuestionAnswerExists_Should_Return_True_When_Answer_Exists()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var newAppliationId = Guid.NewGuid();
@@ -665,8 +658,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task CheckIfQuestionAnswerExists_Should_Return_False_When_No_Matching_Answer()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User

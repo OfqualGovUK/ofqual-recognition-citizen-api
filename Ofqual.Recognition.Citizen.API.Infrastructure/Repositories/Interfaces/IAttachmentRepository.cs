@@ -10,4 +10,5 @@ public interface IAttachmentRepository
     public Task<Attachment?> CreateAttachment(string fileName, string contentType, long size, string upn);
     public Task<bool> CreateAttachmentLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkType linkTypeId, string upn);
     public Task<bool> DeleteAttachmentWithLink(Guid applicationId, Guid attachmentId, Guid linkId, LinkType linkType);
+    public Task<bool> IsAttachmentInOtherCriteria(string fileName, Guid applicationId);
 }

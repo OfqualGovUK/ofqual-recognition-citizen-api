@@ -1,7 +1,6 @@
 using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
 using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 using Ofqual.Recognition.Citizen.Tests.Integration.Helper;
-using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Xunit;
@@ -22,8 +21,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetStageQuestionByTaskAndQuestionUrl_Should_Return_Question_With_Correct_Navigation_Urls()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
@@ -132,8 +130,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetStageStatus_Should_Return_Expected_StageStatusView()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
@@ -196,8 +193,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetAllStageTasksByStageId_Should_Return_All_Tasks_For_Stage()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
@@ -288,8 +284,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task UpsertStageStatusRecord_Should_Insert_And_Update_StageStatus()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
@@ -376,8 +371,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetStageTaskByTaskId_Should_Return_Correct_StageTaskView()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
@@ -426,6 +420,122 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         Assert.Equal(task.TaskId, result.TaskId);
         Assert.Equal(task.TaskName, result.Task);
         Assert.Equal(1, result.OrderNumber);
+
+        // Clean up test container
+        await _fixture.DisposeAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetFirstQuestionByStage_Should_Return_First_Question_In_StageOrder()
+    {
+        // Initialise test container and connection
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
+
+        // Arrange
+        var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
+        {
+            SectionId = Guid.NewGuid(),
+            SectionName = "Test Section",
+            SectionOrderNumber = 1,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var task1 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, new TaskItem
+        {
+            TaskId = Guid.NewGuid(),
+            TaskName = "Test Task",
+            TaskNameUrl = "task-a",
+            TaskOrderNumber = 1,
+            HintText = "Please answer the following question",
+            ReviewFlag = true,
+            SectionId = section.SectionId,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+        var task2 = await TaskTestDataBuilder.CreateTestTask(unitOfWork, new TaskItem
+        {
+            TaskId = Guid.NewGuid(),
+            TaskName = "Test Task",
+            TaskNameUrl = "task-b",
+            TaskOrderNumber = 2,
+            HintText = "Please answer the following question",
+            ReviewFlag = true,
+            SectionId = section.SectionId,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        {
+            QuestionTypeId = Guid.NewGuid(),
+            QuestionTypeName = "TextBox",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        var question1 = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
+        {
+            QuestionId = Guid.NewGuid(),
+            TaskId = task1.TaskId,
+            QuestionOrderNumber = 1,
+            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionContent = "{\"title\":\"second question\"}",
+            QuestionNameUrl = "q-task1",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+        var question2 = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
+        {
+            QuestionId = Guid.NewGuid(),
+            TaskId = task2.TaskId,
+            QuestionOrderNumber = 1,
+            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionContent = "{\"title\":\"first question\"}",
+            QuestionNameUrl = "q-task2",
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
+        {
+            StageId = StageType.PreEngagement,
+            TaskId = task1.TaskId,
+            OrderNumber = 2,
+            Enabled = true,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+        await StageTestDataBuilder.CreateStageTask(unitOfWork, new StageTask
+        {
+            StageId = StageType.PreEngagement,
+            TaskId = task2.TaskId,
+            OrderNumber = 1,
+            Enabled = true,
+            CreatedDate = DateTime.UtcNow,
+            ModifiedDate = DateTime.UtcNow,
+            CreatedByUpn = "test@ofqual.gov.uk"
+        });
+
+        unitOfWork.Commit();
+
+        // Act
+        var result = await unitOfWork.StageRepository.GetFirstQuestionByStage(StageType.PreEngagement);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(question2.QuestionId, result.QuestionId);
+        Assert.Equal(task2.TaskId, result.TaskId);
+        Assert.Equal(task2.TaskNameUrl, result.CurrentTaskNameUrl);
+        Assert.Equal(question2.QuestionNameUrl, result.CurrentQuestionNameUrl);
 
         // Clean up test container
         await _fixture.DisposeAsync();

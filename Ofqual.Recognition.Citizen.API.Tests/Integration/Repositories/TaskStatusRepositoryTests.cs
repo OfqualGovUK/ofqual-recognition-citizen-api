@@ -1,6 +1,5 @@
 using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
 using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
-using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Xunit;
@@ -21,8 +20,7 @@ public class TaskStatusRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetTaskStatusesByApplicationId_Should_Return_Correct_Status_With_Metadata()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
@@ -128,8 +126,7 @@ public class TaskStatusRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task Should_Create_Task_Statuses_For_All_Tasks()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User
@@ -275,8 +272,7 @@ public class TaskStatusRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task Should_Update_Task_Status()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var user = await UserTestDataBuilder.CreateTestUser(unitOfWork, new User

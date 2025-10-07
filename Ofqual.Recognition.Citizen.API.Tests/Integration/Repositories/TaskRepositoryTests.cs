@@ -1,6 +1,5 @@
 using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
 using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
-using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using Xunit;
 
@@ -20,8 +19,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task GetAllTask_Should_Return_Inserted_Task()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
@@ -71,8 +69,7 @@ public class TaskRepositoryTests : IClassFixture<SqlTestFixture>
     public async Task Should_Return_Task_By_TaskNameUrl()
     {
         // Initialise test container and connection
-        await using var connection = await _fixture.InitNewTestDatabaseContainer();
-        using var unitOfWork = new UnitOfWork(connection);
+        var unitOfWork = await _fixture.InitNewTestDatabaseContainer();
 
         // Arrange
         var section = await TaskTestDataBuilder.CreateTestSection(unitOfWork, new Section
