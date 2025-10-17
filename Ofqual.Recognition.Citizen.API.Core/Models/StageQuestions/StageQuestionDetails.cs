@@ -1,4 +1,6 @@
-﻿namespace Ofqual.Recognition.Citizen.API.Core.Models;
+﻿using Ofqual.Recognition.Citizen.API.Core.Enums;
+
+namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
 public class StageQuestionDetails
 {
@@ -7,7 +9,8 @@ public class StageQuestionDetails
     public Guid TaskId { get; set; }
     public required string CurrentQuestionNameUrl { get; set; }
     public required string CurrentTaskNameUrl { get; set; }
-    public required string QuestionTypeName { get; set; }
+    public QuestionTypeEnum? QuestionType { get; set; }
+    public string? QuestionTypeName { get; set; }
     public string? NextQuestionNameUrl { get; set; }
     public string? NextTaskNameUrl { get; set; }
     public string? PreviousQuestionNameUrl { get; set; }
