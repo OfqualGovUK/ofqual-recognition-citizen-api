@@ -1,4 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
 
@@ -7,7 +8,8 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 /// </summary>
 public class QuestionType : IQuestionType, IDataMetadata
 {
-    public Guid QuestionTypeId { get; set; }
+    public QuestionTypeEnum? QuestionType { get; set; }
+    public Guid? QuestionTypeId { get; set; }
     public required string QuestionTypeName { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime ModifiedDate { get; set; }
