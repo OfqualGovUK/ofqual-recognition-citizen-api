@@ -1,3 +1,4 @@
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
@@ -14,9 +15,9 @@ public class QuestionDetails: IQuestion, IQuestionType
     public required string CurrentQuestionNameUrl { get; set; }
     public string? PreviousQuestionNameUrl { get; set; }
     public string? NextQuestionNameUrl { get; set; }
-
+    public QuestionTypeEnum? QuestionType { get; set; }
     // QuestionType table
-    public required string QuestionTypeName { get; set; }
+    public string? QuestionTypeName { get; set; }
 
     // Task table
     public required string TaskNameUrl { get; set; }

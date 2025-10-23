@@ -28,6 +28,7 @@ public class QuestionRepository : IQuestionRepository
                     Q.TaskId,
                     Q.QuestionNameUrl AS CurrentQuestionNameUrl,
                     QT.QuestionTypeName,
+                    QT.QuestionType AS QuestionType,
                     (
                         SELECT TOP 1 prev.QuestionNameUrl
                         FROM recognitionCitizen.Question prev
@@ -44,16 +45,23 @@ public class QuestionRepository : IQuestionRepository
                     ) AS NextQuestionNameUrl,
                     T.TaskNameUrl
                 FROM recognitionCitizen.Question Q
-                JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
+                LEFT JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
                 JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
                 WHERE Q.QuestionNameUrl = @questionNameUrl
                 AND T.TaskNameUrl = @taskNameUrl";
 
-            return await _connection.QueryFirstOrDefaultAsync<QuestionDetails>(query, new
+            var result = await _connection.QueryFirstOrDefaultAsync<QuestionDetails>(query, new
             {
                 taskNameUrl,
                 questionNameUrl
             }, _transaction);
+
+            if (result != null && result.QuestionTypeName == null && result.QuestionType == null)
+            {
+                throw new InvalidOperationException($"QuestionType data is missing for TaskNameUrl: {taskNameUrl}, QuestionNameUrl: {questionNameUrl}");
+            }
+
+            return result;
         }
         catch (Exception ex)
         {
@@ -73,6 +81,7 @@ public class QuestionRepository : IQuestionRepository
                     Q.TaskId,
                     Q.QuestionNameUrl AS CurrentQuestionNameUrl,
                     QT.QuestionTypeName,
+                    QT.QuestionType AS QuestionType,
                     (
                         SELECT TOP 1 prev.QuestionNameUrl
                         FROM recognitionCitizen.Question prev
@@ -89,14 +98,21 @@ public class QuestionRepository : IQuestionRepository
                     ) AS NextQuestionNameUrl,
                     T.TaskNameUrl
                 FROM recognitionCitizen.Question Q
-                JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
+                LEFT JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
                 JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
                 WHERE Q.QuestionId = @questionId";
             
-            return await _connection.QueryFirstOrDefaultAsync<QuestionDetails>(query, new
+            var result = await _connection.QueryFirstOrDefaultAsync<QuestionDetails>(query, new
             {
                 questionId
             }, _transaction);
+
+            if (result != null && result.QuestionTypeName == null && result.QuestionType == null)
+            {
+                throw new InvalidOperationException($"QuestionType data is missing for QuestionId: {questionId}");
+            }
+
+            return result;
         }
         catch (Exception ex)
         {
@@ -109,6 +125,26 @@ public class QuestionRepository : IQuestionRepository
     {
         try
         {
+            // First, check for questions with missing QuestionType data
+            const string validationQuery = @"
+                SELECT
+                    Q.QuestionId,
+                    QT.QuestionTypeName,
+                    QT.QuestionType AS QuestionType
+                FROM [recognitionCitizen].[Question] Q
+                LEFT JOIN [recognitionCitizen].[QuestionType] QT ON Q.QuestionTypeId = QT.QuestionTypeId";
+
+            var validationResults = await _connection.QueryAsync<dynamic>(validationQuery, transaction: _transaction);
+
+            foreach (var item in validationResults)
+            {
+                if (item.QuestionTypeName == null && item.QuestionType == null)
+                {
+                    throw new InvalidOperationException($"QuestionType data is missing for QuestionId: {item.QuestionId}");
+                }
+            }
+
+            // If validation passes, fetch the questions
             const string query = @"
                 SELECT
                     QuestionId,
