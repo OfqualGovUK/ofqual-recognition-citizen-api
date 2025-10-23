@@ -48,7 +48,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
             QuestionTypeName = "TextBox",
@@ -470,7 +470,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
             QuestionTypeName = "TextBox",
