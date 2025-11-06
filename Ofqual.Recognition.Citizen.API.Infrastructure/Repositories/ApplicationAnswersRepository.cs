@@ -178,7 +178,7 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
                         FROM recognitionCitizen.ApplicationAnswers AS AA
                         JOIN recognitionCitizen.Application AS A ON AA.ApplicationId = A.ApplicationId
                         WHERE @QuestionId = AA.QuestionId
-                            AND JSON_VALUE(AA.Answer, CONCAT('$.', @questionItemName)) = @questionItemAnswer
+                            AND JSON_VALUE(AA.Answer, CONCAT('$.', @questionItemName)) COLLATE SQL_Latin1_General_CP1_CI_AS = @questionItemAnswer COLLATE SQL_Latin1_General_CP1_CI_AS
                             AND (
                                 @applicationId IS NULL
                                 OR @applicationId <> A.ApplicationId
