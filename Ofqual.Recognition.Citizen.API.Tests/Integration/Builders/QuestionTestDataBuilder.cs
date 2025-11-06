@@ -1,6 +1,5 @@
 using Ofqual.Recognition.Citizen.API.Infrastructure;
 using Ofqual.Recognition.Citizen.API.Core.Models;
-using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Dapper;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Builders;
@@ -9,12 +8,10 @@ public static class QuestionTestDataBuilder
 {
     public static async Task<QuestionTypeItem> CreateTestQuestionType(UnitOfWork unitOfWork, QuestionTypeItem questionType)
     {
-        questionType.QuestionType ??= QuestionTypeEnum.TextArea;
-
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO [recognitionCitizen].[QuestionType]
-            (QuestionTypeId, QuestionTypeName, QuestionType, CreatedDate, ModifiedDate, CreatedByUpn)
-            VALUES (@QuestionTypeId, @QuestionTypeName, @QuestionType, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
+            (QuestionTypeId, QuestionTypeName, CreatedDate, ModifiedDate, CreatedByUpn)
+            VALUES (@QuestionTypeId, @QuestionTypeName, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
             questionType,
             unitOfWork.Transaction);
 
