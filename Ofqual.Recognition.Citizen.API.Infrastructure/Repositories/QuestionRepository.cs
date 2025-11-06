@@ -27,8 +27,8 @@ public class QuestionRepository : IQuestionRepository
                     Q.QuestionContent,
                     Q.TaskId,
                     Q.QuestionNameUrl AS CurrentQuestionNameUrl,
-                    QT.QuestionTypeName,
-                    QT.QuestionType AS QuestionType,
+                    Q.QuestionTypeKey AS QuestionType,
+                    QT.QuestionTypeName,                    
                     (
                         SELECT TOP 1 prev.QuestionNameUrl
                         FROM recognitionCitizen.Question prev
@@ -80,8 +80,8 @@ public class QuestionRepository : IQuestionRepository
                     Q.QuestionContent,
                     Q.TaskId,
                     Q.QuestionNameUrl AS CurrentQuestionNameUrl,
-                    QT.QuestionTypeName,
-                    QT.QuestionType AS QuestionType,
+                    Q.QuestionTypeKey AS QuestionType,
+                    QT.QuestionTypeName,                     
                     (
                         SELECT TOP 1 prev.QuestionNameUrl
                         FROM recognitionCitizen.Question prev
@@ -127,30 +127,35 @@ public class QuestionRepository : IQuestionRepository
         {
             // First, check for questions with missing QuestionType data
             const string validationQuery = @"
-                SELECT
-                    Q.QuestionId,
-                    QT.QuestionTypeName,
-                    QT.QuestionType AS QuestionType
+                SELECT Q.QuestionId, Q.QuestionNameUrl                            
                 FROM [recognitionCitizen].[Question] Q
-                LEFT JOIN [recognitionCitizen].[QuestionType] QT ON Q.QuestionTypeId = QT.QuestionTypeId";
+                WHERE NOT EXISTS
+                    (   SELECT * 
+                        FROM [recognitionCitizen].[QuestionType] QT 
+                        WHERE Q.QuestionTypeId = QT.QuestionTypeId
+                    );";
 
             var validationResults = await _connection.QueryAsync<dynamic>(validationQuery, transaction: _transaction);
 
-            foreach (var item in validationResults)
+            if(validationResults.Any())
             {
-                if (item.QuestionTypeName == null && item.QuestionType == null)
+                Log.Error("QuestionType data is missing for folowing Question Id's:");         
+                foreach (var row in validationResults)
                 {
-                    throw new InvalidOperationException($"QuestionType data is missing for QuestionId: {item.QuestionId}");
+                    Log.Error("\t- ID: {QuestionId}: QuestionUrl: {QuestionUrl}\n", row.QuestionId, row.QuestionUrl);
                 }
+                throw new InvalidOperationException("Data integrity check failed: Some questions have missing QuestionType data. See logs for details.");
             }
 
             // If validation passes, fetch the questions
             const string query = @"
                 SELECT
                     QuestionId,
+                    QuestionId,
                     TaskId,
                     OrderNumber,
                     QuestionTypeId,
+                    QuestionTypeKey AS QuestionType,
                     QuestionContent,
                     QuestionNameUrl,
                     CreatedDate,
