@@ -1,6 +1,7 @@
-﻿using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
-using Azure.Storage.Blobs.Models;
+﻿using Azure.Identity;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Serilog;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
@@ -12,6 +13,11 @@ public class AzureBlobStorageService : IAzureBlobStorageService
     public AzureBlobStorageService(string connectionString)
     {
         _blobServiceClient = new BlobServiceClient(connectionString);
+    }
+
+    public AzureBlobStorageService(Uri serviceUri, DefaultAzureCredential credential)
+    {
+        _blobServiceClient = new BlobServiceClient(serviceUri, credential);
     }
 
     public async Task<bool> Write(Guid applicationId, Guid blobId, Stream stream, bool isPublicAccess = false)
