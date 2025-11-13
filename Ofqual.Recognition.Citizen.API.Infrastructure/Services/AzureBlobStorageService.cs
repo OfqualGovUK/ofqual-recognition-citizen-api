@@ -1,6 +1,7 @@
 ﻿using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Ofqual.Recognition.Citizen.API.Core.Models;
 using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
 using Serilog;
 
@@ -10,14 +11,21 @@ public class AzureBlobStorageService : IAzureBlobStorageService
 {
     private readonly BlobServiceClient _blobServiceClient;
 
-    public AzureBlobStorageService(string connectionString)
+    public AzureBlobStorageService(AzureBlobStorageConfiguration configuration)
     {
-        _blobServiceClient = new BlobServiceClient(connectionString);
-    }
-
-    public AzureBlobStorageService(Uri serviceUri, DefaultAzureCredential credential)
-    {
-        _blobServiceClient = new BlobServiceClient(serviceUri, credential);
+        if (configuration.UseManagedIdentity && configuration.ServiceUri != null)
+        {
+            try
+            {
+                _blobServiceClient = new BlobServiceClient(configuration.ServiceUri, new DefaultAzureCredential());
+                return;
+            }
+            catch (Exception)
+            {
+                Log.Warning("Failed to create BlobServiceClient with Managed Identity. Falling back to connection string.");
+            }
+        }
+        _blobServiceClient = new BlobServiceClient(configuration.ConnectionString);
     }
 
     public async Task<bool> Write(Guid applicationId, Guid blobId, Stream stream, bool isPublicAccess = false)

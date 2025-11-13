@@ -75,31 +75,21 @@ builder.Services.AddTransient<IAttachmentService, AttachmentService>();
 
 // Register Gov UK Notify service
 builder.Services.Configure<GovUkNotifyConfiguration>(builder.Configuration.GetSection("GovUkNotify"));
-builder.Services.AddSingleton<GovUkNotifyConfiguration>(sp =>
+builder.Services.AddSingleton(sp =>
     sp.GetRequiredService<IOptions<GovUkNotifyConfiguration>>().Value);
 builder.Services.AddScoped<IGovUkNotifyService, GovUkNotifyService>();
 
 // Register AntiVirus service
 builder.Services.Configure<AntiVirusConfiguration>(builder.Configuration.GetSection("AntiVirus"));
-builder.Services.AddSingleton<AntiVirusConfiguration>(sp =>
+builder.Services.AddSingleton(sp =>
     sp.GetRequiredService<IOptions<AntiVirusConfiguration>>().Value);
 builder.Services.AddScoped<IAntiVirusService, AntiVirusService>();
 
 // Register Azure blob storage service 
-
-builder.Services.AddSingleton<IAzureBlobStorageService>(_ => 
-{
-    if(builder.Configuration.GetSection("AzureBlobStorage").GetValue<bool>("UseManagedIdentity"))
-    {
-        var serviceUri = new Uri(builder.Configuration.GetConnectionString("BlobServiceUri")!);
-        var credential = new Azure.Identity.DefaultAzureCredential();
-        return new AzureBlobStorageService(serviceUri, credential);
-    }
-
-    var blobConnectionString = builder.Configuration.GetConnectionString("AzureBlobStorage")!;
-    return new AzureBlobStorageService(blobConnectionString);
-    
-});
+builder.Services.Configure<AzureBlobStorageConfiguration>(builder.Configuration.GetSection("AzureBlobStorage"));
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<IOptions<AzureBlobStorageConfiguration>>().Value);
+builder.Services.AddScoped<IAzureBlobStorageService, AzureBlobStorageService>();
 
 // Add controllers
 builder.Services.AddControllers();
@@ -121,7 +111,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         builder.Configuration.Bind("AzureAdB2C", options);
         // Refer to https://learn.microsoft.com/en-us/entra/identity-platform/claims-validation for validation parameters
-        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        options.TokenValidationParameters = new TokenValidationParameters
         {
             SaveSigninToken = true,
             NameClaimType = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier" // This is the object id of the user
@@ -130,7 +120,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             OnTokenValidated = (context) =>
             {
-                IEnumerable<Claim> oid = context.Principal.Claims.Where(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+                IEnumerable<Claim> oid = context.Principal!.Claims.Where(x => x.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
                 if (oid.Count() != 1)
                 {
                     context.Fail("Invalid Token: No name identifier present");
@@ -178,7 +168,7 @@ app.UseSerilogRequestLogging(opt =>
     {
         dc.Set("RequestHost", hc.Request.Host.Value);
         dc.Set("RequestScheme", hc.Request.Scheme);
-        dc.Set("UserAgent", hc.Request.Headers["User-Agent"].ToString());
+        dc.Set("UserAgent", hc.Request.Headers.UserAgent.ToString());
     };
 });
 app.UseCors("CORS_POLICY");
