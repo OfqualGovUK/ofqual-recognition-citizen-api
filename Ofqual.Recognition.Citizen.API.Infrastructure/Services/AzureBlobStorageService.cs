@@ -13,11 +13,11 @@ public class AzureBlobStorageService : IAzureBlobStorageService
 
     public AzureBlobStorageService(AzureBlobStorageConfiguration configuration)
     {
-        if (configuration.UseManagedIdentity && configuration.ServiceUri != null)
+        if (configuration.UseManagedIdentity && !string.IsNullOrWhiteSpace(configuration.ServiceUri))
         {
             try
             {
-                _blobServiceClient = new BlobServiceClient(configuration.ServiceUri, new DefaultAzureCredential());
+                _blobServiceClient = new BlobServiceClient(new Uri(configuration.ServiceUri), new DefaultAzureCredential());
                 return;
             }
             catch (Exception)

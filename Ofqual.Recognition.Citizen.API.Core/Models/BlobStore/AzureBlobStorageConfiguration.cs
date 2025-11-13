@@ -3,7 +3,7 @@
     public class AzureBlobStorageConfiguration
     {
         public string? ConnectionString;
-        public Uri? ServiceUri;
+        public string? ServiceUri;
         public bool UseManagedIdentity { get; set; } = false;
     }
 }
