@@ -65,9 +65,13 @@ The main application settings are defined in `appsettings.json` and can be tailo
       "InformationFromPreEngagement": ""
     }
   },
+    "AzureBlobStorage": {
+    "UseManagedIdentity": false,
+    "ServiceUri": "",
+    "ConnectionString": ""
+  },
   "ConnectionStrings": {
-    "OfqualODS": "",
-    "AzureBlobStorage": ""
+    "OfqualODS": ""
   }
 }
 ```
@@ -123,6 +127,15 @@ The main application settings are defined in `appsettings.json` and can be tailo
 - **`AzureAdB2C:SignedOutCallbackPath`**  
   The callback path when signing out of Azure B2C, typically set to `/signout-callback-oidc`.
 
+- **`AzureBlobStorage:UseManagedIdentity`**  
+  A flag for enabling Managed Identity authentication, requires a valid ServiceUri to be specified
+
+- **`AzureBlobStorage:ServiceUri`**  
+  The connection string for the managed identity service to be used, not required if typical connection strings are being used. 
+
+  - **`AzureBlobStorage:ConnectionString`**  
+  The connection string for your Azure Storage account. This grants access to Blob containers and their contents, when managed identites are not being used.
+
 - **`GovUkNotify:ApiKey`**  
   The API key for the GovUK Notify library to function.
 
@@ -133,23 +146,20 @@ The main application settings are defined in `appsettings.json` and can be tailo
 - **`GovUkNotify:TemplateIds`**  
   The collection of TemplateIds used for sending out GOV.UK Notify emails.
 
-  - **`GovUkNotify:RecognitionEmailInbox`**
-    An email address used for sending submission emails to the Recognition team.
+- **`GovUkNotify:RecognitionEmailInbox`**
+  An email address used for sending submission emails to the Recognition team.
 
-  - **`GovUkNotify:TemplateIds:AccountCreation`**  
-    The specific TemplateId used for GovUK Notify **account creation** emails.
+- **`GovUkNotify:TemplateIds:AccountCreation`**  
+  The specific TemplateId used for GovUK Notify **account creation** emails.
 
-  - **`GovUkNotify:TemplateIds:ApplicationSubmitted`**  
-    The specific TemplateId used for GovUK Notify **application submission confirmation** emails.
+- **`GovUkNotify:TemplateIds:ApplicationSubmitted`**  
+  The specific TemplateId used for GovUK Notify **application submission confirmation** emails.
 
-  - **`GovUkNotify:TemplateIds:InformationFromPreEngagement`**  
-    The specific TemplateId used for GOV.UK Notify **pre-engagement information** emails.
+- **`GovUkNotify:TemplateIds:InformationFromPreEngagement`**  
+  The specific TemplateId used for GOV.UK Notify **pre-engagement information** emails.
 
 - **`ConnectionStrings:OfqualODS`**  
   Connection string for accessing the Ofqual ODS (Organisational Data Service) database.
-
-- **`ConnectionStrings:AzureBlobStorage`**  
-  The connection string for your Azure Storage account. This grants access to Blob containers and their contents.
 
 > It’s recommended to manage environment-specific values in `appsettings.{Environment}.json` or override them via environment variables, especially in production.
 

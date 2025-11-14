@@ -21,6 +21,7 @@ public class SqlTestFixture : IAsyncLifetime
             .Build();
 
         _containerBootstrapper = new ContainerBootstrapper(_config);
+        await Task.CompletedTask;
     }
 
     public async Task<UnitOfWork> InitNewTestDatabaseContainer()
