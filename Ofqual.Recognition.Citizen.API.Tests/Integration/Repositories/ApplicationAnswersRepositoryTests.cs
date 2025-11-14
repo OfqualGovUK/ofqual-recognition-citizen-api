@@ -67,7 +67,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
             QuestionTypeName = "TextBox",
@@ -81,7 +81,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionTypeId = questionType.QuestionTypeId!,
             QuestionNameUrl = "question-url",
             QuestionContent = "{\"label\":\"Initial content\"}",
             CreatedByUpn = "test@ofqual.gov.uk",
@@ -190,7 +190,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
             QuestionTypeName = "TextBox",
@@ -301,7 +301,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
             QuestionTypeName = "Text",
@@ -417,7 +417,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
             QuestionTypeName = "Text",
@@ -518,7 +518,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
             QuestionTypeName = "Text",
@@ -611,7 +611,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
             QuestionTypeName = "TextBox",
@@ -705,7 +705,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionType
+        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
             QuestionTypeName = "TextBox",
