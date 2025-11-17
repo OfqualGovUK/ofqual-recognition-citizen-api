@@ -6,7 +6,7 @@ namespace Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 
 public static class QuestionTestDataBuilder
 {
-    public static async Task<QuestionType> CreateTestQuestionType(UnitOfWork unitOfWork, QuestionType questionType)
+    public static async Task<QuestionTypeItem> CreateTestQuestionType(UnitOfWork unitOfWork, QuestionTypeItem questionType)
     {
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO [recognitionCitizen].[QuestionType]
