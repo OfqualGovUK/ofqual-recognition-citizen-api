@@ -9,23 +9,13 @@ namespace Ofqual.Recognition.Citizen.API.Infrastructure.Services;
 
 public class AzureBlobStorageService : IAzureBlobStorageService
 {
+    private readonly AzureBlobStorageConfiguration _config;
     private readonly BlobServiceClient _blobServiceClient;
 
     public AzureBlobStorageService(AzureBlobStorageConfiguration configuration)
     {
-        if (configuration.UseManagedIdentity && !string.IsNullOrWhiteSpace(configuration.ServiceUri))
-        {
-            try
-            {
-                _blobServiceClient = new BlobServiceClient(new Uri(configuration.ServiceUri), new DefaultAzureCredential());
-                return;
-            }
-            catch (Exception)
-            {
-                Log.Warning("Failed to create BlobServiceClient with Managed Identity. Falling back to connection string.");
-            }
-        }
-        _blobServiceClient = new BlobServiceClient(configuration.ConnectionString);
+        _config = configuration;
+        _blobServiceClient = CreateBlobServiceClient(_config);
     }
 
     public async Task<bool> Write(Guid applicationId, Guid blobId, Stream stream, bool isPublicAccess = false)
@@ -129,5 +119,15 @@ public class AzureBlobStorageService : IAzureBlobStorageService
     {
         var containerClient = await GetContainerClient(applicationId);
         return containerClient.GetBlobClient(blobId.ToString());
+    }
+
+    private BlobServiceClient CreateBlobServiceClient(AzureBlobStorageConfiguration configuration)
+    {
+        if (configuration.UseManagedIdentity && !string.IsNullOrWhiteSpace(configuration.ServiceUri))
+        {
+            return new BlobServiceClient(new Uri(configuration.ServiceUri), new DefaultAzureCredential());
+        }
+
+        return new BlobServiceClient(configuration.ConnectionString);
     }
 }
