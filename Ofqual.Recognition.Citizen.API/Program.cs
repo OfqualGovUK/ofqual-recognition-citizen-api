@@ -1,23 +1,24 @@
-using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
-using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
-using Ofqual.Recognition.Frontend.Infrastructure.Services;
-using Ofqual.Recognition.Citizen.API.Infrastructure;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Ofqual.Recognition.Citizen.API.Core.Models;
-using Ofqual.Recognition.Citizen.API.Middleware;
-using CorrelationId.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Options;
-using CorrelationId.HttpClient;
-using Microsoft.Data.SqlClient;
-using System.Security.Claims;
-using Microsoft.Identity.Web;
-using Serilog.Sinks.Http;
-using System.Reflection;
-using Serilog.Events;
 using CorrelationId;
-using System.Data;
+using CorrelationId.DependencyInjection;
+using CorrelationId.HttpClient;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.Tokens;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Services.Interfaces;
+using Ofqual.Recognition.Citizen.API.Middleware;
+using Ofqual.Recognition.Frontend.Infrastructure.Services;
 using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.Http;
+using System.Data;
+using System.Reflection;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,9 +57,10 @@ builder.Services.AddCorrelationId(opt =>
 ).WithTraceIdentifierProvider();
 
 // Register database connection
-builder.Services.AddScoped<IDbConnection>(sp =>
-    new SqlConnection(builder.Configuration.GetConnectionString("OfqualODS"))
-);
+builder.Services.AddScoped<IDbConnection>(_ =>
+    builder.Configuration.GetValue<bool>("FeatureFlag:UseSQLManagedIdentity")
+    ? new SqlConnection(builder.Configuration.GetConnectionString("OfqualODSManaged"))
+    : new SqlConnection(builder.Configuration.GetConnectionString("OfqualODS")));
 
 builder.Services.AddHttpContextAccessor();
 

@@ -38,6 +38,7 @@ The main application settings are defined in `appsettings.json` and can be tailo
   "FeatureFlag": {
     "CheckUser": true,
     "EmailRecognition": false,
+    "UseSQLManagedIdentity": false
   },
   "LogzIo": {
     "Environment": "",
@@ -71,7 +72,8 @@ The main application settings are defined in `appsettings.json` and can be tailo
     "ConnectionString": ""
   },
   "ConnectionStrings": {
-    "OfqualODS": ""
+    "OfqualODS": "",
+    "OfqualODSManaged": ""
   }
 }
 ```
@@ -95,7 +97,10 @@ The main application settings are defined in `appsettings.json` and can be tailo
 - **`FeatureFlag:EmailRecognition`**  
   A **boolean** flag used to control whether an email is sent to the Recognition Team when an application has been submitted.  
   When set to `true`, the system will send the email to the address configured in `GovUkNotify:RecognitionEmailInbox`.  
-  When set to `false`, the email will not be sent.  
+  When set to `false`, the email will not be sent.
+
+- **`FeatureFlag:UseSQLManagedIdentity`**
+  A **boolean** flag that will determine whether the Managed ODS (Organisational Data Service) Database connection string should be used, instead of the standard connection
 
 - **`LogzIo:Environment`**  
   Identifies the current environment in the logs (e.g., `DEV`, `PREPROD`, `PROD`). This helps differentiate log entries across deployments.
@@ -160,6 +165,9 @@ The main application settings are defined in `appsettings.json` and can be tailo
 
 - **`ConnectionStrings:OfqualODS`**  
   Connection string for accessing the Ofqual ODS (Organisational Data Service) database.
+
+  - **`ConnectionStrings:OfqualODSManaged`**  
+  An alternative connection string for accessing the Ofqual ODS (Organisational Data Service) database, This connection string is intended to be used when implementing connections using managed identities.
 
 > It’s recommended to manage environment-specific values in `appsettings.{Environment}.json` or override them via environment variables, especially in production.
 
