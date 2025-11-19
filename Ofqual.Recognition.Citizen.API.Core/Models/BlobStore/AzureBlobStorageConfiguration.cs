@@ -1,9 +1,8 @@
-﻿namespace Ofqual.Recognition.Citizen.API.Core.Models
+﻿namespace Ofqual.Recognition.Citizen.API.Core.Models;
+
+public class AzureBlobStorageConfiguration
 {
-    public class AzureBlobStorageConfiguration
-    {
-        public string? ConnectionString;
-        public string? ServiceUri;
-        public bool UseManagedIdentity { get; set; } = false;
-    }
+    public string? ConnectionString { get; set; }
+    public string? ServiceUri { get; set; }
+    public bool UseManagedIdentity { get; set; } = false;
 }
