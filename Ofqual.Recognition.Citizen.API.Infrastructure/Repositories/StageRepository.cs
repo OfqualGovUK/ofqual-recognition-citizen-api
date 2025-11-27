@@ -30,11 +30,9 @@ public class StageRepository : IStageRepository
                         q.QuestionId,
                         q.QuestionContent,
                         q.TaskId,
-                        q.QuestionNameUrl AS CurrentQuestionNameUrl,                        
-                        qt.QuestionTypeName,
-                            
-                        Q.QuestionTypeKey AS QuestionType,
-
+                        q.QuestionNameUrl AS CurrentQuestionNameUrl,
+                        qt.QuestionTypeName,                            
+                        q.QuestionTypeKey AS QuestionType,
                         t.TaskNameUrl AS CurrentTaskNameUrl,
                         LEAD(q.QuestionNameUrl) OVER (ORDER BY vst.OrderNumber) AS NextQuestionNameUrl,
                         LEAD(t.TaskNameUrl) OVER (ORDER BY vst.OrderNumber) AS NextTaskNameUrl,
