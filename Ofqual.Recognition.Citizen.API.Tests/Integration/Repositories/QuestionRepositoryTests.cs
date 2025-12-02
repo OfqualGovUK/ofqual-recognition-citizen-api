@@ -1,6 +1,7 @@
-using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
-using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
+using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
 using Xunit;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
@@ -49,7 +50,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
             CreatedByUpn = "test@ofqual.gov.uk"
@@ -148,7 +149,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
             CreatedByUpn = "test@ofqual.gov.uk"
@@ -237,7 +238,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
             CreatedByUpn = "test@ofqual.gov.uk"

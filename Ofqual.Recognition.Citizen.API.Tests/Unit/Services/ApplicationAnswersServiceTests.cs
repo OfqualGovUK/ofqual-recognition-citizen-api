@@ -186,7 +186,7 @@ public class ApplicationAnswersServiceTests
         {
             QuestionId = questionId,
             TaskId = Guid.NewGuid(),
-            QuestionTypeName = "TextInputGroup",
+            QuestionType = QuestionTypeEnum.TextInputGroup,
             CurrentQuestionNameUrl = "some-url",
             TaskNameUrl = "task-url",
             QuestionContent = JsonSerializer.Serialize(new QuestionContent
@@ -238,7 +238,7 @@ public class ApplicationAnswersServiceTests
         {
             QuestionId = questionId,
             TaskId = Guid.NewGuid(),
-            QuestionTypeName = "TextInputGroup",
+            QuestionType = QuestionTypeEnum.TextInputGroup,
             CurrentQuestionNameUrl = "url",
             TaskNameUrl = "task-url",
             QuestionContent = JsonSerializer.Serialize(new QuestionContent
@@ -289,7 +289,7 @@ public class ApplicationAnswersServiceTests
         {
             QuestionId = questionId,
             TaskId = Guid.NewGuid(),
-            QuestionTypeName = "TextInputGroup",
+            QuestionType = QuestionTypeEnum.TextInputGroup,
             CurrentQuestionNameUrl = "some-question",
             TaskNameUrl = "some-task",
             QuestionContent = JsonSerializer.Serialize(new QuestionContent
@@ -476,7 +476,7 @@ public class ApplicationAnswersServiceTests
                     TaskId = Guid.NewGuid(),
                     QuestionContent = questionContentJson,
                     CurrentQuestionNameUrl = "test-question",
-                    QuestionTypeName = "TextInput",
+                    QuestionType = QuestionTypeEnum.TextArea,
                     TaskNameUrl = "test-task"
                 });
 
@@ -520,7 +520,7 @@ public class ApplicationAnswersServiceTests
                 TaskId = Guid.NewGuid(),
                 QuestionContent = JsonSerializer.Serialize(questionContent),
                 CurrentQuestionNameUrl = "test-question",
-                QuestionTypeName = "TextInputGroup",
+                QuestionType = QuestionTypeEnum.TextInputGroup,
                 TaskNameUrl = "test-task"
             });
 
@@ -571,7 +571,7 @@ public class ApplicationAnswersServiceTests
                 TaskId = Guid.NewGuid(),
                 QuestionContent = JsonSerializer.Serialize(questionContent),
                 CurrentQuestionNameUrl = "test-question",
-                QuestionTypeName = "TextInputGroup",
+                QuestionType = QuestionTypeEnum.TextInputGroup,
                 TaskNameUrl = "test-task"
             });
 
@@ -618,7 +618,7 @@ public class ApplicationAnswersServiceTests
                 QuestionContent = questionContent,
                 TaskId = Guid.NewGuid(),
                 CurrentQuestionNameUrl = "q1",
-                QuestionTypeName = "TextInputGroup",
+                QuestionType = QuestionTypeEnum.TextInputGroup,
                 TaskNameUrl = "task"
             });
 
@@ -665,7 +665,7 @@ public class ApplicationAnswersServiceTests
                 QuestionContent = questionContent,
                 TaskId = Guid.NewGuid(),
                 CurrentQuestionNameUrl = "q1",
-                QuestionTypeName = "Textarea",
+                QuestionType = QuestionTypeEnum.TextArea,
                 TaskNameUrl = "task"
             });
 
@@ -711,7 +711,7 @@ public class ApplicationAnswersServiceTests
                 QuestionContent = questionContent,
                 TaskId = Guid.NewGuid(),
                 CurrentQuestionNameUrl = "q1",
-                QuestionTypeName = "TextInputGroup",
+                QuestionType = QuestionTypeEnum.TextInputGroup,
                 TaskNameUrl = "task"
             });
 
@@ -756,7 +756,7 @@ public class ApplicationAnswersServiceTests
                 QuestionContent = questionContent,
                 TaskId = Guid.NewGuid(),
                 CurrentQuestionNameUrl = "q1",
-                QuestionTypeName = "CheckboxGroup",
+                QuestionType = QuestionTypeEnum.CheckBoxGroup,
                 TaskNameUrl = "task"
             });
 
@@ -810,7 +810,7 @@ public class ApplicationAnswersServiceTests
                 QuestionContent = questionContent,
                 TaskId = Guid.NewGuid(),
                 CurrentQuestionNameUrl = "q1",
-                QuestionTypeName = "CheckboxGroup",
+                QuestionType = QuestionTypeEnum.CheckBoxGroup,
                 TaskNameUrl = "task"
             });
 

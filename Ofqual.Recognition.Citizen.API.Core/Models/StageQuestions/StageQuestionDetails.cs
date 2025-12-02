@@ -10,7 +10,6 @@ public class StageQuestionDetails
     public required string CurrentQuestionNameUrl { get; set; }
     public required string CurrentTaskNameUrl { get; set; }
     public QuestionTypeEnum? QuestionType { get; set; }
-    public string? QuestionTypeName { get; set; }
     public string? NextQuestionNameUrl { get; set; }
     public string? NextTaskNameUrl { get; set; }
     public string? PreviousQuestionNameUrl { get; set; }

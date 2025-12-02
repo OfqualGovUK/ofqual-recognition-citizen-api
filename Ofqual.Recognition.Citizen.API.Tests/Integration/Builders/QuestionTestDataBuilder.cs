@@ -10,8 +10,8 @@ public static class QuestionTestDataBuilder
     {
         await unitOfWork.Connection.ExecuteAsync(@"
             INSERT INTO [recognitionCitizen].[QuestionType]
-            (QuestionTypeId, QuestionTypeName, CreatedDate, ModifiedDate, CreatedByUpn)
-            VALUES (@QuestionTypeId, @QuestionTypeName, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
+            (QuestionTypeId, QuestionType, CreatedDate, ModifiedDate, CreatedByUpn)
+            VALUES (@QuestionTypeId, @QuestionType, @CreatedDate, @ModifiedDate, @CreatedByUpn);",
             questionType,
             unitOfWork.Transaction);
 

@@ -27,8 +27,7 @@ public class QuestionRepository : IQuestionRepository
                     Q.QuestionContent,
                     Q.TaskId,
                     Q.QuestionNameUrl AS CurrentQuestionNameUrl,
-                    Q.QuestionTypeKey AS QuestionType,
-                    QT.QuestionTypeName,                    
+                    Q.QuestionTypeKey AS QuestionType,                   
                     (
                         SELECT TOP 1 prev.QuestionNameUrl
                         FROM recognitionCitizen.Question prev
@@ -56,7 +55,7 @@ public class QuestionRepository : IQuestionRepository
                 questionNameUrl
             }, _transaction);
 
-            if (result != null && result.QuestionTypeName == null && result.QuestionType == null)
+            if (result != null && result.QuestionType == null)
             {
                 throw new InvalidOperationException($"QuestionType data is missing for TaskNameUrl: {taskNameUrl}, QuestionNameUrl: {questionNameUrl}");
             }
@@ -80,8 +79,7 @@ public class QuestionRepository : IQuestionRepository
                     Q.QuestionContent,
                     Q.TaskId,
                     Q.QuestionNameUrl AS CurrentQuestionNameUrl,
-                    Q.QuestionTypeKey AS QuestionType,
-                    QT.QuestionTypeName,                     
+                    Q.QuestionTypeKey AS QuestionType,                   
                     (
                         SELECT TOP 1 prev.QuestionNameUrl
                         FROM recognitionCitizen.Question prev
@@ -107,7 +105,7 @@ public class QuestionRepository : IQuestionRepository
                 questionId
             }, _transaction);
 
-            if (result != null && result.QuestionTypeName == null && result.QuestionType == null)
+            if (result != null && result.QuestionType == null)
             {
                 throw new InvalidOperationException($"QuestionType data is missing for QuestionId: {questionId}");
             }

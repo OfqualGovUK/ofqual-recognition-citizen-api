@@ -3,6 +3,7 @@ using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using System.Text.Json;
 using Xunit;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 
@@ -70,7 +71,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -193,7 +194,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -304,7 +305,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "Text",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -420,7 +421,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "Text",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -521,7 +522,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "Text",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -614,7 +615,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow
@@ -708,7 +709,7 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedByUpn = "test@ofqual.gov.uk",
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow

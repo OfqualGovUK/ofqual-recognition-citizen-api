@@ -51,7 +51,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
             CreatedByUpn = "test@ofqual.gov.uk"
@@ -473,7 +473,7 @@ public class StageRepositoryTests : IClassFixture<SqlTestFixture>
         var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
         {
             QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
+            QuestionType = QuestionTypeEnum.TextArea,
             CreatedDate = DateTime.UtcNow,
             ModifiedDate = DateTime.UtcNow,
             CreatedByUpn = "test@ofqual.gov.uk"

@@ -1,10 +1,11 @@
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
-using Ofqual.Recognition.Citizen.API.Infrastructure;
-using Ofqual.Recognition.Citizen.API.Controllers;
-using Ofqual.Recognition.Citizen.API.Core.Models;
 using Microsoft.AspNetCore.Mvc;
-using Xunit;
 using Moq;
+using Ofqual.Recognition.Citizen.API.Controllers;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Infrastructure;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Xunit;
 
 namespace Ofqual.Recognition.Citizen.Tests.Unit.Controllers;
 
@@ -32,7 +33,7 @@ public class QuestionControllerTests
         {
             CurrentQuestionNameUrl = questionName,
             QuestionContent = "{\"hint\":\"test.\"}",
-            QuestionTypeName = "File Upload",
+            QuestionType = QuestionTypeEnum.FileUpload,
             QuestionId = Guid.NewGuid(),
             TaskId = Guid.NewGuid(),
             TaskNameUrl = taskName
@@ -50,7 +51,7 @@ public class QuestionControllerTests
         var returnedQuestion = Assert.IsType<QuestionDetailsDto>(okResult.Value);
 
         Assert.Equal($"{expectedQuestion.TaskNameUrl}/{expectedQuestion.CurrentQuestionNameUrl}", returnedQuestion.CurrentQuestionUrl);
-        Assert.Equal(expectedQuestion.QuestionTypeName, returnedQuestion.QuestionTypeName);
+        Assert.Equal(expectedQuestion.QuestionType, returnedQuestion.QuestionType);
         Assert.Equal(expectedQuestion.QuestionContent, returnedQuestion.QuestionContent);
         Assert.Equal(expectedQuestion.QuestionId, returnedQuestion.QuestionId);
         Assert.Equal(expectedQuestion.TaskId, returnedQuestion.TaskId);

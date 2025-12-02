@@ -16,9 +16,6 @@ public class QuestionDetails: IQuestion, IQuestionType
     public string? PreviousQuestionNameUrl { get; set; }
     public string? NextQuestionNameUrl { get; set; }
     public QuestionTypeEnum? QuestionType { get; set; }
-    // QuestionType table
-    public string? QuestionTypeName { get; set; }
-
     // Task table
     public required string TaskNameUrl { get; set; }
 }
