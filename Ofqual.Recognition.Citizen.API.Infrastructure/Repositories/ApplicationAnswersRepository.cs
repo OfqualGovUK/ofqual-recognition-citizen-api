@@ -172,28 +172,18 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
         try
         {
             const string query = @"
-               SELECT CASE 
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM recognitionCitizen.ApplicationAnswers AS AA
-                        JOIN recognitionCitizen.Application AS A ON AA.ApplicationId = A.ApplicationId
-                        WHERE @QuestionId = AA.QuestionId
-                            AND JSON_VALUE(AA.Answer, CONCAT('$.', @questionItemName)) COLLATE SQL_Latin1_General_CP1_CI_AS = @questionItemAnswer COLLATE SQL_Latin1_General_CP1_CI_AS
-                            AND (
-                                @applicationId IS NULL
-                                OR @applicationId <> A.ApplicationId
-                            )
-                            AND (
-                                A.OrganisationId IS NULL
-                                OR NOT EXISTS (
-                                    SELECT 1
-                                    FROM recognitionCitizen.Application AS A2
-                                    WHERE A2.OrganisationId = A.OrganisationId
-                                    AND A2.ApplicationId = A.ApplicationId
-                                )
-                            )
-                    ) THEN 1 ELSE 0
-                END;";
+                SELECT AA.*
+                FROM [recognitionCitizen].[v_ParseApplicationAnswersJSON] AS AA
+                    LEFT OUTER JOIN [recognitionCitizen].[Application] AS A ON A.[ApplicationId] = @applicationId
+                WHERE AA.[QuestionId] = @QuestionId
+                    AND AA.[Key] = @questionItemName
+                    AND TRIM(AA.[Value]) = TRIM(@questionItemAnswer)
+                    AND (@applicationId IS NULL OR AA.[ApplicationId] <> @applicationId)
+                    AND (
+                        ISNULL(AA.[OrganisationId],'00000000-0000-0000-0000-000000000000') <> ISNULL(A.[OrganisationId],'00000000-0000-0000-0000-000000000000')
+                        OR (AA.[OrganisationId] IS NULL AND A.[OrganisationId] IS NULL)
+                    )
+            ";
 
             return await _connection.QuerySingleAsync<bool>(
                 query,
