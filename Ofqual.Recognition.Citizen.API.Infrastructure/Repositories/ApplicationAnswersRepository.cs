@@ -172,6 +172,8 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
         try
         {
             const string query = @"
+            SELECT CASE 
+            WHEN EXISTS (  
                 SELECT AA.*
                 FROM [recognitionCitizen].[v_ParseApplicationAnswersJSON] AS AA
                     LEFT OUTER JOIN [recognitionCitizen].[Application] AS A ON A.[ApplicationId] = @applicationId
@@ -183,6 +185,8 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
                         ISNULL(AA.[OrganisationId],'00000000-0000-0000-0000-000000000000') <> ISNULL(A.[OrganisationId],'00000000-0000-0000-0000-000000000000')
                         OR (AA.[OrganisationId] IS NULL AND A.[OrganisationId] IS NULL)
                     )
+            ) THEN 1 ELSE 0
+            END
             ";
 
             return await _connection.QuerySingleAsync<bool>(
