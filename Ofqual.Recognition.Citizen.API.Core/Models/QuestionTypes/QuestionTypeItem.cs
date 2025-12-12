@@ -10,7 +10,7 @@ namespace Ofqual.Recognition.Citizen.API.Core.Models;
 public class QuestionTypeItem : IQuestionType, IDataMetadata
 {
     [JsonIgnore]
-    public QuestionTypeEnum? QuestionType { get; set; }
+    public required QuestionTypeEnum QuestionType { get; set; }
     public Guid QuestionTypeId { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime ModifiedDate { get; set; }
