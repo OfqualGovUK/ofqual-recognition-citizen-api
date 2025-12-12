@@ -67,21 +67,12 @@ public class TaskStatusRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionType = QuestionTypeEnum.TextArea,
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow,
-            CreatedByUpn = "test@ofqual.gov.uk"
-        });
-
         var question = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"title\":\"Question 1\"}",
             QuestionNameUrl = "question-test",
             CreatedDate = DateTime.UtcNow,
@@ -187,21 +178,12 @@ public class TaskStatusRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionType = QuestionTypeEnum.TextArea,
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow,
-            CreatedByUpn = "test@ofqual.gov.uk"
-        });
-
         await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task1.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"title\":\"task 1 question\"}",
             QuestionNameUrl = "question-test-1",
             CreatedDate = DateTime.UtcNow,
@@ -214,7 +196,7 @@ public class TaskStatusRepositoryTests : IClassFixture<SqlTestFixture>
             QuestionId = Guid.NewGuid(),
             TaskId = task2.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"title\":\"task 2 question\"}",
             QuestionNameUrl = "question-test-2",
             CreatedDate = DateTime.UtcNow,
@@ -319,21 +301,12 @@ public class TaskStatusRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionType = QuestionTypeEnum.TextArea,
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow,
-            CreatedByUpn = "test@ofqual.gov.uk"
-        });
-
         await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"title\":\"Test\"}",
             QuestionNameUrl = "question-test",
             CreatedDate = DateTime.UtcNow,

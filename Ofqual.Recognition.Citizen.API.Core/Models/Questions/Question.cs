@@ -1,3 +1,4 @@
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models.Interfaces;
 
 namespace Ofqual.Recognition.Citizen.API.Core.Models;
@@ -10,7 +11,7 @@ public class Question : IQuestion, IDataMetadata
     public Guid QuestionId { get; set; }
     public Guid TaskId { get; set; }
     public int QuestionOrderNumber { get; set; }
-    public Guid QuestionTypeId { get; set; }
+    public QuestionTypeEnum QuestionType { get; set; }
     public required string QuestionContent { get; set; }
     public required string QuestionNameUrl { get; set; }
     public DateTime CreatedDate { get; set; }
