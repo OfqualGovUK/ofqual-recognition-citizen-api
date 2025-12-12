@@ -11,8 +11,7 @@ public class QuestionDetailsDto : IQuestion, IQuestionType
 {
     public required Guid QuestionId { get; set; }
     public required Guid TaskId { get; set; }
-    public QuestionTypeEnum? QuestionType { get; set; }
-    public string? QuestionTypeName { get; set; }
+    public required QuestionTypeEnum QuestionType { get; set; }
     public required string QuestionContent { get; set; }
     public required string CurrentQuestionUrl { get; set; }
     public string? PreviousQuestionUrl { get; set; }

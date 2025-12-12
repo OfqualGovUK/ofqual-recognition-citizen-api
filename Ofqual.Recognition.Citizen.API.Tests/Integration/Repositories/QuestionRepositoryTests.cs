@@ -1,6 +1,7 @@
-using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
-using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
+using Ofqual.Recognition.Citizen.Tests.Integration.Fixtures;
 using Xunit;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
@@ -46,21 +47,12 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow,
-            CreatedByUpn = "test@ofqual.gov.uk"
-        });
-
         var q1 = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"title\":\"First\"}",
             QuestionNameUrl = "question-1",
             CreatedDate = DateTime.UtcNow,
@@ -73,7 +65,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 2,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"title\":\"Middle\"}",
             QuestionNameUrl = "question-2",
             CreatedDate = DateTime.UtcNow,
@@ -86,7 +78,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 3,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"title\":\"Last\"}",
             QuestionNameUrl = "question-3",
             CreatedDate = DateTime.UtcNow,
@@ -145,21 +137,12 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow,
-            CreatedByUpn = "test@ofqual.gov.uk"
-        });
-
         var question1 = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"label\":\"One\"}",
             QuestionNameUrl = "question-1",
             CreatedDate = DateTime.UtcNow,
@@ -172,7 +155,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 2,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"label\":\"Two\"}",
             QuestionNameUrl = "question-2",
             CreatedDate = DateTime.UtcNow,
@@ -234,21 +217,12 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
             CreatedByUpn = "test@ofqual.gov.uk"
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow,
-            CreatedByUpn = "test@ofqual.gov.uk"
-        });
-
         var question1 = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"label\":\"First\"}",
             QuestionNameUrl = "question-1",
             CreatedDate = DateTime.UtcNow,
@@ -261,7 +235,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 2,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"label\":\"Middle\"}",
             QuestionNameUrl = "question-2",
             CreatedDate = DateTime.UtcNow,
@@ -274,7 +248,7 @@ public class QuestionRepositoryTests : IClassFixture<SqlTestFixture>
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 3,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"label\":\"Last\"}",
             QuestionNameUrl = "question-3",
             CreatedDate = DateTime.UtcNow,

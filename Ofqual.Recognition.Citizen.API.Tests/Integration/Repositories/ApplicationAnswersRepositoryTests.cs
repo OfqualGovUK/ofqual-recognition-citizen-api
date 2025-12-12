@@ -3,6 +3,7 @@ using Ofqual.Recognition.Citizen.Tests.Integration.Builders;
 using Ofqual.Recognition.Citizen.API.Core.Models;
 using System.Text.Json;
 using Xunit;
+using Ofqual.Recognition.Citizen.API.Core.Enums;
 
 namespace Ofqual.Recognition.Citizen.Tests.Integration.Repositories;
 
@@ -67,21 +68,12 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
-            CreatedByUpn = "test@ofqual.gov.uk",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow
-        });
-
         var question = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId!,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionNameUrl = "question-url",
             QuestionContent = "{\"label\":\"Initial content\"}",
             CreatedByUpn = "test@ofqual.gov.uk",
@@ -190,21 +182,12 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
-            CreatedByUpn = "test@ofqual.gov.uk",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow
-        });
-
         var question = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"label\":\"Test question\"}",
             QuestionNameUrl = "question-url",
             CreatedByUpn = "test@ofqual.gov.uk",
@@ -301,21 +284,12 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "Text",
-            CreatedByUpn = "test@ofqual.gov.uk",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow
-        });
-
         var question = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"label\":\"Enter something\"}",
             QuestionNameUrl = "question-a",
             CreatedByUpn = "test@ofqual.gov.uk",
@@ -417,21 +391,12 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "Text",
-            CreatedByUpn = "test@ofqual.gov.uk",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow
-        });
-
         var question = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"label\":\"Enter data\"}",
             QuestionNameUrl = "question-1",
             CreatedByUpn = "test@ofqual.gov.uk",
@@ -518,21 +483,12 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "Text",
-            CreatedByUpn = "test@ofqual.gov.uk",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow
-        });
-
         var question = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"label\":\"Unanswered\"}",
             QuestionNameUrl = "question-2",
             CreatedByUpn = "test@ofqual.gov.uk",
@@ -611,21 +567,12 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
-            CreatedByUpn = "test@ofqual.gov.uk",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow
-        });
-
         var question = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"title\":\"Check exists\"}",
             QuestionNameUrl = "question-exists",
             CreatedByUpn = "test@ofqual.gov.uk",
@@ -705,21 +652,12 @@ public class ApplicationAnswersRepositoryTests : IClassFixture<SqlTestFixture>
             ModifiedDate = DateTime.UtcNow
         });
 
-        var questionType = await QuestionTestDataBuilder.CreateTestQuestionType(unitOfWork, new QuestionTypeItem
-        {
-            QuestionTypeId = Guid.NewGuid(),
-            QuestionTypeName = "TextBox",
-            CreatedByUpn = "test@ofqual.gov.uk",
-            CreatedDate = DateTime.UtcNow,
-            ModifiedDate = DateTime.UtcNow
-        });
-
         var question = await QuestionTestDataBuilder.CreateTestQuestion(unitOfWork, new Question
         {
             QuestionId = Guid.NewGuid(),
             TaskId = task.TaskId,
             QuestionOrderNumber = 1,
-            QuestionTypeId = questionType.QuestionTypeId,
+            QuestionType = QuestionTypeEnum.TextArea,
             QuestionContent = "{\"title\":\"No match\"}",
             QuestionNameUrl = "no-match",
             CreatedByUpn = "test@ofqual.gov.uk",

@@ -77,7 +77,7 @@ public class PreEngagementControllerTests
             QuestionContent = "{\"title\":\"test\"}",
             CurrentQuestionNameUrl = "question-b",
             CurrentTaskNameUrl = "task-b",
-            QuestionTypeName = "Text",
+            QuestionType = QuestionTypeEnum.TextArea,
             NextQuestionNameUrl = "next-q",
             NextTaskNameUrl = "next-t",
             PreviousQuestionNameUrl = "prev-q",
@@ -95,7 +95,7 @@ public class PreEngagementControllerTests
         Assert.Equal(question.QuestionId, dto.QuestionId);
         Assert.Equal(question.TaskId, dto.TaskId);
         Assert.Equal(question.QuestionContent, dto.QuestionContent);
-        Assert.Equal(question.QuestionTypeName, dto.QuestionTypeName);
+        Assert.Equal(question.QuestionType, dto.QuestionType);
         Assert.Equal("task-b/question-b", dto.CurrentQuestionUrl);
         Assert.Equal("next-t/next-q", dto.NextQuestionUrl);
         Assert.Equal("prev-t/prev-q", dto.PreviousQuestionUrl);
