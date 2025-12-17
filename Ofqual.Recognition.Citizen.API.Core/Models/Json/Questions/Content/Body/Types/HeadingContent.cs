@@ -6,4 +6,5 @@ public class HeadingContent
 {
     public required string Text { get; set; }
     public BodyTextSize Size { get; set; } = BodyTextSize.L;
+    public HTMLHeading HeadingType { get; set; } = HTMLHeading.Default;
 }

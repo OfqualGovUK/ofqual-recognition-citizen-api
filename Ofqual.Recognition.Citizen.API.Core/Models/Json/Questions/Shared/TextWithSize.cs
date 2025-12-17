@@ -13,4 +13,9 @@ public class TextWithSize
     /// The display size of the text.
     /// </summary>
     public BodyTextSize Size { get; set; } = BodyTextSize.M;
+
+    /// <summary>
+    /// Overrides the HTML heading level for the text.
+    /// </summary>
+    public HTMLHeading HeadingType { get; set; } = HTMLHeading.Default;
 }
