@@ -44,7 +44,6 @@ public class QuestionRepository : IQuestionRepository
                     ) AS NextQuestionNameUrl,
                     T.TaskNameUrl
                 FROM recognitionCitizen.Question Q
-                LEFT JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
                 JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
                 WHERE Q.QuestionNameUrl = @questionNameUrl
                 AND T.TaskNameUrl = @taskNameUrl";
@@ -96,7 +95,6 @@ public class QuestionRepository : IQuestionRepository
                     ) AS NextQuestionNameUrl,
                     T.TaskNameUrl
                 FROM recognitionCitizen.Question Q
-                LEFT JOIN recognitionCitizen.QuestionType QT ON Q.QuestionTypeId = QT.QuestionTypeId
                 JOIN recognitionCitizen.Task T ON Q.TaskId = T.TaskId
                 WHERE Q.QuestionId = @questionId";
             
