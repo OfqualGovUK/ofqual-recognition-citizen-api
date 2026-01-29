@@ -54,11 +54,6 @@ public class QuestionRepository : IQuestionRepository
                 questionNameUrl
             }, _transaction);
 
-            if (result != null && result.QuestionType == null)
-            {
-                throw new InvalidOperationException($"QuestionType data is missing for TaskNameUrl: {taskNameUrl}, QuestionNameUrl: {questionNameUrl}");
-            }
-
             return result;
         }
         catch (Exception ex)
@@ -103,11 +98,6 @@ public class QuestionRepository : IQuestionRepository
                 questionId
             }, _transaction);
 
-            if (result != null && result.QuestionType == null)
-            {
-                throw new InvalidOperationException($"QuestionType data is missing for QuestionId: {questionId}");
-            }
-
             return result;
         }
         catch (Exception ex)
@@ -127,7 +117,6 @@ public class QuestionRepository : IQuestionRepository
                     QuestionId,
                     TaskId,
                     OrderNumber,
-                    QuestionTypeId,
                     QuestionTypeKey AS QuestionType,
                     QuestionContent,
                     QuestionNameUrl,
