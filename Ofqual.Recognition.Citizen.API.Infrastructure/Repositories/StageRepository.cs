@@ -38,7 +38,6 @@ public class StageRepository : IStageRepository
                         LAG(q.QuestionNameUrl) OVER (ORDER BY vst.OrderNumber) AS PreviousQuestionNameUrl,
                         LAG(t.TaskNameUrl) OVER (ORDER BY vst.OrderNumber) AS PreviousTaskNameUrl
                     FROM recognitionCitizen.Question q
-                    INNER JOIN recognitionCitizen.QuestionType qt ON q.QuestionTypeId = qt.QuestionTypeId
                     INNER JOIN recognitionCitizen.Task t ON q.TaskId = t.TaskId
                     INNER JOIN recognitionCitizen.v_StageTask vst ON vst.TaskId = t.TaskId
                     WHERE vst.StageId = @stageId

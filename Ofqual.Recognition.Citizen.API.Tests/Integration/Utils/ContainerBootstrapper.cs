@@ -55,7 +55,7 @@ public class ContainerBootstrapper : IAsyncDisposable
     private string CreateSqlConnectionStr(int port)
     {
         var connStr = $"Server=localhost,{port};Initial Catalog={Get("DatabaseName")};" +
-                      $"User ID={Get("SqlUsername")};Password={Get("SqlPassword")};TrustServerCertificate=True;";
+            $"User ID={Get("SqlUsername")};Password={Get("SqlPassword")};TrustServerCertificate=True;";
 
         return connStr;
     }
