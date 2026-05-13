@@ -1,8 +1,10 @@
-using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
-using Ofqual.Recognition.Citizen.API.Core.Models;
-using System.Data;
-using Serilog;
 using Dapper;
+using Ofqual.Recognition.Citizen.API.Core.Models;
+using Ofqual.Recognition.Citizen.API.Infrastructure.Repositories.Interfaces;
+using Serilog;
+using System;
+using System.Data;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Ofqual.Recognition.Citizen.API.Infrastructure.Repositories;
 
@@ -137,7 +139,7 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
         catch (Exception ex)
         {
             Log.Error(ex, "Failed to fetch question answers for TaskId: {TaskId}, ApplicationId: {ApplicationId}", taskId, applicationId);
-            return Enumerable.Empty<SectionTaskQuestionAnswer>();
+            return [];
         }
     }
 
@@ -207,4 +209,19 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
             return false;
         }
     }
+
+    public async Task<bool> CheckIfOrganisationExistsInPortal(string questionItemName, string questionItemAnswer)
+    {
+        /* We could use an interpolated string here as the column name is not be parameterized 
+         * in the referenced view, but to avoid any risk of SQL injection we will validate the
+         * column name in the where clause instead and keep the query as a constant string. */
+        const string query = @"SELECT CASE EXISTS (
+            SELECT * FROM [recognitionCitizen].[v_ExistingOrganisations]
+            WHERE  (@questionItemName = 'OrganisationId' AND OrganisationId = @questionItemAnswer)
+            OR     (@questionItemName = 'OrganisationName' AND OrganisationName = @questionItemAnswer)
+            OR     (@questionItemName = 'Acronym' AND Acronym = @questionItemAnswer)
+        ) THEN 1 ELSE 0 END;";
+
+        return await _connection.QuerySingleAsync<bool>(query, new { questionItemName, questionItemAnswer }, _transaction);
+    }   
 }

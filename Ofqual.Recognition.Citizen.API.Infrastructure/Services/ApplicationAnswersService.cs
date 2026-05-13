@@ -16,6 +16,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
     private readonly IUserInformationService _userInformationService;
     private readonly IStageService _stageService;
 
+    private static readonly string[] _fieldsToCompareInPortal = ["OrganisationId", "OrganisationName", "Acronym"];
+
     public ApplicationAnswersService(IUnitOfWork context, IUserInformationService userInformationService, IStageService stageService)
     {
         _context = context;
@@ -75,7 +77,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
         var allAnswers = await _context.ApplicationAnswersRepository.GetAllApplicationAnswers(applicationId);
         if (allAnswers == null || !allAnswers.Any())
         {
-            return new List<TaskReviewSectionDto>();
+            return [];
         }
 
         var groupedBySection = allAnswers
@@ -134,7 +136,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
         var taskQuestionAnswers = await _context.ApplicationAnswersRepository.GetTaskQuestionAnswers(applicationId, taskId);
         if (!taskQuestionAnswers.Any())
         {
-            return new List<TaskReviewGroupDto>();
+            return [];
         }
 
         var sections = new List<TaskReviewGroupDto>();
@@ -142,7 +144,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
         foreach (var question in taskQuestionAnswers)
         {
             var section = await ProcessQuestionAnswer(applicationId, question);
-            if (section != null && section.QuestionAnswers.Any())
+            if (section != null && section.QuestionAnswers.Count != 0)
             {
                 sections.Add(section);
             }
@@ -158,7 +160,8 @@ public class ApplicationAnswersService : IApplicationAnswersService
             return null;
         }
 
-        var questionContent = JsonSerializer.Deserialize<QuestionContent>(question.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } });
+        var questionContent = JsonSerializer.Deserialize<QuestionContent>(question.QuestionContent,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } });
         if (questionContent?.FormGroup == null)
         {
             return null;
@@ -221,7 +224,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             });
 
             var selected = values.FirstOrDefault()?.ToLowerInvariant();
-            var selectedOption = formGroup.RadioButtonGroup.Options.FirstOrDefault(o => o.Value.ToLowerInvariant() == selected);
+            var selectedOption = formGroup.RadioButtonGroup.Options.FirstOrDefault(o => o.Value.Equals(selected, StringComparison.InvariantCultureIgnoreCase));
             if (selectedOption != null)
             {
                 if (selectedOption.ConditionalInputs != null)
@@ -315,7 +318,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            if (!sortedFileNames.Any())
+            if (sortedFileNames.Count == 0)
             {
                 sortedFileNames.Add("Not provided");
             }
@@ -328,32 +331,31 @@ public class ApplicationAnswersService : IApplicationAnswersService
             });
         }
 
-        return section.QuestionAnswers.Any() ? section : null;
+        return section.QuestionAnswers.Count != 0 ? section : null;
     }
 
     private static List<string> ExtractAnswer(Dictionary<string, JsonElement>? answers, string key)
     {
         if (answers == null || !answers.TryGetValue(key, out var token))
         {
-            return new List<string> { "Not provided" };
+            return ["Not provided"];
         }
 
         if (token.ValueKind == JsonValueKind.Array)
         {
-            return token.EnumerateArray()
+            return [.. token.EnumerateArray()
                 .Select(x => x.GetString())
                 .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => x!.Trim())
-                .ToList();
+                .Select(x => x!.Trim())];
         }
 
         if (token.ValueKind == JsonValueKind.String)
         {
             var str = token.GetString();
-            return string.IsNullOrWhiteSpace(str) ? new List<string> { "Not provided" } : new List<string> { str };
+            return string.IsNullOrWhiteSpace(str) ? ["Not provided"] : [str];
         }
 
-        return new List<string> { token.ToString() };
+        return [token.ToString()];
     }
 
     public async Task<ValidationResponse?> ValidateQuestionAnswers(Guid questionId, string answerJson, Guid? applicationId = null)
@@ -364,13 +366,15 @@ public class ApplicationAnswersService : IApplicationAnswersService
             return null;
         }
 
-        var questionContent = JsonSerializer.Deserialize<QuestionContent>(questionDetails.QuestionContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } });
+        var questionContent = JsonSerializer.Deserialize<QuestionContent>(questionDetails.QuestionContent, 
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } });
         if (questionContent?.FormGroup == null)
         {
             return null;
         }
 
-        var answerValue = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(answerJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var answerValue = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(answerJson, options: 
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         if (answerValue == null)
         {
             return null;
@@ -440,7 +444,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 selectedRadioValue = radioAnswerElement.GetString()?.Trim().ToLowerInvariant() ?? string.Empty;
 
                 var selectedOption = formGroup.RadioButtonGroup.Options
-                    .FirstOrDefault(opt => opt.Value.Trim().ToLowerInvariant() == selectedRadioValue);
+                    .FirstOrDefault(opt => opt.Value.Trim().Equals(selectedRadioValue, StringComparison.InvariantCultureIgnoreCase));
 
                 if (selectedOption != null)
                 {
@@ -537,7 +541,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             }
 
             //Check if the answer is empty or null when required
-            if (string.IsNullOrWhiteSpace(answerString) && (answerArray == null || !answerArray.Any()))
+            if (string.IsNullOrWhiteSpace(answerString) && (answerArray == null || answerArray.Count == 0))
             {
                 if (validation.Required == true)
                 {
@@ -574,16 +578,43 @@ public class ApplicationAnswersService : IApplicationAnswersService
             //Check if the answer is in database if unique validation is required
             if (validation.Unique == true && !string.IsNullOrWhiteSpace(answerString))
             {
-                var exists = await _context.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(questionId, component.Name, answerString, applicationId);
-                if (exists)
+                //if its a "special" field that needs to be compared with portal, then check if the answer exists in portal,
+                //if yes return the specific error message, if no continue with normal unique validation
+                if (_fieldsToCompareInPortal.Contains(component.Name))
                 {
+                    if (await _context.ApplicationAnswersRepository.CheckIfOrganisationExistsInPortal(component.Name, answerString))
+                    {
+                        /*  If the answer exists in the portal, we will need to stop the user, there and then, and ask them to contact Ofqual,
+                            Hence we just return the error message for the first field and ignore all other errors.   
+                        */
+                        return new ValidationResponse
+                        {
+                            Errors = [ new ValidationErrorItem
+                                {
+                                    PropertyName = component.Name, //this will put the error on the first field of the page
+                                    ErrorMessage = "A previous application appears to have been made on our existing system, "+
+                                                   "You will need to contact Ofqual to continue with your application."
+                                }]
+                        };
+                    }
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
                         ErrorMessage = $"The {componentValidationLabel} \"{answerString}\" already exists in our records"
                     });
+                    continue;
                 }
 
+                if (await _context.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(questionId, component.Name, answerString, applicationId))
+                {                   
+
+                    errors.Add(new ValidationErrorItem
+                    {
+                        PropertyName = component.Name,
+                        ErrorMessage = $"The {componentValidationLabel} \"{answerString}\" already exists in our records"
+                    });
+                    
+                }
                 continue;
             }
 
@@ -613,7 +644,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                 {
                     errors.Add(new ValidationErrorItem
                     {
-                        PropertyName = component.Name,
+                        PropertyName = component.Name, 
                         ErrorMessage = $"{componentValidationLabel} must be {validation.MaxLength.Value} {countType} or fewer"
                     });
 
