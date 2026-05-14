@@ -1,3 +1,4 @@
+using Elastic.CommonSchema;
 using Moq;
 using Ofqual.Recognition.API.Models.JSON.Questions;
 using Ofqual.Recognition.Citizen.API.Core.Enums;
@@ -884,16 +885,75 @@ public class ApplicationAnswersServiceTests
             questionId,
             JsonSerializer.Serialize(new Dictionary<string, string> { [testItemName] = testValue }));
 
+
+
         //Assert
+        Assert.NotNull(result);
+
+        if(expectedResult)
+            Assert.Single(result.Errors!);
+        else 
+            Assert.Empty(result.Errors ?? Enumerable.Empty<ValidationErrorItem>());
+
         Assert.Equal(
-            expectedResult, 
-            result!.Errors?.Any(x => x
-            .ErrorMessage
-            .StartsWith("A previous application appears to have been made on our existing system", StringComparison.OrdinalIgnoreCase)) 
-         ?? false);
+                expectedResult,
+                result.Errors?.Any(x => x
+                .ErrorMessage
+                .StartsWith("A previous application appears to have been made on our existing system", StringComparison.OrdinalIgnoreCase))
+             ?? false);
     }
 
+    [Fact]
+    [Trait("Category", "Unit")]
+    public async Task ValidateQuestionAnswers_ShouldFlagUsingExistingLogicIfNotWhitelistedPortalField()
+    {
+        //Arrange
+        const string testExampleEmail = "abc@test.com";
 
+        _mockUnitOfWork.Setup(u => u.QuestionRepository.GetQuestionByQuestionId(It.IsAny<Guid>()))
+            .ReturnsAsync(new QuestionDetails
+            {
+                QuestionId = Guid.Empty,
+                QuestionType = QuestionTypeEnum.TextInputGroup,
+                CurrentQuestionNameUrl = "test-question",
+                TaskId = Guid.NewGuid(),
+                TaskNameUrl = "test-task",
+                QuestionContent = JsonSerializer.Serialize(new QuestionContent
+                {
+                    FormGroup = new FormGroup
+                    {
+                        TextInputGroup = new TextInputGroup
+                        {
+                            Fields =
+                            [
+                                new()
+                                {
+                                    Name = "Email",
+                                    Label = "Email",
+                                    Validation = new ValidationRule { Unique = true }
+                                }
+                            ]
+                        }
+                    }
+                })
+            });
+                
+        _mockUnitOfWork
+            .Setup(u => u
+                .ApplicationAnswersRepository
+                .CheckIfQuestionAnswerExists(Guid.Empty, "Email", testExampleEmail , null))
+            .Returns(Task.FromResult(true));
+
+        //Act
+        var result = await _applicationAnswersService.ValidateQuestionAnswers(
+                Guid.Empty,
+                JsonSerializer.Serialize(new Dictionary<string, string> { ["Email"] = testExampleEmail }));
+
+        //Assert
+        Assert.NotNull(result?.Errors);       
+        Assert.StartsWith($"The Email \"{testExampleEmail}\" already exists in our records", 
+            result.Errors.Single().ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
 
     [Fact]
     [Trait("Category", "Unit")]

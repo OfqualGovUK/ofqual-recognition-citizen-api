@@ -596,26 +596,18 @@ public class ApplicationAnswersService : IApplicationAnswersService
                                                    "You will need to contact Ofqual to continue with your application."
                                 }]
                         };
-                    }
+                    }                    
+                }
+                
+                if (await _context.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(questionId, component.Name, answerString, applicationId))
+                {   
                     errors.Add(new ValidationErrorItem
                     {
                         PropertyName = component.Name,
                         ErrorMessage = $"The {componentValidationLabel} \"{answerString}\" already exists in our records"
                     });
                     continue;
-                }
-
-                if (await _context.ApplicationAnswersRepository.CheckIfQuestionAnswerExists(questionId, component.Name, answerString, applicationId))
-                {                   
-
-                    errors.Add(new ValidationErrorItem
-                    {
-                        PropertyName = component.Name,
-                        ErrorMessage = $"The {componentValidationLabel} \"{answerString}\" already exists in our records"
-                    });
-                    
-                }
-                continue;
+                }               
             }
 
             // Check for minimum and maximum length or word count
