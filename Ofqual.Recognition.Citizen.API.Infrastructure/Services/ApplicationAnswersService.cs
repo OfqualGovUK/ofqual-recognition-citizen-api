@@ -580,7 +580,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
             {
                 //if its a "special" field that needs to be compared with portal, then check if the answer exists in portal,
                 //if yes return the specific error message, if no continue with normal unique validation
-                if (_fieldsToCompareInPortal.Contains(component.Name))
+                if (_fieldsToCompareInPortal.Contains(component.Name, StringComparer.OrdinalIgnoreCase))
                 {
                     if (await _context.ApplicationAnswersRepository.CheckIfOrganisationExistsInPortal(component.Name, answerString))
                     {
@@ -591,7 +591,7 @@ public class ApplicationAnswersService : IApplicationAnswersService
                         {
                             Errors = [ new ValidationErrorItem
                                 {
-                                    PropertyName = component.Name, //this will put the error on the first field of the page
+                                    PropertyName = string.Empty, //this will allow the error to display without a field being highlighted
                                     ErrorMessage = "A previous application appears to have been made on our existing system, "+
                                                    "You will need to contact Ofqual to continue with your application."
                                 }]

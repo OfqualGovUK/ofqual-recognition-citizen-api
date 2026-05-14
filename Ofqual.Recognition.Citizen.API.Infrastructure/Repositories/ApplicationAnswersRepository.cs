@@ -215,11 +215,11 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
         /* We could use an interpolated string here as the column name is not be parameterized 
          * in the referenced view, but to avoid any risk of SQL injection we will validate the
          * column name in the where clause instead and keep the query as a constant string. */
-        const string query = @"SELECT CASE EXISTS (
+        const string query = @"SELECT CASE WHEN EXISTS (
             SELECT * FROM [recognitionCitizen].[v_ExistingOrganisations]
             WHERE  (@questionItemName = 'OrganisationId' AND OrganisationId = @questionItemAnswer)
             OR     (@questionItemName = 'OrganisationName' AND OrganisationName = @questionItemAnswer)
-            OR     (@questionItemName = 'Acronym' AND Acronym = @questionItemAnswer)
+            OR     (@questionItemName = 'Acronym' AND OrganisationAcronym = @questionItemAnswer)
         ) THEN 1 ELSE 0 END;";
 
         return await _connection.QuerySingleAsync<bool>(query, new { questionItemName, questionItemAnswer }, _transaction);
