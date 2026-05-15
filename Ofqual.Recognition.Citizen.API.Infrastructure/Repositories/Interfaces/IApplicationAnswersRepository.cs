@@ -9,4 +9,5 @@ public interface IApplicationAnswersRepository
     public Task<IEnumerable<SectionTaskQuestionAnswer>> GetTaskQuestionAnswers(Guid applicationId, Guid taskId);
     public Task<QuestionAnswerDto?> GetQuestionAnswer(Guid applicationId, Guid questionId);
     public Task<bool> CheckIfQuestionAnswerExists(Guid questionId, string questionItemName, string questionItemAnswer, Guid? applicationId);
+    public Task<bool> CheckIfOrganisationExistsInPortal(string questionItemName, string questionItemAnswer);
 }

@@ -63,6 +63,6 @@ public class AttachmentService : IAttachmentService
             return dto;
         });
 
-        return (await Task.WhenAll(tasks)).ToList();
+        return [.. await Task.WhenAll(tasks)];
     }
 }
