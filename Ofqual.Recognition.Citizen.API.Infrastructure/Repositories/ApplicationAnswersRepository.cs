@@ -217,8 +217,7 @@ public class ApplicationAnswersRepository : IApplicationAnswersRepository
          * column name in the where clause instead and keep the query as a constant string. */
         const string query = @"SELECT CASE WHEN EXISTS (
             SELECT * FROM [recognitionCitizen].[v_ExistingOrganisations]
-            WHERE  (@questionItemName = 'OrganisationId' AND OrganisationId = @questionItemAnswer)
-            OR     (@questionItemName = 'OrganisationName' AND OrganisationName = @questionItemAnswer)
+            WHERE  (@questionItemName = 'OrganisationName' AND OrganisationName = @questionItemAnswer)
             OR     (@questionItemName = 'Acronym' AND OrganisationAcronym = @questionItemAnswer)
         ) THEN 1 ELSE 0 END;";
 

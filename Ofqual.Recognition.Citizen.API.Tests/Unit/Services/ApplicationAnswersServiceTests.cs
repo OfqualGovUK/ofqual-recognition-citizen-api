@@ -826,8 +826,6 @@ public class ApplicationAnswersServiceTests
     }
 
     [Theory]
-    [InlineData("OrganisationId","FALSE_ORG_ID", false)]
-    [InlineData("OrganisationId","TRUE_ORG_ID", true)]
     [InlineData("OrganisationName", "new_orgainsation", false)]
     [InlineData("OrganisationName", "previous_organisation", false)]
     [InlineData("OrganisationName", "portal_organisation", true)]
@@ -837,13 +835,7 @@ public class ApplicationAnswersServiceTests
     [Trait("Category", "Unit")]
     public async Task ValidateQuestionAnswers_ShouldFlagWhenUniqueNameRecordExistsInPortal(string testItemName, string testValue, bool expectedResult)
     {
-        var orgId = Guid.NewGuid();
-
-        var questionId = Guid.NewGuid();
-        
-        if(testItemName.Equals("OrganisationId", StringComparison.OrdinalIgnoreCase) 
-        && testValue.Equals("TRUE_ORG_ID", StringComparison.OrdinalIgnoreCase))
-           testValue = orgId.ToString();  
+        var questionId = Guid.NewGuid();        
 
         _mockUnitOfWork.Setup(u => u.QuestionRepository.GetQuestionByQuestionId(It.IsAny<Guid>()))
             .ReturnsAsync(new QuestionDetails
@@ -874,13 +866,11 @@ public class ApplicationAnswersServiceTests
             });
 
         _mockUnitOfWork.Setup(u => u.ApplicationAnswersRepository.CheckIfOrganisationExistsInPortal(testItemName, testValue))
-            .ReturnsAsync(            
-             (testItemName == "OrganisationId"   && testValue == $"{orgId}" ) ||
+            .ReturnsAsync(
              (testItemName == "OrganisationName" && testValue == "portal_organisation") ||
              (testItemName == "Acronym"          && testValue == "TPO"));
 
        
-
         //Act
         var result = await _applicationAnswersService.ValidateQuestionAnswers(
             questionId,
@@ -900,7 +890,7 @@ public class ApplicationAnswersServiceTests
                 expectedResult,
                 result.Errors?.Any(x => x
                 .ErrorMessage
-                .StartsWith("A previous application appears to have been made on our existing system", StringComparison.OrdinalIgnoreCase))
+                .StartsWith("An organisation with this name or acronym already exists.", StringComparison.OrdinalIgnoreCase))
              ?? false);
     }
 
