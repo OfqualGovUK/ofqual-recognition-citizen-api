@@ -3,7 +3,6 @@ using CorrelationId.DependencyInjection;
 using CorrelationId.HttpClient;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Tokens;
@@ -68,7 +67,12 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<ITaskStatusService, TaskStatusService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+
+builder.Services.Configure<OfqualSupportConfiguration>(builder.Configuration.GetSection("OfqualSupport"));
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<IOptions<OfqualSupportConfiguration>>().Value);
 builder.Services.AddScoped<IApplicationAnswersService, ApplicationAnswersService>();
+
 builder.Services.AddScoped<IStageService, StageService>();
 builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
 builder.Services.AddTransient<IUserInformationService, UserInformationService>();
