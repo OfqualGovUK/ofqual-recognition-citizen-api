@@ -56,6 +56,9 @@ The main application settings are defined in `appsettings.json` and can be tailo
     "SignUpSignInPolicyId": "",
     "SignedOutCallbackPath": ""
   },
+  "OfqualSupport": {
+    "Contact": ""
+  }
   "GovUkNotify": {
     "ApiKey": "",
     "RecognitionEmailInbox": "",
@@ -138,8 +141,11 @@ The main application settings are defined in `appsettings.json` and can be tailo
 - **`AzureBlobStorage:ServiceUri`**  
   The connection string for the managed identity service to be used, not required if typical connection strings are being used. 
 
-  - **`AzureBlobStorage:ConnectionString`**  
+- **`AzureBlobStorage:ConnectionString`**  
   The connection string for your Azure Storage account. This grants access to Blob containers and their contents, when managed identites are not being used.
+
+- **`OfqualSupport:Contact`**  
+  The contact details (e.g., email address or phone number) for Ofqual support, which can be displayed to users in case they need assistance.
 
 - **`GovUkNotify:ApiKey`**  
   The API key for the GovUK Notify library to function.

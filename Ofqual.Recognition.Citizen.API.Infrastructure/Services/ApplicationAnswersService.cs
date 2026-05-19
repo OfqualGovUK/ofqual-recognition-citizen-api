@@ -15,14 +15,16 @@ public class ApplicationAnswersService : IApplicationAnswersService
     private readonly IUnitOfWork _context;
     private readonly IUserInformationService _userInformationService;
     private readonly IStageService _stageService;
+    private readonly OfqualSupportConfiguration _supportConfig;
 
-    private static readonly string[] _fieldsToCompareInPortal = ["OrganisationId", "OrganisationName", "Acronym"];
+    private static readonly string[] _fieldsToCompareInPortal = ["OrganisationName", "Acronym"];
 
-    public ApplicationAnswersService(IUnitOfWork context, IUserInformationService userInformationService, IStageService stageService)
+    public ApplicationAnswersService(IUnitOfWork context, IUserInformationService userInformationService, IStageService stageService, OfqualSupportConfiguration supportConfig)
     {
         _context = context;
         _userInformationService = userInformationService;
         _stageService = stageService;
+        _supportConfig = supportConfig;
     }
 
     public async Task<bool> SubmitAnswerAndUpdateStatus(Guid applicationId, Guid taskId, Guid questionId, string answerJson)
@@ -587,13 +589,15 @@ public class ApplicationAnswersService : IApplicationAnswersService
                         /*  If the answer exists in the portal, we will need to stop the user, there and then, and ask them to contact Ofqual,
                             Hence we just return the error message for the first field and ignore all other errors.   
                         */
+
                         return new ValidationResponse
                         {
                             Errors = [ new ValidationErrorItem
                                 {
                                     PropertyName = string.Empty, //this will allow the error to display without a field being highlighted
-                                    ErrorMessage = "A previous application appears to have been made on our existing system, "+
-                                                   "You will need to contact Ofqual to continue with your application."
+                                    ErrorMessage = "An organisation with this name or acronym already exists. If you need access to " +
+                                                    "an existing application, you can reset your password or contact " +
+                                                    $"{_supportConfig.Contact}."
                                 }]
                         };
                     }                    
