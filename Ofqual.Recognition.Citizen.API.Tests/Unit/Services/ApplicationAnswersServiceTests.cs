@@ -35,7 +35,8 @@ public class ApplicationAnswersServiceTests
         _applicationAnswersService = new ApplicationAnswersService(
             _mockUnitOfWork.Object,
             _mockUserInformationService.Object,
-            _mockStageService.Object
+            _mockStageService.Object,
+            new OfqualSupportConfiguration { Contact = "technical.support@ofqual.gov.uk"}
         );
     }
 
