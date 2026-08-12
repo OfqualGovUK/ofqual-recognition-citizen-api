@@ -64,17 +64,16 @@ stages:
           serviceConnectionEndpoint: 'snyk-integration-eu'
           testType: 'code'
           codeSeverityThreshold: 'high'
-          failOnIssues: false
+          failOnIssues: true
       # Step 6: Scan app
       - task: SnykSecurityScan@1
         displayName: 'Snyk scanning app'
         inputs:
           serviceConnectionEndpoint: 'snyk-integration-eu'
           testType: 'app'
-          monitorWhen: 'always'
           severityThreshold: 'high'
-          failOnIssues: false
-          additionalArguments: '--all-projects'
+          failOnIssues: true
+          additionalArguments: '--all-projects --exclude=Ofqual.Recognition.Citizen.Api.Tests'
       # Step 7: Scan docker image     
       - task: Docker@2
         displayName: Build Docker Image
@@ -91,9 +90,8 @@ stages:
           testType: 'container'
           dockerImageName: '$(SNYK_DOCKER_REPOS):latest'
           dockerfilePath: './Dockerfile'
-          monitorWhen: 'always'
           severityThreshold: 'high'
-          failOnIssues: false
+          failOnIssues: true
 
 
     # Audit job: This job audits dependencies for vulnerabilities.
