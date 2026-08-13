@@ -21,7 +21,7 @@ variables:
   dotnetVersion: '8.0'
 
 stages:
-# Static Analysis stage: This stage runs static code analysis using SonarQube and audits dependencies for vulnerabilities.
+# Static Analysis stage: This stage runs static code analysis using Snyk and audits dependencies for vulnerabilities.
 - stage: StaticAnalysis
   displayName: 'Run Static Analysis'
   condition: always()
@@ -50,14 +50,7 @@ stages:
           command: "build"
           projects: "**/*.csproj"
           arguments: "--no-restore"
-      # Step 4: Install and authenticate Snyk
-      - script: |
-          npm install -g snyk
-          snyk config set endpoint=$(SNYK_ENDPOINT)
-          snyk auth $(SNYK_TOKEN)
-          set +e
-        displayName: 'Snyk Install & Auth'
-      # Step 5: Scan code
+      # Step 4: Scan code
       - task: SnykSecurityScan@1
         displayName: 'Snyk scanning code'
         inputs:
@@ -65,7 +58,7 @@ stages:
           testType: 'code'
           codeSeverityThreshold: 'high'
           failOnIssues: true
-      # Step 6: Scan app
+      # Step 5: Scan app
       - task: SnykSecurityScan@1
         displayName: 'Snyk scanning app'
         inputs:
@@ -74,7 +67,7 @@ stages:
           severityThreshold: 'high'
           failOnIssues: true
           additionalArguments: '--all-projects --exclude=Ofqual.Recognition.Citizen.Api.Tests'
-      # Step 7: Scan docker image     
+      # Step 6: Scan docker image     
       - task: Docker@2
         displayName: Build Docker Image
         inputs:
@@ -92,7 +85,6 @@ stages:
           dockerfilePath: './Dockerfile'
           severityThreshold: 'high'
           failOnIssues: true
-
 
     # Audit job: This job audits dependencies for vulnerabilities.
     - job: Audit
